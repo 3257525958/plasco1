@@ -265,13 +265,26 @@ def confirm_invoice(request):
 
 
 def search_invoices(request):
-    """جستجوی فاکتورها بر اساس نام فروشنده"""
+    """جستجوی فاکتورها بر اساس معیارهای مختلف"""
     query = request.GET.get('q', '')
-    invoices = Invoice.objects.filter(
-        Q(seller__name__icontains=query) |
-        Q(seller__family__icontains=query) |
-        Q(seller__store_name__icontains=query)
-    ).distinct().order_by('-date')[:20]
+
+    # فقط در صورت وجود عبارت جستجو، فاکتورها را جستجو کنید
+    if query:
+        # تبدیل اعداد فارسی و عربی به انگلیسی
+        query_english = convert_persian_arabic_to_english(query)
+
+        # ایجاد کوئری داینامیک برای جستجو
+        invoices = Invoice.objects.filter(
+            Q(serial_number__icontains=query_english) |
+            Q(seller__name__icontains=query_english) |
+            Q(seller__family__icontains=query_english) |
+            Q(seller__store_name__icontains=query_english) |
+            Q(seller__mobile__icontains=query_english) |
+            Q(seller__card_number__icontains=query_english) |
+            Q(seller__sheba_number__icontains=query_english)
+        ).distinct().order_by('-date')[:20]
+    else:
+        invoices = None  # قبل از جستجو هیچ فاکتوری نمایش داده نشود
 
     return render(request, 'search_invoices.html', {
         'invoices': invoices,
@@ -280,33 +293,82 @@ def search_invoices(request):
 
 
 def edit_invoice(request, invoice_id):
-    """ویرایش فاکتور"""
+    """ویرایش فاکتور با سیستم هشدار تغییرات"""
     invoice = get_object_or_404(Invoice, id=invoice_id)
 
     if request.method == 'POST':
-        form = InvoiceEditForm(request.POST, instance=invoice)
-        if form.is_valid():
-            with transaction.atomic():
-                form.save()
+        # اگر دکمه ذخیره تغییرات زده شده باشد
+        if 'save' in request.POST:
+            form = InvoiceEditForm(request.POST, instance=invoice)
+            if form.is_valid():
+                try:
+                    with transaction.atomic():
+                        form.save()
 
-                # ذخیره آیتم‌ها
-                for item in invoice.items.all():
-                    item_id = str(item.id)
-                    item.quantity = int(request.POST.get(f'quantity_{item_id}', 1))
-                    item.selling_price = Decimal(request.POST.get(f'selling_price_{item_id}', 0))
-                    item.save()
+                        # ذخیره آیتم‌ها
+                        for item in invoice.items.all():
+                            item_id = str(item.id)
 
-                messages.success(request, 'فاکتور با موفقیت ویرایش شد')
+                            # دریافت مقادیر جدید
+                            product_name = request.POST.get(f'product_name_{item_id}')
+                            unit_price = request.POST.get(f'unit_price_{item_id}')
+                            selling_price = request.POST.get(f'selling_price_{item_id}')
+                            quantity = request.POST.get(f'quantity_{item_id}')
+
+                            # اعتبارسنجی و تبدیل انواع داده
+                            if product_name:
+                                item.product_name = product_name
+
+                            if unit_price:
+                                try:
+                                    item.unit_price = Decimal(unit_price)
+                                except (ValueError, TypeError):
+                                    pass
+
+                            if selling_price:
+                                try:
+                                    item.selling_price = Decimal(selling_price)
+                                except (ValueError, TypeError):
+                                    pass
+
+                            if quantity:
+                                try:
+                                    item.quantity = int(quantity)
+                                except (ValueError, TypeError):
+                                    pass
+
+                            item.save()
+
+                        messages.success(request, 'تغییرات فاکتور با موفقیت ثبت شد')
+                        return redirect('edit_invoice', invoice_id=invoice.id)
+
+                except Exception as e:
+                    logger.error(f"Error saving invoice changes: {str(e)}")
+                    messages.error(request, f'خطا در ذخیره تغییرات: {str(e)}')
+            else:
+                messages.error(request, 'خطا در فرم فروشنده. لطفاً داده‌ها را بررسی کنید')
+
+        # درخواست چاپ لیبل
+        elif 'print' in request.POST:
+            selected_items = request.POST.getlist('selected_items')
+            if not selected_items:
+                messages.warning(request, 'هیچ کالایی برای چاپ انتخاب نشده است')
                 return redirect('edit_invoice', invoice_id=invoice.id)
+
+            base_url = reverse('print_settings')
+            query_string = urlencode({
+                'invoice_id': invoice_id,
+                'items': selected_items
+            }, doseq=True)
+            return redirect(f"{base_url}?{query_string}")
+
     else:
         form = InvoiceEditForm(instance=invoice)
 
     return render(request, 'edit_invoice.html', {
         'invoice': invoice,
-        'form': form
+        'form': form,
     })
-
-
 # views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse

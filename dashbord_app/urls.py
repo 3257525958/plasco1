@@ -1,3 +1,5 @@
+
+
 from django.urls import path
 from . import views
 
@@ -21,4 +23,6 @@ urlpatterns = [
     # مسیر تنظیمات چاپ
     path('print-settings/', views.print_settings, name='print_settings'),
 ]
+
+
 

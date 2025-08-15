@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>جستجوی فاکتورها - کلینیک زیبایی دکتر اسدپور</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
     <style>
         :root {
             --primary-color: #4CAF50;
@@ -15,6 +16,10 @@
             --light-bg: #f9f9f9;
             --border-color: #ddd;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --blue-light: #e3f2fd;
+            --blue-dark: #2196f3;
+            --orange: #FF9800;
+            --green-light: #e8f5e9;
         }
 
         * {
@@ -25,21 +30,25 @@
         }
 
         body {
-            background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+            background: linear-gradient(135deg, #f5f7fa, var(--green-light));
             min-height: 100vh;
             padding: 20px;
             color: var(--text-color);
             direction: rtl;
         }
 
-        .search-container {
+        .container {
             max-width: 1200px;
             margin: 0 auto;
+        }
+
+        .search-container {
             background: white;
             border-radius: 20px;
             overflow: hidden;
             box-shadow: var(--shadow);
             padding: 30px;
+            margin-bottom: 30px;
         }
 
         .header {
@@ -55,19 +64,25 @@
             margin-bottom: 15px;
         }
 
+        .subtitle {
+            color: #555;
+            font-size: 18px;
+        }
+
         .search-box {
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto 30px;
             position: relative;
         }
 
         .search-input {
             width: 100%;
-            padding: 15px 20px;
+            padding: 16px 60px 16px 20px;
             border: 2px solid var(--primary-color);
             border-radius: 50px;
             font-size: 18px;
             transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
         }
 
         .search-input:focus {
@@ -78,39 +93,143 @@
 
         .search-btn {
             position: absolute;
-            left: 15px;
+            left: 20px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
             color: var(--primary-color);
-            font-size: 20px;
+            font-size: 22px;
             cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .search-btn:hover {
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .search-hint {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .search-filters {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-tag {
+            background: var(--blue-light);
+            padding: 10px 22px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #bbdefb;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .filter-tag:hover {
+            background: #bbdefb;
+            transform: translateY(-2px);
+        }
+        
+        .filter-tag.active {
+            background: var(--blue-dark);
+            color: white;
+            border-color: var(--blue-dark);
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+        }
+        
+        .filter-tag i {
+            font-size: 18px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .results-count {
+            font-size: 18px;
+            color: var(--accent-color);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sort-options {
+            display: flex;
+            gap: 15px;
+        }
+
+        .sort-btn {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s;
+        }
+
+        .sort-btn:hover {
+            background: #e9e9e9;
+        }
+
+        .sort-btn.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
         }
 
         .invoices-list {
             display: grid;
-            gap: 20px;
+            gap: 25px;
         }
 
         .invoice-card {
             background: white;
-            border-radius: 15px;
+            border-radius: 18px;
             overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             border: 1px solid var(--border-color);
-            transition: all 0.3s;
+            transition: all 0.4s;
         }
 
         .invoice-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transform: translateY(-7px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.15);
             border-color: var(--accent-color);
         }
 
         .invoice-header {
             background: var(--light-bg);
-            padding: 15px 20px;
+            padding: 18px 25px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
@@ -120,19 +239,34 @@
         .invoice-title {
             font-weight: bold;
             color: var(--accent-color);
-            font-size: 20px;
+            font-size: 21px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .invoice-serial {
+            font-family: monospace;
+            letter-spacing: 1px;
+            background: #f0f0f0;
+            padding: 5px 15px;
+            border-radius: 10px;
+            font-size: 19px;
         }
 
         .invoice-date {
             color: #666;
-            font-size: 16px;
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .invoice-body {
-            padding: 20px;
+            padding: 25px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
         }
 
         .seller-info {
@@ -141,42 +275,89 @@
 
         .seller-name {
             font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 5px;
+            font-size: 19px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #1a237e;
         }
 
         .store-name {
-            color: #666;
-            font-size: 16px;
+            font-size: 17px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #555;
+        }
+
+        .seller-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin-top: 20px;
+        }
+
+        .seller-detail {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8f9fa;
+            padding: 8px 18px;
+            border-radius: 25px;
+            font-size: 15px;
+            border: 1px solid #e9ecef;
         }
 
         .items-count {
             background: var(--primary-color);
             color: white;
-            padding: 8px 15px;
+            padding: 15px 25px;
             border-radius: 20px;
-            font-size: 16px;
+            font-size: 19px;
             font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            min-width: 120px;
+        }
+        
+        .count-number {
+            font-size: 28px;
+            line-height: 1;
         }
 
         .invoice-actions {
-            padding: 15px 20px;
+            padding: 18px 25px;
             border-top: 1px solid var(--border-color);
             display: flex;
-            gap: 15px;
+            gap: 18px;
+            background: #f8f9fa;
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 12px 28px;
             border: none;
             border-radius: 50px;
-            font-size: 16px;
+            font-size: 17px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
         }
 
         .btn-edit {
@@ -185,15 +366,33 @@
         }
 
         .btn-print {
-            background: linear-gradient(45deg, #FF9800, #FFC107);
+            background: linear-gradient(45deg, var(--orange), #FFC107);
             color: white;
         }
 
         .no-results {
             text-align: center;
-            padding: 40px;
+            padding: 50px;
             color: #666;
-            font-size: 18px;
+            font-size: 19px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            margin-top: 20px;
+        }
+
+        .no-results i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: #bdbdbd;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            margin-top: 30px;
         }
 
         @media (max-width: 768px) {
@@ -201,55 +400,165 @@
                 padding: 20px;
             }
             
+            .invoice-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
             .invoice-body {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 15px;
+                gap: 25px;
             }
             
             .invoice-actions {
                 flex-direction: column;
+                gap: 12px;
             }
             
             .btn {
                 width: 100%;
                 justify-content: center;
             }
+            
+            .seller-details {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .results-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .sort-options {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .filter-tag {
+                padding: 8px 16px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="search-container">
-        <div class="header">
-            <h1 class="title">جستجوی فاکتورها</h1>
-            <p>جستجو بر اساس نام فروشنده، نام فروشگاه یا شماره فاکتور</p>
+    <div class="container">
+        <div class="search-container">
+            <div class="header">
+                <h1 class="title">جستجوی پیشرفته فاکتورها</h1>
+                <p class="subtitle">جستجو بر اساس شماره فاکتور، نام فروشنده، فروشگاه، موبایل، شماره کارت یا شبا</p>
+            </div>
+            
+            <form method="GET" class="search-box">
+                <input type="text" name="q" value="{{ query }}" 
+                       class="search-input" placeholder="شماره فاکتور، نام فروشنده، موبایل، شماره کارت، شبا...">
+                <button type="submit" class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+            
+{#            <div class="search-hint">#}
+{#                <i class="fas fa-info-circle"></i>#}
+{#                برای جستجوی دقیق‌تر می‌توانید از فیلترهای زیر استفاده کنید:#}
+{#            </div>#}
+{#            #}
+{#            <div class="search-filters">#}
+{#                <div class="filter-tag active" data-filter="شماره فاکتور">#}
+{#                    <i class="fas fa-receipt"></i> شماره فاکتور#}
+{#                </div>#}
+{#                <div class="filter-tag" data-filter="نام فروشنده">#}
+{#                    <i class="fas fa-user"></i> نام فروشنده#}
+{#                </div>#}
+{#                <div class="filter-tag" data-filter="نام فروشگاه">#}
+{#                    <i class="fas fa-store"></i> نام فروشگاه#}
+{#                </div>#}
+{#                <div class="filter-tag" data-filter="موبایل">#}
+{#                    <i class="fas fa-mobile-alt"></i> موبایل#}
+{#                </div>#}
+{#                <div class="filter-tag" data-filter="شماره کارت">#}
+{#                    <i class="fas fa-credit-card"></i> شماره کارت#}
+{#                </div>#}
+{#                <div class="filter-tag" data-filter="شماره شبا">#}
+{#                    <i class="fas fa-university"></i> شماره شبا#}
+{#                </div>#}
+{#            </div>#}
         </div>
         
-        <form method="GET" class="search-box">
-            <input type="text" name="q" value="{{ query }}" 
-                   class="search-input" placeholder="جستجو...">
-            <button type="submit" class="search-btn">
-                <i class="fas fa-search"></i>
-            </button>
-        </form>
+        <div class="results-header">
+            <div class="results-count">
+                <i class="fas fa-file-invoice"></i>
+                {% if invoices %}
+                    نمایش {{ invoices|length }} فاکتور از {{ total_count }}
+                {% else %}
+                    هیچ فاکتوری یافت نشد
+                {% endif %}
+            </div>
+            
+            <div class="sort-options">
+{#                <div class="sort-btn active">#}
+{#                    <i class="fas fa-sort-amount-down"></i> جدیدترین#}
+{#                </div>#}
+{#                <div class="sort-btn">#}
+{#                    <i class="fas fa-sort-amount-up"></i> قدیمی‌ترین#}
+{#                </div>#}
+            </div>
+        </div>
         
         <div class="invoices-list">
             {% if invoices %}
                 {% for invoice in invoices %}
                 <div class="invoice-card">
                     <div class="invoice-header">
-                        <div class="invoice-title">فاکتور {{ invoice.serial_number }}</div>
-                        <div class="invoice-date">{{ invoice.date }}</div>
+                        <div class="invoice-title">
+                            <i class="fas fa-file-invoice"></i>
+                            فاکتور <span class="invoice-serial">{{ invoice.serial_number }}</span>
+                        </div>
+                        <div class="invoice-date">
+                            <i class="far fa-calendar-alt"></i>
+                            {{ invoice.date }}
+                        </div>
                     </div>
                     
                     <div class="invoice-body">
                         <div class="seller-info">
-                            <div class="seller-name">{{ invoice.seller.name }} {{ invoice.seller.family }}</div>
-                            <div class="store-name">{{ invoice.seller.store_name }}</div>
+                            <div class="seller-name">
+                                <i class="fas fa-user-tie"></i>
+                                {{ invoice.seller.name }} {{ invoice.seller.family }}
+                            </div>
+                            {% if invoice.seller.store_name %}
+                            <div class="store-name">
+                                <i class="fas fa-store"></i>
+                                {{ invoice.seller.store_name }}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="seller-details">
+                                <div class="seller-detail">
+                                    <i class="fas fa-mobile-alt"></i>
+                                    {{ invoice.seller.mobile }}
+                                </div>
+                                {% if invoice.seller.card_number %}
+                                <div class="seller-detail">
+                                    <i class="fas fa-credit-card"></i>
+                                    {{ invoice.seller.card_number }}
+                                </div>
+                                {% endif %}
+                                {% if invoice.seller.sheba_number %}
+                                <div class="seller-detail">
+                                    <i class="fas fa-university"></i>
+                                    {{ invoice.seller.sheba_number }}
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
                         
                         <div class="items-count">
-                            {{ invoice.items.count }} کالا
+                            <i class="fas fa-boxes"></i>
+                            <span class="count-number">{{ invoice.items.count }}</span>
+                            کالا
                         </div>
                     </div>
                     
@@ -257,7 +566,7 @@
                         <a href="{% url 'edit_invoice' invoice.id %}" class="btn btn-edit">
                             <i class="fas fa-edit"></i> ویرایش فاکتور
                         </a>
-                        <a href="{% url 'edit_invoice' invoice.id %}" class="btn btn-print">
+                        <a href="{% url 'print_labels' invoice.id %}" class="btn btn-print">
                             <i class="fas fa-print"></i> چاپ لیبل
                         </a>
                     </div>
@@ -265,11 +574,60 @@
                 {% endfor %}
             {% else %}
                 <div class="no-results">
-                    <i class="fas fa-file-invoice" style="font-size: 50px; margin-bottom: 20px;"></i>
-                    <p>هیچ فاکتوری یافت نشد</p>
+                    <i class="fas fa-file-invoice"></i>
+                    <p>هیچ فاکتوری مطابق با جستجوی شما یافت نشد</p>
+                    {% if query %}
+                    <p class="search-hint">لطفاً عبارت جستجو را تغییر دهید یا از فیلترهای دیگر استفاده کنید</p>
+                    {% endif %}
                 </div>
             {% endif %}
         </div>
+        
+        <div class="footer">
+            سیستم مدیریت فاکتورها - کلینیک زیبایی دکتر اسدپور &copy; ۱۴۰۳
+        </div>
     </div>
+
+    <script>
+        // مدیریت فیلترهای جستجو
+        document.querySelectorAll('.filter-tag').forEach(tag => {
+            tag.addEventListener('click', function() {
+                const filterText = this.getAttribute('data-filter');
+                const searchInput = document.querySelector('.search-input');
+                
+                // حذف حالت فعال از همه فیلترها
+                document.querySelectorAll('.filter-tag').forEach(t => {
+                    t.classList.remove('active');
+                });
+                
+                // فعال کردن فیلتر انتخاب شده
+                this.classList.add('active');
+                
+                // تنظیم متن جستجو
+                searchInput.value = filterText + ': ';
+                searchInput.focus();
+            });
+        });
+
+        // مدیریت مرتب‌سازی
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.sort-btn').forEach(b => {
+                    b.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // در اینجا می‌توانید کد مرتب‌سازی را پیاده‌سازی کنید
+                console.log('مرتب‌سازی بر اساس:', this.textContent.trim());
+            });
+        });
+
+        // افزودن قابلیت جستجو با فشار Enter
+        document.querySelector('.search-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                this.form.submit();
+            }
+        });
+    </script>
 </body>
 </html>

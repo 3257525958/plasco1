@@ -19,24 +19,101 @@ logger = logging.getLogger(__name__)
 
 
 class Froshande(models.Model):
-    name = models.CharField(max_length=100, verbose_name="نام", blank=False)
-    family = models.CharField(max_length=100, verbose_name="نام خانوادگی", blank=False)
-    address = models.TextField(verbose_name="آدرس", blank=True, null=True)
-    store_name = models.CharField(max_length=200, verbose_name="اسم فروشگاه", blank=True, null=True)
-    card_number = models.CharField(max_length=16, verbose_name="شماره کارت", blank=True, null=True)
-    sheba_number = models.CharField(max_length=26, verbose_name="شماره شبا", blank=False)
-    phone = models.CharField(max_length=11, verbose_name="تلفن ثابت", blank=True, null=True)
-    mobile = models.CharField(max_length=11, verbose_name="تلفن همراه", blank=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(
+        max_length=100,
+        verbose_name="نام",
+        blank=False,
+        help_text="نام فروشنده را وارد کنید"
+    )
+    family = models.CharField(
+        max_length=100,
+        verbose_name="نام خانوادگی",
+        blank=False,
+        help_text="نام خانوادگی فروشنده را وارد کنید"
+    )
+    address = models.TextField(
+        verbose_name="آدرس",
+        blank=True,
+        null=True,
+        help_text="آدرس کامل فروشنده"
+    )
+    store_name = models.CharField(
+        max_length=200,
+        verbose_name="اسم فروشگاه",
+        blank=True,
+        null=True,
+        help_text="نام فروشگاه یا کسب و کار"
+    )
+    card_number = models.CharField(
+        max_length=16,
+        verbose_name="شماره کارت",
+        blank=True,
+        null=True,
+        help_text="شماره کارت بانکی ۱۶ رقمی"
+    )
+    sheba_number = models.CharField(
+        max_length=26,
+        verbose_name="شماره شبا",
+        blank=False,
+        help_text="شماره شبا بانکی ۲۶ رقمی"
+    )
+    phone = models.CharField(
+        max_length=11,
+        verbose_name="تلفن ثابت",
+        blank=True,
+        null=True,
+        help_text="شماره تلفن ثابت با پیش‌شماره"
+    )
+    mobile = models.CharField(
+        max_length=11,
+        verbose_name="تلفن همراه",
+        blank=False,
+        help_text="شماره همراه ۱۱ رقمی"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="تاریخ ایجاد"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="آخرین بروزرسانی"
+    )
 
     def __str__(self):
-        return f"{self.name} {self.family} - {self.store_name}"
+        return f"{self.name} {self.family} - {self.store_name or 'بدون نام فروشگاه'}"
+
+    def get_full_name(self):
+        return f"{self.name} {self.family}"
+
+    def get_contact_info(self):
+        return {
+            'mobile': self.mobile,
+            'phone': self.phone,
+            'card': self.card_number,
+            'sheba': self.sheba_number
+        }
 
     class Meta:
         verbose_name = "فروشنده"
         verbose_name_plural = "فروشندگان"
-
+        ordering = ['family', 'name']
+        indexes = [
+            models.Index(fields=['name', 'family']),
+            models.Index(fields=['store_name']),
+            models.Index(fields=['mobile']),
+            models.Index(fields=['card_number']),
+            models.Index(fields=['sheba_number']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['mobile'],
+                name='unique_mobile'
+            ),
+            models.UniqueConstraint(
+                fields=['sheba_number'],
+                name='unique_sheba'
+            )
+        ]
 
 class Product(models.Model):
     name = models.CharField(max_length=200, verbose_name="نام کالا", unique=True)

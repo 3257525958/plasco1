@@ -15,6 +15,8 @@
             --light-bg: #f9f9f9;
             --border-color: #ddd;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --warning-color: #d32f2f;
+            --warning-bg: #ffebee;
         }
 
         * {
@@ -40,6 +42,7 @@
             overflow: hidden;
             box-shadow: var(--shadow);
             padding: 30px;
+            position: relative;
         }
 
         .invoice-header {
@@ -129,6 +132,7 @@
         .invoice-table input:focus {
             border-color: var(--accent-color);
             box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+            outline: none;
         }
 
         .actions {
@@ -263,6 +267,98 @@
             transform: rotate(45deg);
         }
 
+        /* دیالوگ‌های تایید */
+        .confirmation-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .dialog-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        
+        .dialog-title {
+            font-size: 24px;
+            color: var(--warning-color);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .dialog-message {
+            font-size: 18px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        
+        .dialog-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .dialog-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 120px;
+            transition: all 0.3s;
+        }
+        
+        .btn-dialog-confirm {
+            background: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-dialog-cancel {
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .dialog-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .change-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--warning-bg);
+            color: var(--warning-color);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 999;
+            display: none;
+        }
+
         @media (max-width: 992px) {
             .invoice-header {
                 flex-direction: column;
@@ -274,18 +370,18 @@
             .invoice-container {
                 padding: 15px;
             }
-            
-            .invoice-table th, 
+
+            .invoice-table th,
             .invoice-table td {
                 padding: 10px 5px;
                 font-size: 16px;
             }
-            
+
             .invoice-table input {
                 padding: 10px;
                 font-size: 16px;
             }
-            
+
             .btn {
                 padding: 12px 20px;
                 font-size: 16px;
@@ -293,14 +389,28 @@
                 justify-content: center;
                 margin-bottom: 10px;
             }
-            
+
             .actions {
                 flex-direction: column;
+            }
+            
+            .dialog-buttons {
+                flex-direction: column;
+            }
+            
+            .dialog-btn {
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
+    <!-- نشانگر تغییرات ذخیره نشده -->
+    <div class="change-indicator" id="change-indicator">
+        <i class="fas fa-exclamation-triangle"></i>
+        تغییرات ذخیره نشده‌اند!
+    </div>
+
     <div class="invoice-container">
         <form method="POST" id="invoice-form">
             {% csrf_token %}
@@ -315,7 +425,7 @@
                         <span class="info-value">{{ invoice.date }}</span>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     {{ form.as_p }}
                 </div>
@@ -347,8 +457,8 @@
                     <tr>
                         <th width="5%">انتخاب</th>
                         <th width="5%">ردیف</th>
-                        <th width="35%">نام کالا</th>
-                        <th width="15%">قیمت واحد (تومان)</th>
+                        <th width="30%">نام کالا</th>
+                        <th width="15%">قیمت خرید (تومان)</th>
                         <th width="15%">قیمت فروش (تومان)</th>
                         <th width="15%">تعداد</th>
                         <th width="10%">عملیات</th>
@@ -364,15 +474,26 @@
                             </label>
                         </td>
                         <td>{{ forloop.counter }}</td>
-                        <td>{{ item.product_name }}</td>
-                        <td>{{ item.unit_price|floatformat:"0" }}</td>
                         <td>
-                            <input type="number" name="selling_price_{{ item.id }}" 
-                                   value="{{ item.selling_price|floatformat:'0' }}"
-                                   min="0" step="1000" required>
+                            <input type="text" name="product_name_{{ item.id }}"
+                                   value="{{ item.product_name }}" required
+                                           autocomplete="off"
+                                           autocorrect="off"
+                                           autocapitalize="off"
+                                           spellcheck="false">
                         </td>
                         <td>
-                            <input type="number" name="quantity_{{ item.id }}" 
+                            <input type="number" name="unit_price_{{ item.id }}"
+                                   value="{{ item.unit_price|floatformat:'0' }}"
+                                   min="0" >
+                        </td>
+                        <td>
+                            <input type="number" name="selling_price_{{ item.id }}"
+                                   value="{{ item.selling_price|floatformat:'0' }}"
+                                   min="0" >
+                        </td>
+                        <td>
+                            <input type="number" name="quantity_{{ item.id }}"
                                    value="{{ item.quantity }}" min="1" required>
                         </td>
                         <td>
@@ -393,7 +514,7 @@
                     <button type="button" id="print-labels" class="btn btn-print">
                         <i class="fas fa-print"></i> چاپ لیبل‌های انتخاب شده
                     </button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="button" id="save-changes" class="btn btn-primary">
                         <i class="fas fa-save"></i> ذخیره تغییرات
                     </button>
                 </div>
@@ -401,37 +522,162 @@
         </form>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // دکمه بازگشت به لیست فاکتورها
-            $('#back-to-invoices').click(function() {
-                window.location.href = "{% url 'search_invoices' %}";
-            });
-            
-            // چاپ لیبل‌های انتخاب شده
-            $('#print-labels').click(function() {
-                const selectedItems = [];
-                $('input[name="selected_items"]:checked').each(function() {
-                    selectedItems.push($(this).val());
-                });
-                
-                if (selectedItems.length === 0) {
-                    alert('لطفاً حداقل یک کالا را برای چاپ لیبل انتخاب کنید');
-                    return;
-                }
-                
-                const queryString = selectedItems.map(id => `items=${id}`).join('&');
-                window.open(`{% url 'print_labels' invoice.id %}?${queryString}`, '_blank');
-            });
-            
-            // حذف سطر
-            $(document).on('click', '.remove-item', function() {
-                if (confirm('آیا از حذف این کالا از فاکتور اطمینان دارید؟')) {
-                    $(this).closest('tr').remove();
-                }
-            });
+    <!-- دیالوگ تأیید ذخیره تغییرات -->
+    <div class="confirmation-dialog" id="save-dialog">
+        <div class="dialog-content">
+            <div class="dialog-title">
+                <i class="fas fa-exclamation-triangle"></i>
+                تأیید ذخیره تغییرات
+            </div>
+            <div class="dialog-message">
+                <p>آیا از ذخیره تغییرات فاکتور اطمینان دارید؟</p>
+                <p>پس از ذخیره، اطلاعات به روز رسانی شده و قابل بازگشت نیستند.</p>
+            </div>
+            <div class="dialog-buttons">
+                <button class="dialog-btn btn-dialog-cancel" id="cancel-save">
+                    <i class="fas fa-times"></i> لغو
+                </button>
+                <button class="dialog-btn btn-dialog-confirm" id="confirm-save">
+                    <i class="fas fa-check"></i> ذخیره تغییرات
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- دیالوگ هشدار ترک صفحه -->
+    <div class="confirmation-dialog" id="leave-dialog">
+        <div class="dialog-content">
+            <div class="dialog-title">
+                <i class="fas fa-exclamation-circle"></i>
+                تغییرات ذخیره نشده
+            </div>
+            <div class="dialog-message">
+                <p>تغییرات شما ذخیره نشده است!</p>
+                <p>در صورت ترک صفحه، تمام تغییرات از دست خواهند رفت.</p>
+            </div>
+            <div class="dialog-buttons">
+                <button class="dialog-btn btn-dialog-cancel" id="cancel-leave">
+                    <i class="fas fa-arrow-left"></i> باقی می‌مانم
+                </button>
+                <button class="dialog-btn btn-dialog-confirm" id="confirm-leave">
+                    <i class="fas fa-sign-out-alt"></i> ترک صفحه
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // وضعیت تغییرات فرم
+    let formChanged = false;
+    let isSubmitting = false; // افزودن متغیر برای ردیابی وضعیت ارسال فرم
+    
+    // تابع برای علامت گذاری تغییرات
+    function markFormChanged() {
+        if (!formChanged) {
+            formChanged = true;
+            // نمایش نشانگر تغییرات
+            document.getElementById('change-indicator').style.display = 'flex';
+        }
+    }
+    
+    // تابع برای بازنشانی وضعیت تغییرات
+    function resetFormChanged() {
+        formChanged = false;
+        document.getElementById('change-indicator').style.display = 'none';
+    }
+    
+    // تابع برای نمایش دیالوگ
+    function showDialog(id) {
+        document.getElementById(id).style.display = 'flex';
+    }
+    
+    // تابع برای مخفی کردن دیالوگ
+    function hideDialog(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    $(document).ready(function() {
+        // ردیابی تغییرات در فرم
+        $('input, select, textarea').on('input change', function() {
+            markFormChanged();
         });
-    </script>
+        
+        // دکمه بازگشت به لیست فاکتورها
+        $('#back-to-invoices').click(function() {
+            if (formChanged) {
+                showDialog('leave-dialog');
+            } else {
+                window.location.href = "{% url 'search_invoices' %}";
+            }
+        });
+        
+        // چاپ لیبل‌های انتخاب شده
+        $('#print-labels').click(function() {
+            const selectedItems = [];
+            $('input[name="selected_items"]:checked').each(function() {
+                selectedItems.push($(this).val());
+            });
+
+            if (selectedItems.length === 0) {
+                alert('لطفاً حداقل یک کالا را برای چاپ لیبل انتخاب کنید');
+                return;
+            }
+
+            const queryString = selectedItems.map(id => `items=${id}`).join('&');
+            window.open(`{% url 'print_labels' invoice.id %}?${queryString}`, '_blank');
+        });
+        
+        // حذف سطر
+        $(document).on('click', '.remove-item', function() {
+            if (confirm('آیا از حذف این کالا از فاکتور اطمینان دارید؟')) {
+                $(this).closest('tr').remove();
+                markFormChanged();
+            }
+        });
+        
+        // دکمه ذخیره تغییرات
+        $('#save-changes').click(function() {
+            if (formChanged) {
+                showDialog('save-dialog');
+            } else {
+                alert('هیچ تغییری برای ذخیره کردن وجود ندارد');
+            }
+        });
+        
+        // تأیید ذخیره تغییرات
+        $('#confirm-save').click(function() {
+            isSubmitting = true; // علامت گذاری برای ارسال فرم
+            resetFormChanged();
+            $('#invoice-form').append('<input type="hidden" name="save" value="1">');
+            $('#invoice-form').submit();
+        });
+        
+        // لغو ذخیره تغییرات
+        $('#cancel-save').click(function() {
+            hideDialog('save-dialog');
+        });
+        
+        // تأیید ترک صفحه
+        $('#confirm-leave').click(function() {
+            resetFormChanged();
+            window.location.href = "{% url 'search_invoices' %}";
+        });
+        
+        // لغو ترک صفحه
+        $('#cancel-leave').click(function() {
+            hideDialog('leave-dialog');
+        });
+        
+        // هشدار هنگام بستن یا رفرش صفحه
+        window.addEventListener('beforeunload', function(e) {
+            if (formChanged && !isSubmitting) {
+                e.preventDefault();
+                e.returnValue = 'تغییرات ذخیره نشده‌اند. آیا مطمئن هستید که می‌خواهید صفحه را ترک کنید؟';
+            }
+        });
+    });
+</script>
+
 </body>
 </html>
