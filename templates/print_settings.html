@@ -1,0 +1,354 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تنظیمات چاپ لیبل‌ها</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&family=Tahoma&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            padding: 20px;
+            color: #2c3e50;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2E7D32;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        
+        .settings-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+        }
+        
+        h2 {
+            color: #388E3C;
+            margin-bottom: 20px;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input[type="number"], select, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input[type="number"]:focus, select:focus, input[type="text"]:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-group input {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .items-list {
+            margin-top: 20px;
+        }
+        
+        .item-row {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            gap: 15px;
+        }
+        
+        .item-info {
+            flex: 1;
+        }
+        
+        .item-quantity {
+            width: 150px;
+        }
+        
+        .btn-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .btn-print {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-print:hover {
+            background: #2E7D32;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .preview-box {
+            width: 100%;
+            height: 250px;
+            border: 2px dashed #4CAF50;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            background: #f0fff4;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .preview-label {
+            width: auto;
+            height: auto;
+            border: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            background: white;
+            margin: 10px auto;
+        }
+        
+        .preview-barcode {
+            width: 80%;
+            height: 50px;
+            background: #f0f0f0;
+            margin: 5px 0;
+        }
+        
+        .total-labels {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-cog"></i> تنظیمات چاپ لیبل‌ها</h1>
+        
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="invoice_id" value="{{ invoice.id }}">
+            {% for item in items %}
+                <input type="hidden" name="items" value="{{ item.id }}">
+            {% endfor %}
+            
+            <!-- تنظیمات ابعاد و چینش -->
+            <div class="settings-section">
+                <h2><i class="fas fa-ruler-combined"></i> ابعاد و چینش لیبل‌ها</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="columns">تعداد لیبل در هر سطر:</label>
+                        <input type="number" id="columns" name="columns" value="3" min="1" max="6">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="page_alignment">چیدمان لیبل‌ها در صفحه:</label>
+                        <select id="page_alignment" name="page_alignment">
+                            <option value="right">راست</option>
+                            <option value="left">چپ</option>
+                            <option value="center" selected>وسط</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="content_alignment">چیدمان محتوا در لیبل:</label>
+                        <select id="content_alignment" name="content_alignment">
+                            <option value="right">راست</option>
+                            <option value="left">چپ</option>
+                            <option value="center" selected>وسط</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vertical_gap">فاصله عمودی بین لیبل‌ها (میلی‌متر):</label>
+                        <input type="number" id="vertical_gap" name="vertical_gap" value="5" min="0" max="20">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="horizontal_gap">فاصله افقی بین لیبل‌ها (میلی‌متر):</label>
+                        <input type="number" id="horizontal_gap" name="horizontal_gap" value="5" min="0" max="20">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- تنظیمات محتوا -->
+            <div class="settings-section">
+                <h2><i class="fas fa-edit"></i> تنظیمات محتوای لیبل</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="barcode_scale">اندازه بارکد (درصد):</label>
+                        <input type="number" id="barcode_scale" name="barcode_scale" value="90" min="50" max="100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="content_spacing">فاصله بین اجزا (میلی‌متر):</label>
+                        <input type="number" id="content_spacing" name="content_spacing" value="5" min="0" max="20">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="font_family">فونت متن:</label>
+                        <select id="font_family" name="font_family">
+                            <option value="Vazirmatn" selected>Vazirmatn (پیش‌فرض)</option>
+                            <option value="Tahoma">Tahoma</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="font_size">اندازه فونت (pt):</label>
+                        <input type="number" id="font_size" name="font_size" value="12" min="8" max="24">
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show_product_name" name="show_product_name" checked>
+                        <label for="show_product_name">نمایش نام کالا</label>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show_price" name="show_price" checked>
+                        <label for="show_price">نمایش قیمت کالا</label>
+                    </div>
+                </div>
+                
+                <div class="preview-box">
+                    <h3>پیش‌نمایش لیبل</h3>
+                    <div class="preview-label">
+                        <div class="product-name">نام کالا</div>
+                        <div class="preview-barcode"></div>
+                        <div class="price">120,000 تومان</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- تنظیمات تعداد چاپ -->
+            <div class="settings-section">
+                <h2><i class="fas fa-copy"></i> تعداد چاپ برای هر کالا</h2>
+                <p>تعداد کل لیبل‌ها: <span id="total-labels" class="total-labels">0</span></p>
+                
+                <div class="items-list">
+                    {% for item in items %}
+                    <div class="item-row">
+                        <div class="item-info">
+                            <strong>{{ item.product_name }}</strong>
+                            <div>قیمت: {{ item.selling_price|floatformat:"0" }} تومان</div>
+                        </div>
+                        <div class="item-quantity">
+                            <label for="quantity_{{ item.id }}">تعداد چاپ:</label>
+                            <input type="number" id="quantity_{{ item.id }}" name="quantity[]" 
+                                   value="1" min="1" max="100" class="quantity-input">
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="btn-container">
+                <button type="submit" class="btn-print">
+                    <i class="fas fa-eye"></i> مشاهده پیش‌نمایش و چاپ
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        // محاسبه خودکار تعداد کل لیبل‌ها
+        document.addEventListener('DOMContentLoaded', function() {
+            const quantityInputs = document.querySelectorAll('.quantity-input');
+            
+            function updateTotalLabels() {
+                let total = 0;
+                quantityInputs.forEach(input => {
+                    total += parseInt(input.value) || 0;
+                });
+                document.getElementById('total-labels').textContent = total;
+            }
+            
+            quantityInputs.forEach(input => {
+                input.addEventListener('change', updateTotalLabels);
+                input.addEventListener('input', updateTotalLabels);
+            });
+            
+            // محاسبه اولیه
+            updateTotalLabels();
+        });
+    </script>
+</body>
+</html>

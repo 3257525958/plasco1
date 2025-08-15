@@ -1,0 +1,275 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جستجوی فاکتورها - کلینیک زیبایی دکتر اسدپور</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #388E3C;
+            --accent-color: #2E7D32;
+            --text-color: #2c3e50;
+            --light-bg: #f9f9f9;
+            --border-color: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            direction: rtl;
+        }
+
+        .search-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .title {
+            color: var(--accent-color);
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .search-box {
+            max-width: 600px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid var(--primary-color);
+            border-radius: 50px;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.3);
+            outline: none;
+        }
+
+        .search-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .invoices-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .invoice-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .invoice-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border-color: var(--accent-color);
+        }
+
+        .invoice-header {
+            background: var(--light-bg);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .invoice-title {
+            font-weight: bold;
+            color: var(--accent-color);
+            font-size: 20px;
+        }
+
+        .invoice-date {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .invoice-body {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .seller-info {
+            flex: 1;
+        }
+
+        .seller-name {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .store-name {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .items-count {
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .invoice-actions {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit {
+            background: linear-gradient(45deg, #2196F3, #21CBF3);
+            color: white;
+        }
+
+        .btn-print {
+            background: linear-gradient(45deg, #FF9800, #FFC107);
+            color: white;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .search-container {
+                padding: 20px;
+            }
+            
+            .invoice-body {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .invoice-actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <div class="header">
+            <h1 class="title">جستجوی فاکتورها</h1>
+            <p>جستجو بر اساس نام فروشنده، نام فروشگاه یا شماره فاکتور</p>
+        </div>
+        
+        <form method="GET" class="search-box">
+            <input type="text" name="q" value="{{ query }}" 
+                   class="search-input" placeholder="جستجو...">
+            <button type="submit" class="search-btn">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+        
+        <div class="invoices-list">
+            {% if invoices %}
+                {% for invoice in invoices %}
+                <div class="invoice-card">
+                    <div class="invoice-header">
+                        <div class="invoice-title">فاکتور {{ invoice.serial_number }}</div>
+                        <div class="invoice-date">{{ invoice.date }}</div>
+                    </div>
+                    
+                    <div class="invoice-body">
+                        <div class="seller-info">
+                            <div class="seller-name">{{ invoice.seller.name }} {{ invoice.seller.family }}</div>
+                            <div class="store-name">{{ invoice.seller.store_name }}</div>
+                        </div>
+                        
+                        <div class="items-count">
+                            {{ invoice.items.count }} کالا
+                        </div>
+                    </div>
+                    
+                    <div class="invoice-actions">
+                        <a href="{% url 'edit_invoice' invoice.id %}" class="btn btn-edit">
+                            <i class="fas fa-edit"></i> ویرایش فاکتور
+                        </a>
+                        <a href="{% url 'edit_invoice' invoice.id %}" class="btn btn-print">
+                            <i class="fas fa-print"></i> چاپ لیبل
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">
+                    <i class="fas fa-file-invoice" style="font-size: 50px; margin-bottom: 20px;"></i>
+                    <p>هیچ فاکتوری یافت نشد</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,713 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فرم فاکتور فروش - کلینیک زیبایی دکتر اسدپور</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #388E3C;
+            --accent-color: #2E7D32;
+            --text-color: #2c3e50;
+            --light-bg: #f9f9f9;
+            --border-color: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --input-bg: #f1f8e9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            direction: rtl;
+        }
+
+        .invoice-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .header-item {
+            display: flex;
+            flex-direction: column;
+            min-width: 180px;
+        }
+
+        .header-label {
+            font-size: 16px;
+            color: #757575;
+            margin-bottom: 8px;
+        }
+
+        .header-value {
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .jalali-date {
+            font-size: 16px;
+            color: #388E3C;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        .serial-breakdown {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .serial-breakdown div {
+            margin: 3px 0;
+        }
+
+        .seller-select-container {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .seller-select {
+            width: 100%;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .invoice-table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            font-size: 18px;
+        }
+
+        .invoice-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .invoice-table input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .invoice-table input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-back {
+            background: #9e9e9e;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #d32f2f;
+            font-size: 18px;
+        }
+
+        /* استایل جدید برای جستجوی فروشنده */
+        .seller-search-container {
+            position: relative;
+            width: 100%;
+        }
+
+        #seller-search {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            transition: all 0.3s;
+            background: var(--input-bg);
+        }
+
+        #seller-search:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.3);
+            outline: none;
+        }
+
+        #seller-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 5px;
+        }
+
+        .seller-result-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 18px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .seller-result-item:hover {
+            background-color: #f1f8e9;
+            transform: translateY(-2px);
+        }
+
+        .seller-info {
+            flex: 1;
+        }
+
+        .seller-name {
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .seller-details {
+            color: #666;
+            font-size: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .seller-details div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* استایل جدید برای جستجوی کالا */
+        .product-search-container {
+            position: relative;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 18px;
+        }
+
+        .search-result-item:hover {
+            background-color: #f1f8e9;
+            transform: translateY(-2px);
+        }
+
+        .search-result-item.new-product {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .product-price {
+            float: left;
+            color: #888;
+            font-size: 16px;
+        }
+
+        .item-row td {
+            vertical-align: middle !important;
+        }
+
+        @media (max-width: 992px) {
+            .header-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .header-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .seller-select-container {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .invoice-container {
+                padding: 15px;
+            }
+            
+            .header-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .invoice-table th, 
+            .invoice-table td {
+                padding: 10px 5px;
+                font-size: 16px;
+            }
+            
+            .invoice-table input {
+                padding: 10px;
+                font-size: 16px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 16px;
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .actions {
+                flex-direction: column-reverse;
+                gap: 10px;
+            }
+
+            .seller-result-item,
+            .search-result-item {
+                font-size: 16px;
+                padding: 12px;
+            }
+            
+            .seller-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <form method="POST" id="invoice-form">
+            {% csrf_token %}
+            <div class="header-section">
+                <div class="header-info">
+                    <div class="header-item">
+                        <span class="header-label">شماره فاکتور</span>
+                        <span class="header-value" id="serial-number">{{ serial_number }}</span>
+                        <div class="serial-breakdown">
+                            <div>تاریخ: {{ serial_number|slice:":6" }}</div>
+                            <div>زمان: {{ serial_number|slice:"6:8" }}:{{ serial_number|slice:"8:10" }}:{{ serial_number|slice:"10:12" }}</div>
+                        </div>
+                        <input type="hidden" name="serial_number" value="{{ serial_number }}">
+                    </div>
+                    <div class="header-item">
+                        <span class="header-label">تاریخ</span>
+                        <span class="header-value jalali-date">{{ today_jalali }}</span>
+                    </div>
+                </div>
+                
+                <div class="seller-select-container">
+                    <span class="header-label">فروشنده</span>
+                    <div class="seller-search-container">
+                        <input type="text" id="seller-search" placeholder="جستجوی فروشنده..." autocomplete="off">
+                        <div id="seller-results"></div>
+                        <input type="hidden" name="seller" id="selected-seller" required>
+                    </div>
+                </div>
+            </div>
+
+            {% if error_message %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i> {{ error_message }}
+                </div>
+            {% endif %}
+
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th width="35%">نام کالا</th>
+                        <th width="15%">قیمت واحد (تومان)</th>
+                        <th width="15%">قیمت فروش (تومان)</th>
+                        <th width="15%">تعداد</th>
+                        <th width="10%">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody id="items-container">
+                    <tr class="item-row">
+                        <td>
+    <div class="product-search-container">
+        <input type="hidden" name="product_id[]" class="product-id">
+        <input type="text" name="product_name[]" class="product-name"
+               placeholder="جستجوی نام کالا (حداقل ۲ حرف)"
+               required
+               autocomplete="off"
+               autocorrect="off"
+               autocapitalize="off"
+               spellcheck="false">
+        <div class="search-results"></div>
+    </div>
+</td>                        
+                        <td><input type="number" name="unit_price[]" class="unit-price" min="0" step="1000" required></td>
+                        <td><input type="number" name="selling_price[]" class="selling-price" min="0" step="1000" required value="0"></td>
+                        <td><input type="number" name="quantity[]" min="1" value="1" required></td>
+                        <td><button type="button" class="btn btn-danger remove-item"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="actions">
+                <button type="button" id="back-to-home" class="btn btn-back">
+                    <i class="fas fa-home"></i> بازگشت به صفحه اصلی
+                </button>
+                <button type="button" id="add-item" class="btn btn-secondary">
+                    <i class="fas fa-plus"></i> اضافه کردن کالا
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> ذخیره فاکتور
+                </button>
+            </div>
+        </form>
+    </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // تابع تبدیل اعداد فارسی و عربی به انگلیسی
+    function convertPersianToEnglishNumbers(input) {
+        if (!input) return input;
+        
+        const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        
+        let output = input;
+        for (let i = 0; i < 10; i++) {
+            let persianRegex = new RegExp(persianNumbers[i], 'g');
+            let arabicRegex = new RegExp(arabicNumbers[i], 'g');
+            output = output.replace(persianRegex, i).replace(arabicRegex, i);
+        }
+        
+        return output;
+    }
+
+    $(document).ready(function() {
+        // جستجوی فروشنده (بدون تغییر)
+        $('#seller-search').on('input', function() {
+            let query = $(this).val().trim();
+            query = convertPersianToEnglishNumbers(query);
+            const $results = $('#seller-results');
+            
+            if (query.length < 2) {
+                $results.empty().hide();
+                return;
+            }
+            
+            $.ajax({
+                url: "{% url 'search_sellers' %}",
+                data: { q: query },
+                dataType: 'json',
+                success: function(data) {
+                    $results.empty();
+                    
+                    if (data.results.length > 0) {
+                        data.results.forEach(seller => {
+                            $results.append(`
+                                <div class="seller-result-item" 
+                                     data-id="${seller.id}"
+                                     data-name="${seller.text}">
+                                    <div class="seller-info">
+                                        <div class="seller-name">
+                                            <i class="fas fa-store"></i> 
+                                            ${seller.store || 'بدون نام فروشگاه'}
+                                        </div>
+                                        <div class="seller-details">
+                                            <div><i class="fas fa-user"></i> ${seller.name} ${seller.family}</div>
+                                            <div><i class="fas fa-mobile-alt"></i> ${seller.mobile}</div>
+                                            <div><i class="fas fa-credit-card"></i> ${seller.card || '---'}</div>
+                                            <div><i class="fas fa-bank"></i> ${seller.sheba || '---'}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                        });
+                    } else {
+                        $results.append(`
+                            <div class="seller-result-item new-seller" 
+                                 data-name="${query}">
+                                <i class="fas fa-plus-circle"></i> 
+                                ایجاد فروشنده جدید: "${query}"
+                            </div>
+                        `);
+                    }
+                    
+                    $results.show();
+                }
+            });
+        });
+        
+        // انتخاب فروشنده (بدون تغییر)
+        $('#seller-results').on('click', '.seller-result-item', function() {
+            if ($(this).hasClass('new-seller')) {
+                alert('ایجاد فروشنده جدید در این نسخه پشتیبانی نمی‌شود');
+            } else {
+                $('#selected-seller').val($(this).data('id'));
+                $('#seller-search').val($(this).data('name'));
+                $('#seller-results').empty().hide();
+            }
+        });
+        
+        // مخفی کردن نتایج فروشنده (بدون تغییر)
+        $(document).on('click', function(e) {
+            if (!$('#seller-results').is(e.target) && 
+                $('#seller-results').has(e.target).length === 0 &&
+                !$('#seller-search').is(e.target)) {
+                $('#seller-results').hide();
+            }
+        });
+
+        // تابع برای جستجوی محصولات (فقط در InvoiceItem)
+        function initProductSearch($input) {
+            const $results = $input.siblings('.search-results');
+            const $row = $input.closest('.item-row');
+            
+            $input.on('input', function() {
+                let query = $(this).val().trim();
+                query = convertPersianToEnglishNumbers(query);
+                
+                if (query.length < 2) {
+                    $results.empty().hide();
+                    return;
+                }
+                
+                $.ajax({
+                    url: "{% url 'search_products' %}",
+                    data: { q: query },
+                    dataType: 'json',
+                    success: function(data) {
+                        $results.empty();
+                        
+                        if (data.results.length > 0) {
+                            data.results.forEach(item => {
+                                $results.append(`
+                                    <div class="search-result-item" 
+                                         data-name="${item.text}">
+                                        <i class="fas fa-file-invoice"></i>
+                                        ${item.text}
+                                    </div>
+                                `);
+                            });
+                        }
+                        
+                        $results.append(`
+                            <div class="search-result-item new-product" 
+                                 data-name="${query}">
+                                <i class="fas fa-plus-circle"></i> 
+                                ایجاد کالای جدید: "${query}"
+                            </div>
+                        `);
+                        
+                        $results.show();
+                    }
+                });
+            });
+            
+            // انتخاب نتیجه جستجو
+            $results.on('click', '.search-result-item', function() {
+                if ($(this).hasClass('new-product')) {
+                    $row.find('.product-id').val('');
+                    $row.find('.product-name').val($(this).data('name'));
+                    $row.find('.unit-price').val('').focus();
+                    $row.find('.selling-price').val('0');
+                } else {
+                    $row.find('.product-id').val('');
+                    $row.find('.product-name').val($(this).data('name'));
+                    $row.find('.unit-price').val('').focus();
+                    $row.find('.selling-price').val('0');
+                }
+                
+                $results.empty().hide();
+            });
+            
+            // مخفی کردن نتایج هنگام کلیک خارج
+            $(document).on('click', function(e) {
+                if (!$results.is(e.target) && $results.has(e.target).length === 0) {
+                    $results.hide();
+                }
+            });
+        }
+
+        // فعال‌سازی جستجو برای کالای اول
+        initProductSearch($('.product-name'));
+
+        // افزودن سطر جدید (بدون تغییر)
+        $('#add-item').click(function() {
+            const newRow = $('<tr class="item-row">').html(`
+                <td>
+                    <div class="product-search-container">
+                        <input type="hidden" name="product_id[]" class="product-id">
+                        <input type="text" name="product_name[]" class="product-name" 
+                               placeholder="جستجو یا وارد کردن کالای جدید" required>
+                        <div class="search-results"></div>
+                    </div>
+                </td>
+                <td><input type="number" name="unit_price[]" class="unit-price" min="0" step="1000" required></td>
+                <td><input type="number" name="selling_price[]" class="selling-price" min="0" step="1000" required value="0"></td>
+                <td><input type="number" name="quantity[]" min="1" value="1" required></td>
+                <td><button type="button" class="btn btn-danger remove-item"><i class="fas fa-trash"></i></button></td>
+            `);
+            
+            $('#items-container').append(newRow);
+            initProductSearch(newRow.find('.product-name'));
+        });
+        
+        // حذف سطر (بدون تغییر)
+        $(document).on('click', '.remove-item', function() {
+            if ($('#items-container tr').length > 1) {
+                $(this).closest('tr').remove();
+            } else {
+                alert('حداقل یک کالا باید وجود داشته باشد');
+            }
+        });
+        
+        // اعتبارسنجی فرم (بدون تغییر)
+        $('#invoice-form').submit(function(e) {
+            const seller = $('#selected-seller').val();
+            if (!seller) {
+                alert('لطفاً فروشنده را انتخاب کنید');
+                e.preventDefault();
+                return;
+            }
+            
+            let valid = true;
+            $('.product-name').each(function() {
+                if (!$(this).val()) {
+                    valid = false;
+                    $(this).css('border-color', 'red');
+                }
+            });
+            
+            if (!valid) {
+                alert('لطفاً تمام کالاها را انتخاب کنید');
+                e.preventDefault();
+            }
+        });
+        
+        // دکمه بازگشت به صفحه اصلی (بدون تغییر)
+        $('#back-to-home').click(function() {
+            if (confirm('اطلاعات وارد شده ثبت نشده و با خارج شدن از صفحه از بین خواهند رفت. آیا مطمئن هستید؟')) {
+                window.location.href = "{% url 'home' %}";
+            }
+        });
+    });
+</script>
+</body>
+</html>

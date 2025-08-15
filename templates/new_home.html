@@ -1,0 +1,357 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>کلینیک زیبایی دکتر اسدپور</title>
+    <link rel="stylesheet" type="text/css" href="{% static "/css/materialize.min.css" %}">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static  "/css/materialize-rtl.css"%}">
+    <link rel="stylesheet" type="text/css" href="{% static "/fontawesome/css/all.css" %}">
+  <link rel="stylesheet" type="text/css" href="{% static '/css/new_home.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="body">
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="progress-content">
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="percentage-text" id="percentageText">0%</div>
+    </div>
+</div>
+  <!-- پوشش راهنما -->
+{#<--------------------------------------------------------------------------------------------------------->#}
+{% if login_user == 'true' %}
+<ul id="dropdown1" class="dropdown-content hide-on-med-and-down faseleazbala">
+                <li id="m7"><a  href="zib/cast/" >دریافت</a></li>
+                <li id="m19"><a  href="reserv/reserver/" >رزروشن </a></li>
+                <li id="m21"><a   href="reserv/reservdasti/" >رزرو دستی</a></li>
+                <li id="m222"><a   href="stor/reserv/" >نمایش رزروها</a></li>
+                <li id="m23"><a   href="reserv/leave/" >تقاضای مرخصی</a></li>
+                <li id="m25"><a   href="cantact/addreservecantact/" >ثبت عضو جدید</a></li>
+                <li id="m26"><a   href="zib/closecash/" >بستن صندوق</a></li>
+                <li id="m27"><a   href="zib/contact/" >دفتر تلفن</a></li>
+</ul>
+<ul id="dropdown2" class="dropdown-content hide-on-med-and-down faseleazbala">
+                <li id="m9" ><a   href="zib/bank/" >تعریف حساب بانکی</a></li>
+                <li id="m15"><a   href="zib/pardakht/" >پرداخت فاکتورها</a></li>
+                <li id="m18"><a   href="accountanc/pardakhthoghogh/" >پرداخت حقوق </a></li>
+                <li id="m23"><a   href="reserv/leave/" >تقاضای مرخصی</a></li>
+                <li id="m24"><a   href="sana/sana/" >ورود اقلام خرید</a></li>
+                <li id="m26"><a   href="zib/closecash/" >بستن صندوق</a></li>
+                <li id="m27"><a   href="zib/contact/" >دفتر تلفن</a></li>
+                <li id="m29"><a   href="sana/froshande/" >ثبت اطلاعات فروشنده</a></li>
+                <li id="m31"><a   href="zib/sakhthesab/" >ثبت حساب مشتریان</a></li>
+                <li id="m31"><a   href="zib/sakhthesab/" >ثبت دریافت</a></li>
+</ul>
+<ul id="dropdown3" class="dropdown-content hide-on-med-and-down faseleazbala">
+    <li id="m12" hidden="hidden" ><a class="menu_links_desktop"  href="it/tiket/" >مشاوره در پیام رسان </a></li>
+    <li id="m13" hidden="hidden" ><a class="menu_links_desktop"  href="it/control/" >کنترل it </a></li>
+    <li id="m14"><a  href="it/controldel/" >حذف کنترل it </a></li>
+    <li id="m20"><a  href="reserv/dashbord/" >داشبورد</a></li>
+    <li id="m21"><a  href="reserv/reservdasti/" >رزرو دستی</a></li>
+    <li id="m23"><a  href="reserv/leave/" >تقاضای مرخصی</a></li>
+</ul>
+<ul id="dropdown4" class="dropdown-content hide-on-med-and-down faseleazbala">
+                <li id="m28"><a  href="sana/ware/" >انبارداری</a></li>
+                <li id="m30"><a  href="sana/anbargardani/" >انبارگردانی</a></li>
+</ul>
+<ul id="dropdown5" class="dropdown-content hide-on-med-and-down faseleazbala">
+                <li id="m8"><a  href="jobs/" >تعریف مشاغل</a></li>
+                <li id="m10"><a  href="cantact/addphon/" >ورود تلفن </a></li>
+                <li id="m111"><a  href="it/sendmesaage/" >ارسال پیامک </a></li>
+                <li id="m16"><a  href="accountanc/aghd/" >عقد قرارداد</a></li>
+                <li id="m17"><a  href="accountanc/laghv/" >لغو قرارداد </a></li>
+</ul>
+<ul id="dropdown6" class="dropdown-content hide-on-med-and-down faseleazbala">
+                <li id="m32"><a href="#" onclick="document.getElementById('myForm').submit()">ویرایش</a></li>
+                <li id="m33"><a  href="cantact/logout/" >خروج </a></li>
+</ul>
+<ul id="dropdown11" class="dropdown-content  faseleazbalamobile">
+                <li id="m7"><a  href="zib/cast/" >دریافت</a></li>
+                <li id="m19"><a  href="reserv/reserver/" >رزروشن </a></li>
+                <li id="m21"><a   href="reserv/reservdasti/" >رزرو دستی</a></li>
+                <li id="m222"><a   href="stor/reserv/" >نمایش رزروها</a></li>
+                <li id="m23"><a   href="reserv/leave/" >تقاضای مرخصی</a></li>
+                <li id="m25"><a   href="cantact/addreservecantact/" >ثبت عضو جدید</a></li>
+                <li id="m26"><a   href="zib/closecash/" >بستن صندوق</a></li>
+                <li id="m27"><a   href="zib/contact/" >دفتر تلفن</a></li>
+</ul>
+<ul id="dropdown22" class="dropdown-content  faseleazbalamobile">
+                <li id="m9" ><a   href="zib/bank/" >تعریف حساب بانکی</a></li>
+                <li id="m15"><a   href="zib/pardakht/" >پرداخت فاکتورها</a></li>
+                <li id="m18"><a   href="accountanc/pardakhthoghogh/" >پرداخت حقوق </a></li>
+                <li id="m23"><a   href="reserv/leave/" >تقاضای مرخصی</a></li>
+                <li id="m24"><a   href="sana/sana/" >ورود اقلام خرید</a></li>
+                <li id="m26"><a   href="zib/closecash/" >بستن صندوق</a></li>
+                <li id="m27"><a   href="zib/contact/" >دفتر تلفن</a></li>
+                <li id="m29"><a   href="sana/froshande/" >ثبت اطلاعات فروشنده</a></li>
+                <li id="m31"><a   href="zib/sakhthesab/" >ثبت حساب مشتریان</a></li>
+                <li id="m31"><a   href="zib/sakhthesab/" >ثبت دریافت</a></li>
+</ul>
+<ul id="dropdown33" class="dropdown-content  faseleazbalamobile">
+    <li id="m12"><a class="menu_links_desktop"  href="it/tiket/" >مشاوره در پیام رسان </a></li>
+    <li id="m13"><a class="menu_links_desktop"  href="it/control/" >کنترل it </a></li>
+    <li id="m14"><a  href="it/controldel/" >حذف کنترل it </a></li>     
+    <li id="m20"><a  href="reserv/dashbord/" >داشبورد</a></li>
+    <li id="m21"><a  href="reserv/reservdasti/" >رزرو دستی</a></li>
+    <li id="m23"><a  href="reserv/leave/" >تقاضای مرخصی</a></li>
+</ul>
+<ul id="dropdown44" class="dropdown-content  faseleazbalamobile">
+                <li id="m28"><a  href="sana/ware/" >انبارداری</a></li>
+                <li id="m30"><a  href="sana/anbargardani/" >انبارگردانی</a></li>
+</ul>
+<ul id="dropdown55" class="dropdown-content  faseleazbalamobile">
+                <li id="m8"><a  href="jobs/" >تعریف مشاغل</a></li>
+                <li id="m10"><a  href="cantact/addphon/" >ورود تلفن </a></li>
+                <li id="m111"><a  href="it/sendmesaage/" >ارسال پیامک </a></li>
+                <li id="m16"><a  href="accountanc/aghd/" >عقد قرارداد</a></li>
+                <li id="m17"><a  href="accountanc/laghv/" >لغو قرارداد </a></li>
+</ul>
+<ul id="dropdown66" class="dropdown-content  faseleazbalamobile">
+                <li id="m3232"> <a href="#" onclick="document.getElementById('myForm').submit()">ویرایش</a></li>
+                <li id="m3333"><a  href="cantact/logout/" >خروج </a></li>
+</ul>
+
+
+<!-- فرم مخفی با متد POST -->
+<form id="myForm" action="cantact/edit-profile/" method="post" style="display:none;">
+    {% csrf_token %}
+  <input type="hidden" name="user" value="my">
+</form>
+    
+  <!-- منوی بالایی -->
+  <nav class="top-menu">
+{#      ------منو در حالت دسکتاپ-------#}
+                <ul class=" hide-on-med-and-down nav-rastchin">
+{#                <li id="m1" ><a class="menu_links_desktop" href="cantact/login/">ثبت نام و ورود</a></li>#}
+{#                <li id="m2" ><a class="menu_links_desktop" href="reserv/reserv/">رزرو آنلاین</a></li>#}
+{#                <li id="m222" ><a class="menu_links_desktop" href="stor/reserv/" >نمایش رزروها</a></li>#}
+{#                <li id="m3" ><a class="menu_links_desktop" href="collapsible.html">آموزش مجازی</a></li>#}
+{#                <li id="m4" ><a class="menu_links_desktop" href="mobile.html">گالری</a></li>#}
+{#                <li id="m5" ><a class="menu_links_desktop" href="mobile.html">ارتباط با ما</a></li>#}
+{#                <li id="m6" ><a class="menu_links_desktop" href="mobile.html">راهنما</a></li>#}
+                <li id="m32"><a class="menu_links_desktop" href="image/upload/">پردازش تصویر</a></li>
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown6">حساب کاربری<i class="material-icons right">arrow_drop_down</i></a></li>
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown1">رزروشن<i class="material-icons right">arrow_drop_down</i></a></li>
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown2">حسابداری<i class="material-icons right">arrow_drop_down</i></a></li>
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown3">اپراتورها<i class="material-icons right">arrow_drop_down</i></a></li>
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown4">انبارداری<i class="material-icons right">arrow_drop_down</i></a></li>
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown5">مدیریت<i class="material-icons right">arrow_drop_down</i></a></li>
+                </ul>
+ <!--منو در حالت م.بایل-->
+          <a href="#" data-target="mobile-demo" class="sidenav-trigger">
+              <i class="material-icons " >menu</i></a>
+          <ul class="sidenav nav-rastchin " id="mobile-demo">
+{#                <li id="m11" ><a class="menu_links_desktop" href="cantact/login/">ثبت نام و ورود</a></li>#}
+{#                <li id="m22" hidden="hidden" ><a class="menu_links_desktop" href="reserv/reserv/">رزرو آنلاین</a></li>#}
+{#                <li id="m2222" hidden="hidden" ><a class="menu_links_desktop"  href="stor/reserv/" >نمایش رزروها</a></li>#}
+                <li id="m33" hidden="hidden" ><a class="menu_links_desktop" href="collapsible.html">آموزش مجازی</a></li>
+                <li id="m44" hidden="hidden" ><a class="menu_links_desktop" href="mobile.html">گالری</a></li>
+                <li id="m55" hidden="hidden" ><a class="menu_links_desktop" href="mobile.html">ارتباط با ما</a></li>
+                <li id="m66" hidden="hidden" ><a class="menu_links_desktop" href="mobile.html">راهنما</a></li>
+                <li id="m3232" hidden="hidden" ><a class="menu_links_desktop" href="mobile.html">پردازش تصویر</a></li>
+                  <!-- Dropdown Trigger -->
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown11">رزروشن<i class="material-icons left">arrow_left</i></a></li>
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown66">حساب کاربری<i class="material-icons left">arrow_left</i></a></li>
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown22">حسابداری<i class="material-icons left">arrow_left</i></a></li>
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown33">اپراتورها<i class="material-icons left">arrow_left</i></a></li>
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown44">انبارداری<i class="material-icons left">arrow_left</i></a></li>
+                  <li><a class="dropdown-trigger" href="#!" data-target="dropdown55">مدیریت<i class="material-icons left">arrow_left</i></a></li>
+{#            <li id="m11" ><a class="menu_links_desktop" href="cantact/login/">ثبت نام و ورود</a></li>#}
+{#            <li id="m22" hidden="hidden" ><a class="menu_links_desktop" href="reserv/reserv/">رزرو آنلاین</a></li>#}
+{#            <li id="m33" hidden="hidden" ><a class="menu_links_desktop" href="collapsible.html">آموزش مجازی</a></li>#}
+{#            <li id="m44" hidden="hidden" ><a class="menu_links_desktop" href="mobile.html">گالری</a></li>#}
+{#            <li id="m55" hidden="hidden" ><a class="menu_links_desktop" href="mobile.html">ارتباط با ما</a></li>#}
+{#            <li id="m66" hidden="hidden" ><a class="menu_links_desktop" href="mobile.html">راهنما</a></li>#}
+{#            <li id="m77" hidden="hidden" ><a class="menu_links_desktop"  href="zib/cast/" >دریافت</a></li>#}
+{#            <li id="m88" hidden="hidden" ><a class="menu_links_desktop"  href="jobs/" >تعریف مشاغل</a></li>#}
+{#            <li id="m99" hidden="hidden" ><a class="menu_links_desktop"  href="zib/bank/" >تعریف حساب بانکی</a></li>#}
+{#            <li id="m1010" hidden="hidden" ><a class="menu_links_desktop"  href="cantact/addphon/">ورود تلفن </a></li>#}
+{#            <li id="m1111" hidden="hidden" ><a class="menu_links_desktop"  href="it/sendmesaage/" >ارسال پیامک </a></li>#}
+{#            <li id="m1212" hidden="hidden" ><a class="menu_links_desktop"  href="it/tiket/" >مشاوره در پیام رسان</a></li>#}
+{#            <li id="m1313" hidden="hidden" ><a class="menu_links_desktop"  href="it/control/" >کنترل it </a></li>#}
+{#            <li id="m1414" hidden="hidden" ><a class="menu_links_desktop"  href="it/controldel/" >حذف کنترل it </a></li>#}
+{#            <li id="m1515" hidden="hidden" ><a class="menu_links_desktop"  href="zib/pardakht/" >پرداخت فاکتورها </a></li>#}
+{#            <li id="m1616" hidden="hidden" ><a class="menu_links_desktop"  href="accountanc/aghd/" >عقد قرارداد</a></li>#}
+{#            <li id="m1717" hidden="hidden" ><a class="menu_links_desktop"  href="accountanc/laghv/" >لغو قرارداد </a></li>#}
+{#            <li id="m1818" hidden="hidden" ><a class="menu_links_desktop"  href="accountanc/pardakhthoghogh/" >پرداخت حقوق </a></li>#}
+{#            <li id="m1919" hidden="hidden" ><a class="menu_links_desktop"  href="reserv/reserver/" >رزروشن </a></li>#}
+{#            <li id="m2020" hidden="hidden" ><a class="menu_links_desktop"  href="reserv/dashbord/" >داشبورد</a></li>#}
+{#            <li id="m2121" hidden="hidden" ><a class="menu_links_desktop"  href="reserv/reservdasti/" >رزرو دستی</a></li>#}
+{#            <li id="m2222"  hidden><a class="menu_links_desktop"  href="stor/reserv/" >نمایش رزروها</a></li>#}
+{#            <li id="m2323"  hidden><a class="menu_links_desktop"  href="reserv/leave/" >تقاضای مرخصی</a></li>#}
+{#            <li id="m2424"  hidden><a class="menu_links_desktop"  href="sana/sana/" >ورود اقلام خرید</a></li>#}
+{#            <li id="m2525" hidden><a class="menu_links_desktop"  href="cantact/addreservecantact/" >ثبت عضو جدید</a></li>#}
+{#            <li id="m2626" hidden><a class="menu_links_desktop"  href="zib/closecash/" >بستن صندوق</a></li>#}
+{#            <li id="m2727" hidden><a class="menu_links_desktop"  href="zib/contact/" >دفتر تلفن</a></li>#}
+{#            <li id="m2828" hidden><a class="menu_links_desktop"  href="sana/ware/" >انبارداری</a></li>#}
+{#            <li id="m2929" hidden><a class="menu_links_desktop"  href="sana/froshande/" >ثبت اطلاعات فروشنده</a></li>#}
+{#            <li id="m3030" hidden><a class="menu_links_desktop"  href="sana/anbargardani/" >انبارگردانی</a></li>#}
+{#            <li id="m3131" hidden><a class="menu_links_desktop"  href="zib/sakhthesab/" >ثبت دریافت</a></li>#}
+{#                <li id="m3232" hidden="hidden" ><a class="menu_links_desktop" href="mobile.html">پردازش تصویر</a></li>#}
+    </ul>
+{% endif %}      
+{#    <ul class="sidenav" id="mobile-demo">#}
+{#      <li><a href="sass.html"></a></li>#}
+{#    </ul>#}
+{#    <label id="loglevel" hidden="">{{ loglevel }}</label>#}
+
+
+{#    <ul class="top-menu-list">#}
+{#      <li><a href="#">خانه</a></li>#}
+{#      <li><a href="#">درباره ما</a></li>#}
+{#      <li><a href="#">تماس</a></li>#}
+{#      <li><a href="#">سوالات متداول</a></li>#}
+{#    </ul>#}
+  </nav>
+
+  <!-- هدر اصلاح شده -->
+  <header class="header-info">
+    <div class="logo-container">
+      <img src="{% static "/img/logo.jpg" %}" alt="لوگوی مطب">
+    </div>
+    
+        {% if profilestatus != '' %}
+    <div class="user-info">
+      <span class="user-name-display">{{profilestatus }}</span>
+      <div class="profile-circle">
+        <img src="{{ img }}" alt="User Profile" class="profile-image">
+        </div>
+    </div>
+        {% endif %}
+  </header>
+
+  <!-- اسلایدر -->
+  <section class="slider-section">
+    <div class="carousel slider">
+      <div class="carousel-item active">
+        <img src="{% static "/img/login.jpg" %}" alt="تصویر اسلاید 1">
+        <div class="text_style">پاکسازی</div>
+      </div>
+      <div class="carousel-item">
+        <img src="{% static "/img/images (1).jpg" %}" alt="تصویر اسلاید 2">
+        <div class="text_style">لیزر موی زائد</div>
+      </div>
+      <div class="carousel-item">
+        <img src="{% static "/img/images (2).jpg" %}" alt="تصویر اسلاید 3">
+        <div class="text_style">جوانسازی و درمان پوست</div>
+      </div>
+    </div>
+  </section>
+
+<!-- منوی سریع -->
+<section id="quick_section">
+  <div class="row menosari">
+    <!-- آیتم ورود همیشه فعال -->
+    <a href="cantact/login/" class="quick_item">
+      <i class="fas fa-sign-in-alt quick-icon"></i>
+      <span>ورود</span>
+    </a>
+
+    <!-- سایر آیتم‌ها با شرط فعال بودن -->
+    <a href="{% if profilestatus %}reserv/reserv/{% else %}#{% endif %}" 
+       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">
+      <i class="fas fa-calendar-check quick-icon"></i>
+      <span>رزرو آنلاین</span>
+    </a>
+
+    <a href="{% if profilestatus %}file/triage/{% else %}#{% endif %}" 
+{#       class="quick_item {% if not profilestatus %}disabled{% endif %}">#}
+       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">
+      <i class="fas fa-photo-video quick-icon"></i>
+      <span>نمونه کارها</span>
+    </a>
+
+    <a href="{% if profilestatus %}dashbord/search-invoices/{% else %}dashbord/search-invoices/{% endif %}" 
+       class="quick_item {% if not profilestatus %}{% endif %}">
+{#       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">#}
+      <i class="fas fa-video quick-icon"></i>
+      <span>فیلم آموزشی</span>
+    </a>
+
+    <a href="{% if profilestatus %}dashbord/create-invoice/{% else %}dashbord/create-invoice/{% endif %}" 
+       class="quick_item {% if not profilestatus %}{% endif %}">
+{#       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">#}
+      <i class="fas fa-file-invoice-dollar quick-icon"></i>
+      <span>صورت حساب</span>
+    </a>
+
+    <a href="{% if profilestatus %}dashbord/sana/froshande/{% else %}dashbord/sana/froshande/{% endif %}" 
+       class="quick_item {% if not profilestatus %}
+{#       disabled#}
+        {% endif %}">
+{#       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">#}
+      <i class="fas fa-tachometer-alt quick-icon"></i>
+      <span>داشبورد من</span>
+    </a> 
+  </div>
+</section>
+  <!-- بخش اخبار -->
+  <section id="news_section">
+    <div class="news-container">
+      <div class="news-box">
+        <img src="news1.jpg" alt="خبر ۱">
+        <div class="news-content">
+          <h3>عنوان خبر اول</h3>
+          <p>متن خبر اول. اینجا متن خبر می‌تواند بسیار طولانی بوده و فضای کافی برای توضیحات داشته باشد.</p>
+        </div>
+      </div>
+      <div class="news-box">
+        <img src="news2.jpg" alt="خبر ۲">
+        <div class="news-content">
+          <h3>عنوان خبر دوم</h3>
+          <p>متن خبر دوم. اینجا متن خبر می‌تواند بسیار طولانی بوده و فضای کافی برای توضیحات داشته باشد.</p>
+        </div>
+      </div>
+      <div class="news-box">
+        <img src="news3.jpg" alt="خبر ۳">
+        <div class="news-content">
+          <h3>عنوان خبر سوم</h3>
+          <p>متن خبر سوم. اینجا متن خبر می‌تواند بسیار طولانی بوده و فضای کافی برای توضیحات داشته باشد.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+    <!-- ------- شروع پیگیری صفحات مجازی--------------- -->
+    <section class="row top-20" >
+      <div class="">
+        <h5 class="center-align  colo" >
+          ما را در فضای مجازی مجازی دنبال کنید
+        </h5>
+      </div>
+        <div class="social_icons m2-text">
+          <a href="https://www.instagram.com/dr.mahdiasadpour/?hl=fa" class="fab fa-instagram fa-3x purple-text text-accent-4"></a>
+          <a href="tel:02144291669" class="btn-floating pulse btn-large">
+            <i class="fas fa-phone"></i>
+          </a>
+        </div>
+
+    </section>
+
+  <!-- فوتر -->
+  <footer class="clum">
+    <div class="footer-container">
+      <div class="footer-links">
+        <a href="#">پیوند مرتبط ۱</a>
+        <a href="#">پیوند مرتبط ۲</a>
+      </div>
+      <p>© 2025 کلینیک زیبایی دکتر اسدپور. تمامی حقوق محفوظ است.</p>
+    </div>
+
+      <div class="col l2 s12">
+      <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=361568&Code=rfRJvt89x7WeFTvMVzE8'>
+      <img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=361568&Code=rfRJvt89x7WeFTvMVzE8' alt='' style='cursor:pointer' code='rfRJvt89x7WeFTvMVzE8'></a>
+      </div>
+
+  </footer>
+<label id="melicod_etebar" hidden >{{ melicod_etebar }}</label>
+
+  <script src="{% static "/js/materialize.min.js" %}"></script>
+        <script src="{% static "/js/home.js" %}" ></script>
+  <script src="{% static '/js/new_home.js' %}"></script>
+</body>
+</html>

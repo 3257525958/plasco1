@@ -1,0 +1,340 @@
+:root {
+  --primary-color: #4CAF50;
+  --secondary-color: #388E3C;
+  --accent-color: #2E7D32;
+  --error-color: #f44336;
+  --text-color: #2c3e50;
+  --light-bg: #f9f9f9;
+  --border-color: #ddd;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --input-bg: #f1f8e9;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Vazirmatn', sans-serif;
+  background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-color);
+  direction: rtl;
+  padding: 20px;
+}
+
+.container-wrapper {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  height: auto;
+  min-height: 600px;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  flex-direction: row-reverse;
+}
+
+.image-section {
+  flex: 1;
+  min-width: 40%;
+  background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+  position: relative;
+  overflow: hidden;
+}
+
+.image-section img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* حذف لایه سبز */
+.image-section::before {
+  display: none;
+}
+
+.signup-container {
+  flex: 1;
+  min-width: 60%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--light-bg);
+  overflow: hidden;
+}
+
+.form-content {
+  padding: 30px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.header-section {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid white;
+  box-shadow: var(--shadow);
+  margin-bottom: 15px;
+}
+
+.title {
+  color: var(--primary-color);
+  font-size: 22px;
+  margin: 8px 0;
+  position: relative;
+}
+
+.title::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  right: 50%;
+  transform: translateX(50%);
+  width: 70px;
+  height: 3px;
+  background: var(--accent-color);
+  border-radius: 2px;
+}
+
+.subtitle {
+  color: #757575;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.form-row .input-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.input-field {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.input-field .icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+.input-field input {
+  width: 100%;
+  padding: 12px 45px 12px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 50px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  outline: none;
+  background: var(--input-bg);
+  text-align: right;
+}
+
+.input-field input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+.input-field input::placeholder {
+  color: #78909c;
+  text-align: right;
+  font-size: 13px;
+}
+
+.submit-btn {
+  background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 10px rgba(76, 175, 80, 0.4);
+  width: 100%;
+}
+
+.submit-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(76, 175, 80, 0.5);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 12px;
+  margin-top: 4px;
+  margin-right: 12px;
+  text-align: right;
+}
+
+/* رسپانسیو برای تبلت */
+@media (max-width: 992px) {
+  .container-wrapper {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .image-section {
+    height: 300px;
+    min-height: 300px;
+    width: 100%;
+    flex: none;
+  }
+
+  .signup-container {
+    padding: 20px;
+    width: 100%;
+    flex: none;
+  }
+
+  .form-content {
+    padding: 20px 15px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+/* رسپانسیو برای موبایل */
+@media (max-width: 768px) {
+  body {
+    padding: 0;
+    display: block;
+  }
+
+  .container-wrapper {
+    width: 100%;
+    border-radius: 0;
+    min-height: 100vh;
+    flex-direction: column;
+    height: auto;
+  }
+
+  .image-section {
+    height: 35vh; /* افزایش ارتفاع */
+    min-height: 250px; /* افزایش حداقل ارتفاع */
+    max-height: none; /* حذف محدودیت ارتفاع */
+  }
+
+  .image-section img {
+    object-fit: cover; /* پوشش کامل فضای در دسترس */
+    object-position: center;
+  }
+
+  .signup-container {
+    padding: 10px 5px;
+    height: auto;
+    overflow: visible;
+    flex: 1; /* استفاده از فضای باقیمانده */
+  }
+
+  .form-content {
+    padding: 20px 10px;
+  }
+
+  .logo {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 10px;
+  }
+
+  .title {
+    font-size: 20px;
+    margin: 10px 0;
+  }
+
+  .title::after {
+    bottom: -6px;
+    width: 60px;
+    height: 2px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    margin-top: 0;
+  }
+
+  .input-field input {
+    padding: 10px 40px 10px 10px;
+    font-size: 14px;
+  }
+
+  .input-field .icon {
+    font-size: 14px;
+    right: 12px;
+  }
+
+  .submit-btn {
+    padding: 12px;
+    font-size: 15px;
+    margin-top: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .image-section {
+    height: 30vh; /* افزایش ارتفاع برای موبایل‌های کوچک */
+    min-height: 220px;
+  }
+
+  .form-content {
+    padding: 15px 5px;
+  }
+
+  .form-row {
+    margin-bottom: 5px;
+  }
+
+  .input-field {
+    margin-bottom: 5px;
+  }
+
+  .logo {
+    width: 65px;
+    height: 65px;
+  }
+}

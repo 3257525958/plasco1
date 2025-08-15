@@ -1,0 +1,208 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چاپ لیبل‌ها</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&family=Tahoma&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --vertical-gap: {{ settings.vertical_gap }}mm;
+            --horizontal-gap: {{ settings.horizontal_gap }}mm;
+            --barcode-scale: {{ settings.barcode_scale }}%;
+            --content-spacing: {{ settings.content_spacing }}mm;
+            --font-family: {{ settings.font_family }}, sans-serif;
+            --font-size: {{ settings.font_size }}pt;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: white;
+            padding: 10mm;
+            direction: rtl;
+            font-family: var(--font-family);
+        }
+
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 210mm;
+            margin: 0 auto;
+        }
+
+        .labels-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--vertical-gap) var(--horizontal-gap);
+            width: 100%;
+            
+            {% if settings.page_alignment == 'right' %}
+                justify-content: flex-end;
+            {% elif settings.page_alignment == 'left' %}
+                justify-content: flex-start;
+            {% else %}
+                justify-content: center;
+            {% endif %}
+        }
+
+        .label-card {
+            display: inline-flex;
+            flex-direction: column;
+            padding: 2mm; /* کاهش padding */
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            page-break-inside: avoid;
+            
+            /* تغییرات اصلی برای فیت کردن محتوا */
+            min-width: 0; /* بسیار مهم برای فیت شدن */
+            width: auto; /* عرض خودکار */
+            max-width: calc((100% - ({{ settings.columns }} - 1) * var(--horizontal-gap)) / {{ settings.columns }});
+            
+            {% if settings.content_alignment == 'right' %}
+                align-items: flex-end;
+                text-align: right;
+            {% elif settings.content_alignment == 'left' %}
+                align-items: flex-start;
+                text-align: left;
+            {% else %}
+                align-items: center;
+                text-align: center;
+            {% endif %}
+        }
+
+        .product-name {
+            font-size: calc(var(--font-size) * 1.2);
+            font-weight: bold;
+            {% if not settings.show_product_name %}display: none;{% endif %}
+            margin-bottom: var(--content-spacing);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            padding: 0 1mm; /* کاهش padding */
+        }
+
+        .barcode-container {
+            display: flex;
+            width: 100%;
+            margin: var(--content-spacing) 0;
+            padding: 0 1mm; /* کاهش padding */
+            
+            {% if settings.content_alignment == 'right' %}
+                justify-content: flex-end;
+            {% elif settings.content_alignment == 'left' %}
+                justify-content: flex-start;
+            {% else %}
+                justify-content: center;
+            {% endif %}
+        }
+
+        .barcode-image {
+            max-width: var(--barcode-scale);
+            max-height: 100%;
+            display: block;
+            width: auto;
+            height: auto;
+        }
+
+        .price {
+            font-size: var(--font-size);
+            font-weight: bold;
+            {% if not settings.show_price %}display: none;{% endif %}
+            margin-top: var(--content-spacing);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            padding: 0 1mm; /* کاهش padding */
+        }
+
+        .print-actions {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .btn-print {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-print:hover {
+            background: #2E7D32;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        @media print {
+            body {
+                padding: 5mm;
+            }
+            
+            .print-actions {
+                display: none;
+            }
+            
+            .label-card {
+                border: 1px solid #ccc;
+                box-shadow: none;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            @page {
+                size: A4;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="labels-container">
+            {% for item in items %}
+            <div class="label-card">
+                {% if settings.show_product_name %}
+                <div class="product-name">{{ item.product_name }}</div>
+                {% endif %}
+                
+                <div class="barcode-container">
+                    {% if item.barcode_image %}
+                        <img src="{{ item.barcode_image.url }}" alt="بارکد" class="barcode-image">
+                    {% else %}
+                        <div class="error">بارکد تولید نشد</div>
+                    {% endif %}
+                </div>
+                
+                {% if settings.show_price %}
+                <div class="price">{{ item.selling_price|floatformat:"0" }} تومان</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="print-actions">
+        <button class="btn-print" onclick="window.print()">
+            <i class="fas fa-print"></i> چاپ لیبل‌ها
+        </button>
+    </div>
+</body>
+</html>
