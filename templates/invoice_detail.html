@@ -35,7 +35,7 @@
         }
 
         .invoice-detail-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -269,6 +269,11 @@
                 flex-direction: column;
             }
             
+            .invoice-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
             .invoice-table th, 
             .invoice-table td {
                 padding: 10px 5px;
@@ -352,6 +357,8 @@
                     <th>قیمت واحد (تومان)</th>
                     <th>قیمت فروش (تومان)</th>
                     <th>تعداد</th>
+                    <th>تخفیف (%)</th>
+                    <th>محل چیدن جنس</th>
                     <th>مبلغ کل (تومان)</th>
                     <th>بارکد</th>
                 </tr>
@@ -364,12 +371,14 @@
                     <td>{{ item.unit_price|floatformat:"0" }}</td>
                     <td>{{ item.selling_price|floatformat:"0" }}</td>
                     <td>{{ item.quantity }}</td>
+                    <td>{{ item.discount|floatformat:"0" }}</td>
+                    <td>{{ item.location|default:"-" }}</td>
                     <td>{{ item.total_price|floatformat:"0" }}</td>
                     <td class="barcode-cell">{{ item.barcode_value|default:"---" }}</td>
                 </tr>
                 {% endfor %}
                 <tr class="total-row">
-                    <td colspan="5">جمع کل فاکتور</td>
+                    <td colspan="7">جمع کل فاکتور</td>
                     <td colspan="2" class="grand-total">
                         {{ total|floatformat:"0" }} تومان
                     </td>

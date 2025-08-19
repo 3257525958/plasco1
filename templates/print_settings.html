@@ -148,7 +148,7 @@
         
         .preview-box {
             width: 100%;
-            height: 250px;
+            height: 300px;
             border: 2px dashed #4CAF50;
             border-radius: 10px;
             display: flex;
@@ -162,14 +162,14 @@
         }
         
         .preview-label {
-            width: auto;
-            height: auto;
+            width: 100%;
+            max-width: 600px;
             border: 1px solid #ccc;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 5px;
+            padding: 10px;
             background: white;
             margin: 10px auto;
         }
@@ -180,6 +180,23 @@
             background: #f0f0f0;
             margin: 5px 0;
             transition: height 0.3s ease;
+        }
+        
+        .preview-multi-barcodes {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        .preview-barcode-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            min-width: 40%;
         }
         
         .total-labels {
@@ -210,25 +227,22 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="columns">تعداد لیبل در هر سطر:</label>
-                        <input type="number" id="columns" name="columns" value="3" min="1" max="6">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="page_alignment">چیدمان لیبل‌ها در صفحه:</label>
-                        <select id="page_alignment" name="page_alignment">
-                            <option value="right">راست</option>
-                            <option value="left">چپ</option>
-                            <option value="center" selected>وسط</option>
+                        <label for="barcodes_per_label">تعداد بارکد در هر لیبل:</label>
+                        <select id="barcodes_per_label" name="barcodes_per_label">
+                            <option value="1" {% if settings.barcodes_per_label == '1' %}selected{% endif %}>1</option>
+                            <option value="2" {% if settings.barcodes_per_label == '2' or not settings.barcodes_per_label %}selected{% endif %}>2</option>
+                            <option value="3" {% if settings.barcodes_per_label == '3' %}selected{% endif %}>3</option>
+                            <option value="4" {% if settings.barcodes_per_label == '4' %}selected{% endif %}>4</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
                         <label for="content_alignment">چیدمان محتوا در لیبل:</label>
                         <select id="content_alignment" name="content_alignment">
-                            <option value="right">راست</option>
-                            <option value="left">چپ</option>
-                            <option value="center" selected>وسط</option>
+                            <option value="right" {% if settings.content_alignment == 'right' %}selected{% endif %}>راست</option>
+                            <option value="left" {% if settings.content_alignment == 'left' %}selected{% endif %}>چپ</option>
+                            <option value="center" {% if settings.content_alignment == 'center' or not settings.content_alignment %}selected{% endif %}>وسط</option>
+                            <option value="space-between" {% if settings.content_alignment == 'space-between' %}selected{% endif %}>فضای یکنواخت</option>
                         </select>
                     </div>
                 </div>
@@ -236,12 +250,12 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="vertical_gap">فاصله عمودی بین لیبل‌ها (میلی‌متر):</label>
-                        <input type="number" id="vertical_gap" name="vertical_gap" value="5" min="0" max="20">
+                        <input type="number" id="vertical_gap" name="vertical_gap" value="{{ settings.vertical_gap }}" min="0" max="20">
                     </div>
                     
                     <div class="form-group">
-                        <label for="horizontal_gap">فاصله افقی بین لیبل‌ها (میلی‌متر):</label>
-                        <input type="number" id="horizontal_gap" name="horizontal_gap" value="5" min="0" max="20">
+                        <label for="inner_gap">فاصله داخلی در لیبل (میلی‌متر):</label>
+                        <input type="number" id="inner_gap" name="inner_gap" value="{{ settings.inner_gap }}" min="0" max="20">
                     </div>
                 </div>
             </div>
@@ -251,26 +265,25 @@
                 <h2><i class="fas fa-edit"></i> تنظیمات محتوای لیبل</h2>
                 
                 <div class="form-row">
-                    <!-- فیلد جدید برای تنظیم ارتفاع بارکد -->
                     <div class="form-group">
                         <label for="module_height">ارتفاع بارکد (میلی‌متر):</label>
-                        <input type="number" id="module_height" name="module_height" value="15" min="5" max="50">
+                        <input type="number" id="module_height" name="module_height" value="{{ settings.module_height }}" min="5" max="50">
                     </div>
                     
                     <div class="form-group">
                         <label for="module_width">عرض میله بارکد (میلی‌متر):</label>
-                        <input type="number" id="module_width" name="module_width" value="0.2" step="0.01" min="0.1" max="1.0">
+                        <input type="number" id="module_width" name="module_width" value="{{ settings.module_width }}" step="0.01" min="0.1" max="1.0">
                         <small>ضخامت هر میله بارکد (پیش‌فرض: 0.2)</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="barcode_scale">اندازه بارکد (درصد):</label>
-                        <input type="number" id="barcode_scale" name="barcode_scale" value="90" min="50" max="100">
+                        <input type="number" id="barcode_scale" name="barcode_scale" value="{{ settings.barcode_scale }}" min="50" max="100">
                     </div>
                     
                     <div class="form-group">
                         <label for="content_spacing">فاصله بین اجزا (میلی‌متر):</label>
-                        <input type="number" id="content_spacing" name="content_spacing" value="5" min="0" max="20">
+                        <input type="number" id="content_spacing" name="content_spacing" value="{{ settings.content_spacing }}" min="0" max="20">
                     </div>
                 </div>
                 
@@ -278,25 +291,25 @@
                     <div class="form-group">
                         <label for="font_family">فونت متن:</label>
                         <select id="font_family" name="font_family">
-                            <option value="Vazirmatn" selected>Vazirmatn (پیش‌فرض)</option>
-                            <option value="Tahoma">Tahoma</option>
-                            <option value="Arial">Arial</option>
-                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Vazirmatn" {% if settings.font_family == 'Vazirmatn' or not settings.font_family %}selected{% endif %}>Vazirmatn (پیش‌فرض)</option>
+                            <option value="Tahoma" {% if settings.font_family == 'Tahoma' %}selected{% endif %}>Tahoma</option>
+                            <option value="Arial" {% if settings.font_family == 'Arial' %}selected{% endif %}>Arial</option>
+                            <option value="Times New Roman" {% if settings.font_family == 'Times New Roman' %}selected{% endif %}>Times New Roman</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
                         <label for="font_size">اندازه فونت (pt):</label>
-                        <input type="number" id="font_size" name="font_size" value="12" min="8" max="24">
+                        <input type="number" id="font_size" name="font_size" value="{{ settings.font_size }}" min="8" max="24">
                     </div>
                     
                     <div class="checkbox-group">
-                        <input type="checkbox" id="show_product_name" name="show_product_name" checked>
+                        <input type="checkbox" id="show_product_name" name="show_product_name" {% if settings.show_product_name %}checked{% endif %}>
                         <label for="show_product_name">نمایش نام کالا</label>
                     </div>
                     
                     <div class="checkbox-group">
-                        <input type="checkbox" id="show_price" name="show_price" checked>
+                        <input type="checkbox" id="show_price" name="show_price" {% if settings.show_price %}checked{% endif %}>
                         <label for="show_price">نمایش قیمت کالا</label>
                     </div>
                 </div>
@@ -304,9 +317,18 @@
                 <div class="preview-box">
                     <h3>پیش‌نمایش لیبل</h3>
                     <div class="preview-label">
-                        <div class="product-name">نام کالا</div>
-                        <div class="preview-barcode"></div>
-                        <div class="price">120,000 تومان</div>
+                        <div class="preview-multi-barcodes">
+                            <div class="preview-barcode-item">
+                                <div class="product-name">نام کالا 1</div>
+                                <div class="preview-barcode"></div>
+                                <div class="price">120,000 تومان</div>
+                            </div>
+                            <div class="preview-barcode-item">
+                                <div class="product-name">نام کالا 2</div>
+                                <div class="preview-barcode"></div>
+                                <div class="price">95,000 تومان</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -365,24 +387,54 @@
             // به‌روزرسانی پیش‌نمایش با تغییر تنظیمات
             const settingsForm = document.querySelector('form');
             const previewLabel = document.querySelector('.preview-label');
-            const previewProductName = previewLabel.querySelector('.product-name');
-            const previewPrice = previewLabel.querySelector('.price');
-            const previewBarcode = previewLabel.querySelector('.preview-barcode');
+            const previewMultiBarcodes = previewLabel.querySelector('.preview-multi-barcodes');
             
             function updatePreview() {
-                // به‌روزرسانی نمایش نام کالا
-                if (settingsForm.querySelector('#show_product_name').checked) {
-                    previewProductName.style.display = 'block';
-                } else {
-                    previewProductName.style.display = 'none';
+                // تعداد بارکدها در هر لیبل
+                const barcodesPerLabel = parseInt(settingsForm.querySelector('#barcodes_per_label').value) || 2;
+                
+                // حذف آیتم‌های قبلی
+                previewMultiBarcodes.innerHTML = '';
+                
+                // ایجاد آیتم‌های جدید
+                for (let i = 0; i < barcodesPerLabel; i++) {
+                    const barcodeItem = document.createElement('div');
+                    barcodeItem.className = 'preview-barcode-item';
+                    
+                    // نام کالا
+                    const productName = document.createElement('div');
+                    productName.className = 'product-name';
+                    productName.textContent = `نام کالا ${i+1}`;
+                    
+                    // بارکد
+                    const barcode = document.createElement('div');
+                    barcode.className = 'preview-barcode';
+                    
+                    // قیمت
+                    const price = document.createElement('div');
+                    price.className = 'price';
+                    price.textContent = `${(120000 - i*25000).toLocaleString('fa-IR')} تومان`;
+                    
+                    // افزودن به DOM
+                    barcodeItem.appendChild(productName);
+                    barcodeItem.appendChild(barcode);
+                    barcodeItem.appendChild(price);
+                    previewMultiBarcodes.appendChild(barcodeItem);
                 }
                 
+                // به‌روزرسانی نمایش نام کالا
+                const showProductName = settingsForm.querySelector('#show_product_name').checked;
+                const productNames = previewLabel.querySelectorAll('.product-name');
+                productNames.forEach(el => {
+                    el.style.display = showProductName ? 'block' : 'none';
+                });
+                
                 // به‌روزرسانی نمایش قیمت
-                if (settingsForm.querySelector('#show_price').checked) {
-                    previewPrice.style.display = 'block';
-                } else {
-                    previewPrice.style.display = 'none';
-                }
+                const showPrice = settingsForm.querySelector('#show_price').checked;
+                const prices = previewLabel.querySelectorAll('.price');
+                prices.forEach(el => {
+                    el.style.display = showPrice ? 'block' : 'none';
+                });
                 
                 // به‌روزرسانی فونت
                 const fontFamily = settingsForm.querySelector('#font_family').value;
@@ -394,11 +446,20 @@
                 
                 // به‌روزرسانی اندازه بارکد
                 const barcodeScale = settingsForm.querySelector('#barcode_scale').value;
-                previewBarcode.style.width = barcodeScale + '%';
+                const barcodes = previewLabel.querySelectorAll('.preview-barcode');
+                barcodes.forEach(el => {
+                    el.style.width = barcodeScale + '%';
+                });
                 
                 // به‌روزرسانی ارتفاع بارکد
                 const moduleHeight = settingsForm.querySelector('#module_height').value;
-                previewBarcode.style.height = moduleHeight + 'px';
+                barcodes.forEach(el => {
+                    el.style.height = moduleHeight + 'px';
+                });
+                
+                // به‌روزرسانی فاصله داخلی
+                const innerGap = settingsForm.querySelector('#inner_gap').value;
+                previewMultiBarcodes.style.gap = innerGap + 'mm';
             }
             
             // افزودن رویداد تغییر به تمام عناصر فرم

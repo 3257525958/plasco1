@@ -259,9 +259,9 @@
       <span>رزرو آنلاین</span>
     </a>
 
-    <a href="{% if profilestatus %}file/triage/{% else %}#{% endif %}" 
-{#       class="quick_item {% if not profilestatus %}disabled{% endif %}">#}
-       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">
+    <a href="{% if profilestatus %}dashbord/usb/{% else %}dashbord/usb/{% endif %}" 
+       class="quick_item {% if not profilestatus %}{% endif %}">
+{#       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">#}
       <i class="fas fa-photo-video quick-icon"></i>
       <span>نمونه کارها</span>
     </a>

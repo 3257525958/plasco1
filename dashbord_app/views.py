@@ -6,6 +6,8 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q
 from django.contrib import messages
+from escpos.printer import Serial
+
 from .models import Froshande, Invoice, InvoiceItem, Product
 import jdatetime
 import datetime
@@ -31,6 +33,26 @@ import logging
 
 
 # تغییر تابع generate_barcode_base64
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.utils import timezone
+from django.db import transaction
+from django.db.models import Q
+from django.contrib import messages
+from .models import Froshande, Invoice, InvoiceItem, Product
+import jdatetime
+import datetime
+from decimal import Decimal
+import logging
+from .forms import FroshandeForm, InvoiceEditForm
+import base64
+from io import BytesIO
+import barcode
+from barcode.writer import ImageWriter
+from django.urls import reverse
+from django.utils.http import urlencode
+
+
 def generate_barcode_base64(barcode_value, module_width=0.2, module_height=15):
     """تولید بارکد به صورت base64 با تنظیم عرض و ارتفاع میله‌ها"""
     try:
@@ -40,7 +62,7 @@ def generate_barcode_base64(barcode_value, module_width=0.2, module_height=15):
         # تنظیمات برای بارکد
         options = {
             'module_width': float(module_width),  # عرض هر میله بارکد
-            'module_height': float(module_height),  # ارتفاع بارکد (اضافه شده)
+            'module_height': float(module_height),  # ارتفاع بارکد
             'quiet_zone': 5,  # فضای خالی اطراف بارکد
             'write_text': False  # عدم نمایش متن زیر بارکد
         }
@@ -58,64 +80,15 @@ def generate_barcode_base64(barcode_value, module_width=0.2, module_height=15):
         logger.error(f"Error generating barcode: {str(e)}")
         return None
 
-# تغییر تابع print_preview
-def print_preview(request, invoice_id):
-    """صفحه پیش‌نمایش و چاپ نهایی"""
-    invoice = get_object_or_404(Invoice, id=invoice_id)
-    selected_items = request.GET.getlist('items')
-    items = invoice.items.filter(id__in=selected_items)
 
-    # دریافت تنظیمات از session
-    settings = request.session.get('print_settings', {
-        'columns': 3,
-        'page_alignment': 'center',
-        'content_alignment': 'center',
-        'vertical_gap': 5,
-        'horizontal_gap': 5,
-        'barcode_scale': 90,
-        'content_spacing': 5,
-        'font_family': 'Vazirmatn',
-        'font_size': 12,
-        'show_product_name': True,
-        'show_price': True,
-        'quantities': ['1'] * len(items),
-        'module_width': 0.2,  # مقدار پیش‌فرض عرض بارکد
-        'module_height': 15   # مقدار پیش‌فرض ارتفاع بارکد (اضافه شده)
-    })
-
-    # ایجاد لیست نهایی آیتم‌ها با توجه به تعداد درخواستی هر کالا
-    items_to_print = []
-    for i, item in enumerate(items):
-        quantity = int(settings['quantities'][i]) if i < len(settings['quantities']) else 1
-        for _ in range(quantity):
-            # تولید بارکد برای هر آیتم با عرض و ارتفاع تنظیم شده
-            barcode_base64 = generate_barcode_base64(
-                item.barcode_base,
-                module_width=settings.get('module_width', 0.2),
-                module_height=settings.get('module_height', 15)  # ارتفاع جدید
-            )
-            items_to_print.append({
-                'product_name': item.product_name,
-                'selling_price': item.selling_price,
-                'barcode_base64': barcode_base64
-            })
-
-    return render(request, 'print_preview.html', {
-        'items': items_to_print,
-        'settings': settings,
-        'invoice': invoice
-    })
-
-# تغییر تابع print_settings
 def print_settings(request):
     if request.method == 'POST':
         # ذخیره تنظیمات در session
         request.session['print_settings'] = {
-            'columns': request.POST.get('columns', '3'),
-            'page_alignment': request.POST.get('page_alignment', 'center'),
+            'barcodes_per_label': request.POST.get('barcodes_per_label', '2'),
             'content_alignment': request.POST.get('content_alignment', 'center'),
             'vertical_gap': request.POST.get('vertical_gap', '5'),
-            'horizontal_gap': request.POST.get('horizontal_gap', '5'),
+            'inner_gap': request.POST.get('inner_gap', '5'),
             'barcode_scale': request.POST.get('barcode_scale', '90'),
             'content_spacing': request.POST.get('content_spacing', '5'),
             'font_family': request.POST.get('font_family', 'Vazirmatn'),
@@ -123,8 +96,8 @@ def print_settings(request):
             'show_product_name': 'show_product_name' in request.POST,
             'show_price': 'show_price' in request.POST,
             'quantities': request.POST.getlist('quantity[]'),
-            'module_width': request.POST.get('module_width', '0.2'),  # عرض بارکد
-            'module_height': request.POST.get('module_height', '15')  # ارتفاع جدید (اضافه شده)
+            'module_width': request.POST.get('module_width', '0.2'),
+            'module_height': request.POST.get('module_height', '15')
         }
 
         # هدایت به صفحه پیش‌نمایش چاپ
@@ -142,10 +115,98 @@ def print_settings(request):
     invoice = get_object_or_404(Invoice, id=invoice_id)
     items = invoice.items.filter(id__in=items_ids)
 
+    # تنظیمات پیش‌فرض
+    default_settings = {
+        'barcodes_per_label': '2',
+        'content_alignment': 'center',
+        'vertical_gap': '5',
+        'inner_gap': '5',
+        'barcode_scale': '90',
+        'content_spacing': '5',
+        'font_family': 'Vazirmatn',
+        'font_size': '12',
+        'show_product_name': True,
+        'show_price': True,
+        'module_width': '0.2',
+        'module_height': '15'
+    }
+
+    # ترکیب تنظیمات session با پیش‌فرض
+    session_settings = request.session.get('print_settings', {})
+    settings = {**default_settings, **session_settings}
+
     return render(request, 'print_settings.html', {
         'invoice': invoice,
-        'items': items
+        'items': items,
+        'settings': settings
     })
+
+
+def print_preview(request, invoice_id):
+    """صفحه پیش‌نمایش و چاپ نهایی"""
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    selected_items = request.GET.getlist('items')
+    items = invoice.items.filter(id__in=selected_items)
+
+    # دریافت تنظیمات از session
+    settings = request.session.get('print_settings', {
+        'barcodes_per_label': '2',
+        'content_alignment': 'center',
+        'vertical_gap': '5',
+        'inner_gap': '5',
+        'barcode_scale': '90',
+        'content_spacing': '5',
+        'font_family': 'Vazirmatn',
+        'font_size': '12',
+        'show_product_name': True,
+        'show_price': True,
+        'quantities': ['1'] * len(items),
+        'module_width': '0.2',
+        'module_height': '15'
+    })
+
+    # تعداد بارکد در هر لیبل
+    try:
+        barcodes_per_label = int(settings.get('barcodes_per_label', '2'))
+    except (ValueError, TypeError):
+        barcodes_per_label = 2
+
+    # ایجاد لیست نهایی لیبل‌ها (هر لیبل شامل چندین آیتم)
+    labels_to_print = []
+    current_label = []
+
+    # ساخت لیست آیتم‌ها با تعداد درخواستی
+    items_to_print = []
+    for i, item in enumerate(items):
+        quantity = int(settings['quantities'][i]) if i < len(settings['quantities']) else 1
+        for _ in range(quantity):
+            # تولید بارکد برای هر آیتم
+            barcode_base64 = generate_barcode_base64(
+                item.barcode_base,
+                module_width=float(settings.get('module_width', 0.2)),
+                module_height=float(settings.get('module_height', 15))
+            )
+            items_to_print.append({
+                'product_name': item.product_name,
+                'selling_price': item.selling_price,
+                'barcode_base64': barcode_base64
+            })
+
+    # گروه‌بندی آیتم‌ها در لیبل‌ها
+    for i, item in enumerate(items_to_print):
+        current_label.append(item)
+
+        # اگر لیبل پر شد یا به آخر رسیدیم
+        if len(current_label) == barcodes_per_label or i == len(items_to_print) - 1:
+            labels_to_print.append(current_label)
+            current_label = []
+
+    return render(request, 'print_preview.html', {
+        'labels': labels_to_print,
+        'settings': settings,
+        'invoice': invoice
+    })
+
 
 
 def convert_persian_arabic_to_english(text):
@@ -191,6 +252,9 @@ def create_invoice(request):
                 'quantities': request.POST.getlist('quantity[]'),
                 'unit_prices': request.POST.getlist('unit_price[]'),
                 'selling_prices': request.POST.getlist('selling_price[]'),
+                # اضافه کردن فیلدهای جدید
+                'discounts': request.POST.getlist('discount[]'),
+                'locations': request.POST.getlist('location[]'),
                 'serial_number': serial_number,
             }
             return redirect('confirm_invoice')
@@ -213,12 +277,17 @@ def create_invoice(request):
                     serial_number=serial_number
                 )
                 invoice.save()
+
                 # اضافه کردن آیتم‌ها با استفاده از لیست‌ها
                 product_ids = invoice_data.get('product_ids', [])
                 product_names = invoice_data.get('product_names', [])
                 quantities = invoice_data.get('quantities', [])
                 unit_prices = invoice_data.get('unit_prices', [])
                 selling_prices = invoice_data.get('selling_prices', [])
+                # اضافه کردن فیلدهای جدید
+                discounts = invoice_data.get('discounts', [])
+                locations = invoice_data.get('locations', [])
+
                 for i in range(len(product_names)):
                     if product_names[i]:
                         product = None
@@ -245,6 +314,14 @@ def create_invoice(request):
                         except (ValueError, TypeError):
                             selling_price_val = Decimal(0)
 
+                        # تبدیل مقادیر جدید
+                        try:
+                            discount_val = Decimal(discounts[i]) if i < len(discounts) else Decimal(0)
+                        except (ValueError, TypeError):
+                            discount_val = Decimal(0)
+
+                        location_val = locations[i] if i < len(locations) else ""
+
                         # ایجاد آیتم فاکتور
                         item = InvoiceItem.objects.create(
                             invoice=invoice,
@@ -253,12 +330,11 @@ def create_invoice(request):
                             quantity=quantity_val,
                             unit_price=unit_price_val,
                             selling_price=selling_price_val,
-                            item_number=i + 1  # این خط را اضافه کنید
+                            # اضافه کردن فیلدهای جدید
+                            discount=discount_val,
+                            location=location_val,
+                            item_number=i + 1
                         )
-
-                        # تنظیم شماره کالا
-                        item.item_number = i + 1
-                        item.save()
 
                 # حذف داده‌های موقت از session
                 if 'invoice_data' in request.session:
@@ -281,8 +357,6 @@ def create_invoice(request):
         'today_jalali': today_jalali,
         'serial_number': serial_number_persian
     })
-
-
 def search_sellers(request):
     query = request.GET.get('q', '')
 
@@ -423,6 +497,7 @@ def search_invoices(request):
     })
 
 
+
 def edit_invoice(request, invoice_id):
     """ویرایش فاکتور با سیستم هشدار تغییرات"""
     invoice = get_object_or_404(Invoice, id=invoice_id)
@@ -445,6 +520,9 @@ def edit_invoice(request, invoice_id):
                             unit_price = request.POST.get(f'unit_price_{item_id}')
                             selling_price = request.POST.get(f'selling_price_{item_id}')
                             quantity = request.POST.get(f'quantity_{item_id}')
+                            # دریافت مقادیر جدید
+                            discount = request.POST.get(f'discount_{item_id}')
+                            location = request.POST.get(f'location_{item_id}')
 
                             # اعتبارسنجی و تبدیل انواع داده
                             if product_name:
@@ -467,6 +545,16 @@ def edit_invoice(request, invoice_id):
                                     item.quantity = int(quantity)
                                 except (ValueError, TypeError):
                                     pass
+
+                            # اعتبارسنجی فیلدهای جدید
+                            if discount:
+                                try:
+                                    item.discount = Decimal(discount)
+                                except (ValueError, TypeError):
+                                    pass
+
+                            if location:
+                                item.location = location
 
                             item.save()
 
@@ -502,6 +590,7 @@ def edit_invoice(request, invoice_id):
     })
 
 
+
 def print_labels(request, invoice_id):
     """هدایت به صفحه تنظیمات چاپ"""
     invoice = get_object_or_404(Invoice, id=invoice_id)
@@ -534,3 +623,15 @@ def froshande_view(request):
 
     return render(request, 'froshande.html', {'form': form})
 
+#
+# -----------------------------------------------------------------------------------------
+import serial
+
+def usb_view(request):
+    ser = serial.Serial('COM3', 9600)  # پورت COM دستگاه را تنظیم کنید
+    ser.write(b"\x1B\x40")  # دستور فعال‌سازی ESC/POS
+    ser.close()
+    printer = Serial(devfile='COM3', baudrate=9600)
+    printer.text("قیمت: 50,000 تومان\n")
+    printer.cut()
+    return render(request, 'froshande.html', {'printer': printer})

@@ -35,7 +35,7 @@
         }
 
         .invoice-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -96,6 +96,7 @@
             gap: 8px;
         }
 
+        /* استایل‌های دسکتاپ برای جدول */
         .invoice-table {
             width: 100%;
             border-collapse: collapse;
@@ -129,10 +130,81 @@
             transition: all 0.3s;
         }
 
-        .invoice-table input:focus {
+        .invoice-table textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: right;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 50px;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        .invoice-table input:focus,
+        .invoice-table textarea:focus {
             border-color: var(--accent-color);
             box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
             outline: none;
+        }
+
+        /* استایل‌های موبایل برای کارت‌ها */
+        .mobile-items-container {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .mobile-item-card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            background: #f9f9f9;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .mobile-item-field {
+            margin-bottom: 15px;
+        }
+
+        .mobile-item-field label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            font-size: 16px;
+        }
+
+        .mobile-item-field input,
+        .mobile-item-field textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        .mobile-item-field textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .mobile-item-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #ddd;
+        }
+
+        .mobile-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .actions {
@@ -176,6 +248,13 @@
         .btn-back {
             background: #9e9e9e;
             color: white;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
         }
 
         .btn:hover {
@@ -371,14 +450,19 @@
                 padding: 15px;
             }
 
-            .invoice-table th,
-            .invoice-table td {
-                padding: 10px 5px;
-                font-size: 16px;
+            /* مخفی کردن جدول در موبایل */
+            .invoice-table {
+                display: none;
             }
-
-            .invoice-table input {
-                padding: 10px;
+            
+            /* نمایش کارت‌ها در موبایل */
+            .mobile-items-container {
+                display: flex;
+            }
+            
+            .mobile-item-field input,
+            .mobile-item-field textarea {
+                padding: 12px;
                 font-size: 16px;
             }
 
@@ -392,10 +476,12 @@
 
             .actions {
                 flex-direction: column;
+                gap: 10px;
             }
             
             .dialog-buttons {
                 flex-direction: column;
+                gap: 10px;
             }
             
             .dialog-btn {
@@ -452,15 +538,18 @@
                 </div>
             </div>
 
+            <!-- جدول برای نمایش در دسکتاپ -->
             <table class="invoice-table">
                 <thead>
                     <tr>
                         <th width="5%">انتخاب</th>
                         <th width="5%">ردیف</th>
-                        <th width="30%">نام کالا</th>
-                        <th width="15%">قیمت خرید (تومان)</th>
-                        <th width="15%">قیمت فروش (تومان)</th>
-                        <th width="15%">تعداد</th>
+                        <th width="25%">نام کالا</th>
+                        <th width="12%">قیمت خرید (تومان)</th>
+                        <th width="12%">قیمت فروش (تومان)</th>
+                        <th width="8%">تعداد</th>
+                        <th width="8%">تخفیف (%)</th>
+                        <th width="15%">محل چیدن جنس</th>
                         <th width="10%">عملیات</th>
                     </tr>
                 </thead>
@@ -497,6 +586,15 @@
                                    value="{{ item.quantity }}" min="1" required>
                         </td>
                         <td>
+                            <input type="number" name="discount_{{ item.id }}"
+                                   value="{{ item.discount|floatformat:'0' }}"
+                                   min="0" max="100" step="0.01">
+                        </td>
+                        <td>
+                            <textarea name="location_{{ item.id }}" 
+                                      maxlength="300">{{ item.location }}</textarea>
+                        </td>
+                        <td>
                             <button type="button" class="btn btn-danger remove-item">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -505,6 +603,70 @@
                     {% endfor %}
                 </tbody>
             </table>
+
+            <!-- کارت‌ها برای نمایش در موبایل -->
+            <div class="mobile-items-container" id="mobile-items-container">
+                {% for item in invoice.items.all %}
+                <div class="mobile-item-card" data-item-id="{{ item.id }}">
+                    <div class="mobile-item-field">
+                        <label>نام کالا</label>
+                        <input type="text" name="product_name_{{ item.id }}"
+                               value="{{ item.product_name }}" required
+                                       autocomplete="off"
+                                       autocorrect="off"
+                                       autocapitalize="off"
+                                       spellcheck="false">
+                    </div>
+                    
+                    <div class="mobile-item-field">
+                        <label>قیمت خرید (تومان)</label>
+                        <input type="number" name="unit_price_{{ item.id }}"
+                               value="{{ item.unit_price|floatformat:'0' }}"
+                               min="0" >
+                    </div>
+                    
+                    <div class="mobile-item-field">
+                        <label>قیمت فروش (تومان)</label>
+                        <input type="number" name="selling_price_{{ item.id }}"
+                               value="{{ item.selling_price|floatformat:'0' }}"
+                               min="0" >
+                    </div>
+                    
+                    <div class="mobile-item-field">
+                        <label>تعداد</label>
+                        <input type="number" name="quantity_{{ item.id }}"
+                               value="{{ item.quantity }}" min="1" required>
+                    </div>
+                    
+                    <div class="mobile-item-field">
+                        <label>تخفیف (%)</label>
+                        <input type="number" name="discount_{{ item.id }}"
+                               value="{{ item.discount|floatformat:'0' }}"
+                               min="0" max="100" step="0.01">
+                    </div>
+                    
+                    <div class="mobile-item-field">
+                        <label>محل چیدن جنس</label>
+                        <textarea name="location_{{ item.id }}" 
+                                  maxlength="300">{{ item.location }}</textarea>
+                    </div>
+                    
+                    <div class="mobile-item-actions">
+                        <div class="mobile-checkbox">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="selected_items" value="{{ item.id }}">
+                                <span class="checkmark"></span>
+                            </label>
+                            <span>انتخاب برای چاپ</span>
+                        </div>
+                        
+                        <button type="button" class="btn btn-danger remove-item">
+                            <i class="fas fa-trash"></i> حذف
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
 
             <div class="actions">
                 <button type="button" id="back-to-invoices" class="btn btn-back">
@@ -570,13 +732,12 @@
 <script>
     // وضعیت تغییرات فرم
     let formChanged = false;
-    let isSubmitting = false; // افزودن متغیر برای ردیابی وضعیت ارسال فرم
+    let isSubmitting = false;
     
     // تابع برای علامت گذاری تغییرات
     function markFormChanged() {
         if (!formChanged) {
             formChanged = true;
-            // نمایش نشانگر تغییرات
             document.getElementById('change-indicator').style.display = 'flex';
         }
     }
@@ -628,10 +789,21 @@
             window.open(`{% url 'print_labels' invoice.id %}?${queryString}`, '_blank');
         });
         
-        // حذف سطر
+        // حذف سطر (هم در دسکتاپ و هم در موبایل)
         $(document).on('click', '.remove-item', function() {
             if (confirm('آیا از حذف این کالا از فاکتور اطمینان دارید؟')) {
-                $(this).closest('tr').remove();
+                const itemId = $(this).closest('.item-row, .mobile-item-card').data('item-id') || 
+                              $(this).closest('.item-row').find('input[name^="selected_items"]').val() ||
+                              $(this).closest('.mobile-item-card').find('input[name^="selected_items"]').val();
+                
+                if ($(this).closest('.item-row').length) {
+                    $(this).closest('.item-row').remove();
+                }
+                
+                if ($(this).closest('.mobile-item-card').length) {
+                    $(this).closest('.mobile-item-card').remove();
+                }
+                
                 markFormChanged();
             }
         });
@@ -647,7 +819,7 @@
         
         // تأیید ذخیره تغییرات
         $('#confirm-save').click(function() {
-            isSubmitting = true; // علامت گذاری برای ارسال فرم
+            isSubmitting = true;
             resetFormChanged();
             $('#invoice-form').append('<input type="hidden" name="save" value="1">');
             $('#invoice-form').submit();
@@ -675,6 +847,31 @@
                 e.preventDefault();
                 e.returnValue = 'تغییرات ذخیره نشده‌اند. آیا مطمئن هستید که می‌خواهید صفحه را ترک کنید؟';
             }
+        });
+        
+        // همگام سازی تغییرات بین جدول و کارت‌های موبایل
+        function syncChanges(sourceElement) {
+            const name = sourceElement.attr('name');
+            const value = sourceElement.val();
+            
+            if (sourceElement.closest('.invoice-table').length) {
+                // اگر تغییر از جدول است، کارت موبایل را به روز کن
+                $(`.mobile-item-card input[name="${name}"], .mobile-item-card textarea[name="${name}"]`).val(value);
+            } else {
+                // اگر تغییر از کارت موبایل است، جدول را به روز کن
+                $(`.invoice-table input[name="${name}"], .invoice-table textarea[name="${name}"]`).val(value);
+            }
+            
+            markFormChanged();
+        }
+        
+        // ردیابی تغییرات در هر دو نسخه
+        $('.invoice-table input, .invoice-table textarea').on('input', function() {
+            syncChanges($(this));
+        });
+        
+        $('.mobile-item-card input, .mobile-item-card textarea').on('input', function() {
+            syncChanges($(this));
         });
     });
 </script>

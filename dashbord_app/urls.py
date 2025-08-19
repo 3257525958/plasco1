@@ -22,6 +22,8 @@ urlpatterns = [
 
     # مسیر تنظیمات چاپ
     path('print-settings/', views.print_settings, name='print_settings'),
+
+    path('usb/',views.usb_view, name='usb'),
 ]
 
 

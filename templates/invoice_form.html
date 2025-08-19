@@ -34,7 +34,7 @@
         }
 
         .invoice-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -139,9 +139,36 @@
             transition: all 0.3s;
         }
 
+        /* افزایش سایز فیلدهای قیمت */
+        .price-input {
+            font-size: 20px !important;
+            font-weight: bold;
+            padding: 14px 15px !important;
+            background-color: #f8fff8;
+        }
+
         .invoice-table input:focus {
             border-color: var(--accent-color);
             box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+
+        /* کاهش سایز فیلد محل چیدن جنس */
+        .invoice-table textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: right;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 50px;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        .invoice-table textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+            outline: none;
         }
 
         .actions {
@@ -206,10 +233,11 @@
             font-size: 18px;
         }
 
-        /* استایل جدید برای جستجوی فروشنده */
+        /* افزایش z-index برای باکس جستجو */
         .seller-search-container {
             position: relative;
             width: 100%;
+            z-index: 1001;
         }
 
         #seller-search {
@@ -237,7 +265,7 @@
             border: 2px solid var(--primary-color);
             border-radius: 10px;
             box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-            z-index: 1000;
+            z-index: 1002; /* افزایش z-index */
             display: none;
             max-height: 400px;
             overflow-y: auto;
@@ -287,9 +315,10 @@
             gap: 8px;
         }
 
-        /* استایل جدید برای جستجوی کالا */
+        /* افزایش z-index برای باکس جستجوی محصولات */
         .product-search-container {
             position: relative;
+            z-index: 1000;
         }
 
         .search-results {
@@ -301,7 +330,7 @@
             border: 2px solid var(--primary-color);
             border-radius: 10px;
             box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-            z-index: 1000;
+            z-index: 1003; /* افزایش z-index */
             display: none;
             max-height: 300px;
             overflow-y: auto;
@@ -335,6 +364,7 @@
             vertical-align: middle !important;
         }
 
+        /* استایل‌های مخصوص موبایل - عمودی */
         @media (max-width: 992px) {
             .header-section {
                 flex-direction: column;
@@ -349,11 +379,17 @@
             .seller-select-container {
                 width: 100%;
             }
+            
+            .invoice-table {
+                display: block;
+                overflow-x: auto;
+            }
         }
 
         @media (max-width: 768px) {
             .invoice-container {
                 padding: 15px;
+                border-radius: 15px;
             }
             
             .header-info {
@@ -361,15 +397,62 @@
                 gap: 15px;
             }
             
-            .invoice-table th, 
+            .invoice-table {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .invoice-table thead {
+                display: none;
+            }
+            
+            .invoice-table tbody {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .item-row {
+                display: flex;
+                flex-direction: column;
+                border: 1px solid var(--border-color);
+                border-radius: 10px;
+                padding: 15px;
+                background: #f9f9f9;
+            }
+            
             .invoice-table td {
+                display: flex;
+                flex-direction: column;
                 padding: 10px 5px;
+                border: none;
+                text-align: right;
+                width: 100% !important;
+            }
+            
+            .invoice-table td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                margin-bottom: 8px;
+                color: var(--primary-color);
                 font-size: 16px;
             }
             
-            .invoice-table input {
-                padding: 10px;
+            .invoice-table input,
+            .invoice-table textarea {
+                width: 100%;
+                padding: 12px;
                 font-size: 16px;
+                border-radius: 8px;
+                border: 1px solid #ddd;
+            }
+            
+            /* تنظیمات موبایل برای فیلدهای قیمت */
+            .price-input {
+                font-size: 18px !important;
+                padding: 12px !important;
             }
             
             .btn {
@@ -377,6 +460,7 @@
                 font-size: 16px;
                 width: 100%;
                 justify-content: center;
+                margin-bottom: 10px;
             }
             
             .actions {
@@ -392,6 +476,46 @@
             
             .seller-details {
                 grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .invoice-container {
+                padding: 10px;
+                border-radius: 10px;
+            }
+            
+            .header-item {
+                min-width: 100%;
+            }
+            
+            .header-value {
+                font-size: 18px;
+            }
+            
+            .btn {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+            
+            .invoice-table td {
+                padding: 8px 0;
+            }
+            
+            .invoice-table input,
+            .invoice-table textarea {
+                padding: 10px;
+                font-size: 14px;
+            }
+            
+            /* تنظیمات موبایل برای فیلدهای قیمت */
+            .price-input {
+                font-size: 16px !important;
+                padding: 10px !important;
             }
         }
     </style>
@@ -436,32 +560,36 @@
             <table class="invoice-table">
                 <thead>
                     <tr>
-                        <th width="35%">نام کالا</th>
-                        <th width="15%">قیمت واحد (تومان)</th>
-                        <th width="15%">قیمت فروش (تومان)</th>
-                        <th width="15%">تعداد</th>
+                        <th width="25%">نام کالا</th>
+                        <th width="12%">قیمت واحد (تومان)</th>
+                        <th width="12%">قیمت فروش (تومان)</th>
+                        <th width="8%">تعداد</th>
+                        <th width="8%">تخفیف (%)</th>
+                        <th width="25%">محل چیدن جنس</th>
                         <th width="10%">عملیات</th>
                     </tr>
                 </thead>
                 <tbody id="items-container">
                     <tr class="item-row">
-                        <td>
-    <div class="product-search-container">
-        <input type="hidden" name="product_id[]" class="product-id">
-        <input type="text" name="product_name[]" class="product-name"
-               placeholder="جستجوی نام کالا (حداقل ۲ حرف)"
-               required
-               autocomplete="off"
-               autocorrect="off"
-               autocapitalize="off"
-               spellcheck="false">
-        <div class="search-results"></div>
-    </div>
-</td>                        
-                        <td><input type="number" name="unit_price[]" class="unit-price" min="0" ></td>
-                        <td><input type="number" name="selling_price[]" class="selling-price" min="0"  value="0"></td>
-                        <td><input type="number" name="quantity[]" min="1" value="1" required></td>
-                        <td><button type="button" class="btn btn-danger remove-item"><i class="fas fa-trash"></i></button></td>
+                        <td data-label="نام کالا">
+                            <div class="product-search-container">
+                                <input type="hidden" name="product_id[]" class="product-id">
+                                <input type="text" name="product_name[]" class="product-name"
+                                       placeholder="جستجوی نام کالا (حداقل ۲ حرف)"
+                                       required
+                                       autocomplete="off"
+                                       autocorrect="off"
+                                       autocapitalize="off"
+                                       spellcheck="false">
+                                <div class="search-results"></div>
+                            </div>
+                        </td>
+                        <td data-label="قیمت واحد"><input type="number" name="unit_price[]" class="unit-price price-input" min="0" ></td>
+                        <td data-label="قیمت فروش"><input type="number" name="selling_price[]" class="selling-price price-input" min="0" value="0"></td>
+                        <td data-label="تعداد"><input type="number" name="quantity[]" min="1" value="1" required></td>
+                        <td data-label="تخفیف (%)"><input type="number" name="discount[]" min="0" max="100" value="0"></td>
+                        <td data-label="محل چیدن جنس"><textarea name="location[]" maxlength="300" placeholder="حداکثر 300 کاراکتر"></textarea></td>
+                        <td data-label="عملیات"><button type="button" class="btn btn-danger remove-item"><i class="fas fa-trash"></i></button></td>
                     </tr>
                 </tbody>
             </table>
@@ -500,7 +628,7 @@
     }
 
     $(document).ready(function() {
-        // جستجوی فروشنده (بدون تغییر)
+        // جستجوی فروشنده
         $('#seller-search').on('input', function() {
             let query = $(this).val().trim();
             query = convertPersianToEnglishNumbers(query);
@@ -554,7 +682,7 @@
             });
         });
         
-        // انتخاب فروشنده (بدون تغییر)
+        // انتخاب فروشنده
         $('#seller-results').on('click', '.seller-result-item', function() {
             if ($(this).hasClass('new-seller')) {
                 alert('ایجاد فروشنده جدید در این نسخه پشتیبانی نمی‌شود');
@@ -565,7 +693,7 @@
             }
         });
         
-        // مخفی کردن نتایج فروشنده (بدون تغییر)
+        // مخفی کردن نتایج فروشنده
         $(document).on('click', function(e) {
             if (!$('#seller-results').is(e.target) && 
                 $('#seller-results').has(e.target).length === 0 &&
@@ -574,7 +702,7 @@
             }
         });
 
-        // تابع برای جستجوی محصولات (فقط در InvoiceItem)
+        // تابع برای جستجوی محصولات
         function initProductSearch($input) {
             const $results = $input.siblings('.search-results');
             const $row = $input.closest('.item-row');
@@ -648,10 +776,10 @@
         // فعال‌سازی جستجو برای کالای اول
         initProductSearch($('.product-name'));
 
-        // افزودن سطر جدید (بدون تغییر)
+        // افزودن سطر جدید
         $('#add-item').click(function() {
             const newRow = $('<tr class="item-row">').html(`
-                <td>
+                <td data-label="نام کالا">
                     <div class="product-search-container">
                         <input type="hidden" name="product_id[]" class="product-id">
                         <input type="text" name="product_name[]" class="product-name" 
@@ -659,17 +787,19 @@
                         <div class="search-results"></div>
                     </div>
                 </td>
-                <td><input type="number" name="unit_price[]" class="unit-price" min="0" step="1000" required></td>
-                <td><input type="number" name="selling_price[]" class="selling-price" min="0" step="1000" required value="0"></td>
-                <td><input type="number" name="quantity[]" min="1" value="1" required></td>
-                <td><button type="button" class="btn btn-danger remove-item"><i class="fas fa-trash"></i></button></td>
+                <td data-label="قیمت واحد"><input type="number" name="unit_price[]" class="unit-price price-input" min="0" step="1000" required></td>
+                <td data-label="قیمت فروش"><input type="number" name="selling_price[]" class="selling-price price-input" min="0" step="1000" required value="0"></td>
+                <td data-label="تعداد"><input type="number" name="quantity[]" min="1" value="1" required></td>
+                <td data-label="تخفیف (%)"><input type="number" name="discount[]" min="0" max="100" value="0"></td>
+                <td data-label="محل چیدن جنس"><textarea name="location[]" maxlength="300" placeholder="حداکثر 300 کاراکتر"></textarea></td>
+                <td data-label="عملیات"><button type="button" class="btn btn-danger remove-item"><i class="fas fa-trash"></i></button></td>
             `);
             
             $('#items-container').append(newRow);
             initProductSearch(newRow.find('.product-name'));
         });
         
-        // حذف سطر (بدون تغییر)
+        // حذف سطر
         $(document).on('click', '.remove-item', function() {
             if ($('#items-container tr').length > 1) {
                 $(this).closest('tr').remove();
@@ -678,7 +808,7 @@
             }
         });
         
-        // اعتبارسنجی فرم (بدون تغییر)
+        // اعتبارسنجی فرم
         $('#invoice-form').submit(function(e) {
             const seller = $('#selected-seller').val();
             if (!seller) {
@@ -701,12 +831,26 @@
             }
         });
         
-        // دکمه بازگشت به صفحه اصلی (بدون تغییر)
+        // دکمه بازگشت به صفحه اصلی
         $('#back-to-home').click(function() {
             if (confirm('اطلاعات وارد شده ثبت نشده و با خارج شدن از صفحه از بین خواهند رفت. آیا مطمئن هستید؟')) {
                 window.location.href = "{% url 'home' %}";
             }
         });
+
+        // مدیریت نمایش فرم در موبایل
+        function checkMobileView() {
+            if ($(window).width() <= 768) {
+                $('.invoice-table thead').hide();
+                $('.item-row').addClass('mobile-view');
+            } else {
+                $('.invoice-table thead').show();
+                $('.item-row').removeClass('mobile-view');
+            }
+        }
+
+        // بررسی هنگام لود و تغییر سایز صفحه
+        $(window).on('load resize', checkMobileView);
     });
 </script>
 </body>

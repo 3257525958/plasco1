@@ -282,6 +282,18 @@ class InvoiceItem(models.Model):
         verbose_name="تعداد",
         validators=[MinValueValidator(1)]
     )
+    # فیلدهای جدید
+    discount = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        verbose_name="تخفیف (%)"
+    )
+    location = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name="محل چیدن جنس"
+    )
     item_number = models.PositiveIntegerField(
         verbose_name="شماره کالا",
         default=0
@@ -289,7 +301,10 @@ class InvoiceItem(models.Model):
 
     @property
     def total_price(self):
-        return self.selling_price * self.quantity
+        # محاسبه قیمت نهایی با احتساب تخفیف
+        price_before_discount = self.selling_price * self.quantity
+        discount_amount = (price_before_discount * self.discount) / 100
+        return price_before_discount - discount_amount
 
     @property
     def barcode_base(self):
@@ -311,4 +326,3 @@ class InvoiceItem(models.Model):
 
     class Meta:
         ordering = ['item_number']
-

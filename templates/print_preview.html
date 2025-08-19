@@ -10,9 +10,9 @@
     <style>
         :root {
             --vertical-gap: {{ settings.vertical_gap }}mm;
-            --horizontal-gap: {{ settings.horizontal_gap }}mm;
+            --inner-gap: {{ settings.inner_gap }}mm;
             --barcode-scale: {{ settings.barcode_scale }}%;
-            --barcode-height: {{ settings.module_height }}mm; /* ارتفاع جدید */
+            --barcode-height: {{ settings.module_height }}mm;
             --content-spacing: {{ settings.content_spacing }}mm;
             --font-family: {{ settings.font_family }}, sans-serif;
             --font-size: {{ settings.font_size }}pt;
@@ -26,7 +26,7 @@
 
         body {
             background: white;
-            padding: 10mm;
+            padding: 0;
             direction: rtl;
             font-family: var(--font-family);
         }
@@ -38,33 +38,26 @@
             width: 100%;
             max-width: 210mm;
             margin: 0 auto;
+            padding: 0;
         }
 
         .labels-container {
             display: flex;
-            flex-wrap: wrap;
-            gap: var(--vertical-gap) var(--horizontal-gap);
+            flex-direction: column;
+            gap: var(--vertical-gap);
             width: 100%;
-            
-            {% if settings.page_alignment == 'right' %}
-                justify-content: flex-end;
-            {% elif settings.page_alignment == 'left' %}
-                justify-content: flex-start;
-            {% else %}
-                justify-content: center;
-            {% endif %}
+            padding: 0;
+            margin: 0;
         }
 
         .label-card {
-            display: inline-flex;
+            display: flex;
             flex-direction: column;
-            padding: 2mm;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 0;
             page-break-inside: avoid;
-            min-width: 0;
-            width: auto;
-            max-width: calc((100% - ({{ settings.columns }} - 1) * var(--horizontal-gap)) / {{ settings.columns }});
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: var(--vertical-gap);
             
             {% if settings.content_alignment == 'right' %}
                 align-items: flex-end;
@@ -72,9 +65,48 @@
             {% elif settings.content_alignment == 'left' %}
                 align-items: flex-start;
                 text-align: left;
+            {% elif settings.content_alignment == 'space-between' %}
+                align-items: stretch;
+                text-align: center;
             {% else %}
                 align-items: center;
                 text-align: center;
+            {% endif %}
+        }
+
+        .barcode-container {
+            display: flex;
+            flex-wrap: wrap;
+            width: 100%;
+            gap: var(--inner-gap);
+            margin: var(--content-spacing) 0;
+            padding: 0;
+            
+            {% if settings.content_alignment == 'right' %}
+                justify-content: flex-end;
+            {% elif settings.content_alignment == 'left' %}
+                justify-content: flex-start;
+            {% elif settings.content_alignment == 'space-between' %}
+                justify-content: space-between;
+            {% else %}
+                justify-content: center;
+            {% endif %}
+        }
+
+        .barcode-item {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: calc(50% - var(--inner-gap));
+            max-width: 100%;
+            padding: 0;
+            
+            {% if settings.content_alignment == 'right' %}
+                align-items: flex-end;
+            {% elif settings.content_alignment == 'left' %}
+                align-items: flex-start;
+            {% else %}
+                align-items: center;
             {% endif %}
         }
 
@@ -87,28 +119,20 @@
             overflow: hidden;
             text-overflow: ellipsis;
             width: 100%;
-            padding: 0 1mm;
+            padding: 0;
         }
 
-        .barcode-container {
+        .barcode-image-container {
             display: flex;
+            height: var(--barcode-height);
+            margin-bottom: var(--content-spacing);
             width: 100%;
-            height: var(--barcode-height); /* ارتفاع جدید */
-            margin: var(--content-spacing) 0;
-            padding: 0 1mm;
-            
-            {% if settings.content_alignment == 'right' %}
-                justify-content: flex-end;
-            {% elif settings.content_alignment == 'left' %}
-                justify-content: flex-start;
-            {% else %}
-                justify-content: center;
-            {% endif %}
+            justify-content: center;
         }
 
         .barcode-image {
             max-width: var(--barcode-scale);
-            max-height: 100%; /* تغییر یافته */
+            max-height: 100%;
             display: block;
             width: auto;
             height: auto;
@@ -123,12 +147,13 @@
             overflow: hidden;
             text-overflow: ellipsis;
             width: 100%;
-            padding: 0 1mm;
+            padding: 0;
         }
 
         .print-actions {
             text-align: center;
             margin: 30px 0;
+            padding: 0;
         }
 
         .btn-print {
@@ -154,7 +179,8 @@
 
         @media print {
             body {
-                padding: 5mm;
+                padding: 0;
+                margin: 0;
             }
             
             .print-actions {
@@ -162,10 +188,9 @@
             }
             
             .label-card {
-                border: 1px solid #ccc;
-                box-shadow: none;
                 page-break-inside: avoid;
                 break-inside: avoid;
+                margin-bottom: var(--vertical-gap);
             }
             
             @page {
@@ -178,23 +203,29 @@
 <body>
     <div class="page-container">
         <div class="labels-container">
-            {% for item in items %}
+            {% for label in labels %}
             <div class="label-card">
-                {% if settings.show_product_name %}
-                <div class="product-name">{{ item.product_name }}</div>
-                {% endif %}
-                
                 <div class="barcode-container">
-                    {% if item.barcode_base64 %}
-                        <img src="{{ item.barcode_base64 }}" alt="بارکد" class="barcode-image">
-                    {% else %}
-                        <div class="error">بارکد تولید نشد</div>
-                    {% endif %}
+                    {% for item in label %}
+                    <div class="barcode-item">
+                        {% if settings.show_product_name %}
+                        <div class="product-name">{{ item.product_name }}</div>
+                        {% endif %}
+                        
+                        <div class="barcode-image-container">
+                            {% if item.barcode_base64 %}
+                                <img src="{{ item.barcode_base64 }}" alt="بارکد" class="barcode-image">
+                            {% else %}
+                                <div class="error">بارکد تولید نشد</div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if settings.show_price %}
+                        <div class="price">{{ item.selling_price|floatformat:"0" }} تومان</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
-                
-                {% if settings.show_price %}
-                <div class="price">{{ item.selling_price|floatformat:"0" }} تومان</div>
-                {% endif %}
             </div>
             {% endfor %}
         </div>
