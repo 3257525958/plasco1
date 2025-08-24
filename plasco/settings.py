@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dashbord_app.apps.DashbordAppConfig',
+    'cantact_app.apps.CantactAppConfig',
 ]
 JALALI_DATE_DEFAULTS = {
    'Strftime': {

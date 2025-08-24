@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ثبت نام - کلینیک زیبایی دکتر اسدپور</title>
+  <!-- استایل‌های اصلی و فونت آیکن -->
+  <link rel="stylesheet" href="{% static 'css/new_addcontact.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/persian-datepicker@latest/dist/css/persian-datepicker.min.css">
+</head>
+<body>
+
+<div class="container-wrapper">
+  <div class="image-section">
+    <img src="{% static 'img/login.jpg' %}" alt="تصویر پس زمینه">
+  </div>
+
+  <div class="signup-container">
+    <div class="header-section">
+      <img src="{% static 'img/logo.jpg' %}" alt="لوگوی کلینیک" class="logo">
+      <h2 class="title">ورود کاربر</h2>
+    </div>
+
+    <form method="POST" class="signup-form">
+      {% csrf_token %}
+
+      <!-- فیلد نام -->
+      <div class="input-field">
+          <i class="fas fa-user icon"></i>
+          <input type="text" name="username" id="username" placeholder="نام کاربری" required>
+
+      </div>
+
+      <!-- فیلد نام خانوادگی -->
+      <div class="input-field">
+                    <i class="fas fa-lock icon"></i>
+                    <input type="password" name="password" id="password" placeholder="رمز عبور" required>
+      </div>
+
+                <div class="remember-me">
+                    <a href="/cantact/ignor/" >فراموشی رمز؟</a>
+                </div>
+
+      <!-- دکمه ثبت نام -->
+      <button type="submit" class="submit-btn" name="button_send" value="accept" >
+          ورود
+      </button>
+
+      <!-- لینک ورود -->
+      <div class="login-link">
+                <p class="register" ><a href="/cantact/addcontact/"> ساخت حساب کاربری جدید </a></p>
+      </div>
+   <label id="login_etebar" hidden >{{ login_etebar }}</label>
+
+    </form>
+  </div>
+</div>
+<!-- کتابخانه‌های مورد نیاز -->
+<script src="/static/js/materialize.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{% static 'js/new_addcontact.js' %}"></script>
+</body>
+</html>

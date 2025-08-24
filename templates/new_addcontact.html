@@ -1,0 +1,111 @@
+{% load static %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ثبت نام - کلینیک زیبایی دکتر اسدپور</title>
+  <!-- استایل‌های اصلی و فونت آیکن -->
+  <link rel="stylesheet" href="{% static 'css/new_addcontact.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/persian-datepicker@latest/dist/css/persian-datepicker.min.css">
+</head>
+<body>
+
+<div class="container-wrapper">
+  <div class="image-section">
+    <img src="{% static 'img/login.jpg' %}" alt="تصویر پس زمینه">
+  </div>
+
+  <div class="signup-container">
+    <div class="header-section">
+      <img src="{% static 'img/logo.jpg' %}" alt="لوگوی کلینیک" class="logo">
+      <h2 class="title">ثبت نام در سامانه</h2>
+    </div>
+
+    <form method="POST" class="signup-form" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- فیلد نام -->
+      <div class="input-field">
+        <i class="fas fa-user icon"></i>
+        <input type="text" id="first_name" name="firstname" placeholder="نام" required>
+      </div>
+
+      <!-- فیلد نام خانوادگی -->
+      <div class="input-field">
+        <i class="fas fa-user icon"></i>
+        <input type="text" id="last_name" name="lastname" placeholder="نام خانوادگی" required>
+      </div>
+
+      <!-- فیلد کدملی -->
+      <div class="input-field">
+        <i class="fas fa-id-card icon"></i>
+        <input type="number" id="national_code" name="melicod" placeholder="کدملی" required>
+      </div>
+
+      <!-- فیلد تلفن -->
+      <div class="input-field">
+        <i class="fas fa-phone icon"></i>
+        <input type="tel" id="phone" name="phonnumber" placeholder="تلفن" pattern="09\d{9}" required>
+      </div>
+
+      <!-- فیلد تاریخ تولد -->
+      <div class="input-field">
+        <i class="fas fa-calendar-alt icon" id="calendar-icon"></i>
+        <input type="text" id="birthdate" name="birthdate" class="persian-date-input" placeholder="تاریخ تولد (شمسی)" readonly required>
+      </div>
+<!-- قبل از بخش قوانین -->
+<div class="file-upload-field">
+    <i class="fas fa-camera icon"></i>
+    <div class="file-input-container">
+        <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+        <label for="profile_picture" class="file-label">
+            <span class="file-text">عکس پروفایل (اختیاری)</span>
+            <span class="browse-btn">انتخاب فایل</span>
+        </label>
+    </div>
+</div>      <!-- فیلدهای مخفی برای ذخیره روز، ماه و سال (اختیاری) -->
+      <input type="hidden" id="day" name="day">
+      <input type="hidden" id="month" name="month">
+      <input type="hidden" id="year" name="year">
+
+     <!-- بخش قوانین -->
+      <div class="terms-section">
+        <label>
+          <input type="checkbox" required>
+          <span>موافقت با <a href="/terms/">قوانین و مقررات</a></span>
+        </label>
+      </div>
+
+      <!-- دکمه ثبت نام -->
+      <button type="submit" class="submit-btn" name="button_send" value="accept" onclick="move()">
+        <i class="fas fa-user-plus"></i>
+        ثبت نام
+      </button>
+
+      <!-- لینک ورود -->
+      <div class="login-link">
+        <p>حساب دارید؟ <a href="/login/">وارد شوید</a></p>
+      </div>
+      <label id="melicod_etebar" hidden >{{ melicod_etebar }}</label>
+      <div id="w">
+      <div id="myBar" class="w3" hidden>0%</div>
+      </div>
+
+    </form>
+  </div>
+</div>
+<label>{{ d }}</label>
+<!-- کتابخانه‌های مورد نیاز -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/persian-date@latest/dist/persian-date.min.js"></script>
+<script src="https://unpkg.com/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
+<script src="/static/js/materialize.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{% static 'js/new_addcontact.js' %}"></script>
+<script src="{% static "/js/add_cantact.js" %}"></script>
+</body>
+</html>

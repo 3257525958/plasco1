@@ -1,0 +1,74 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تأیید کد - کلینیک زیبایی دکتر اسدپور</title>
+  <link rel="stylesheet" href="{% static 'css/new_reserv_end.css' %}">
+  <link rel="stylesheet" href="{% static 'css/new_code_cantact.css' %}">
+</head>
+<body>
+  <form  action=""  method="POST">
+      {% csrf_token %}
+  <div class="container-wrapper">
+    <div class="confirmation-container">
+      <div class="header-section">
+        <img src="{% static 'img/logo.jpg' %}" alt="لوگوی کلینیک" class="logo">
+        <h2 class="title">تأیید کد پیامکی</h2>
+      </div>
+
+      <div class="details-box">
+        <div class="detail-item" style="flex-direction: column; align-items: center; gap: 1rem;">
+          <p class="pclass" >
+            کد ۴ رقمی به شماره 
+            <span class="spanclass">{{ telhide }}</span>
+            ارسال شد
+          </p>
+          <input type="text" 
+                 name="inputcode_regester"
+                 id="verificationCode" 
+                 maxlength="4" 
+                 placeholder=" ــ  ــ  ــ  ــ"
+                 >
+
+          <div class="timer">
+            <span id="minutes">1</span>
+            :
+            <span id="seconds">00</span>
+            <span>ثانیه تا ارسال مجدد</span>
+          </div>
+        </div>
+      </div>
+        
+        
+        <div class="buttons-group">
+        <button type="submit" 
+                name="buttoncode_repeat" 
+                value="accept"
+                class="btn cancel-btn"
+                id="regesterbuttonrepeat" 
+                disabled>
+          ارسال مجدد
+        </button>
+        <button type="submit"
+                name="buttoncode_send" 
+                value="accept"
+                class="btn pay-btn"
+                onclick="move()">
+          تأیید کد
+        </button>
+        </div>
+    </div>
+  </div>  
+    <label id="etebar"  hidden>{{ etebar }}</label>
+      <div id="myBar" class="w3" hidden>0%</div>
+
+  </form>
+    <script src="{% static "js/materialize.min.js" %}"></script>
+    <label id="etebar"  hidden>{{ etebar }}</label>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src = "{% static "js/codetimer_cantact.js" %}"></script>
+
+</body>
+</html>

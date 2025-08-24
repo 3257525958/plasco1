@@ -1,0 +1,21 @@
+#verificationCode{
+    width: 100%;
+    padding: 12px;
+    font-size: 1.5rem;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    font-family: 'Vazirmatn';
+}
+.timer{
+    color: var(--text-dark);
+    margin-top: 1.5rem;
+}
+.spanclass{
+    color: var(--accent-color);
+    font-weight: bold;
+}
+.pclass{
+    color: var(--text-dark);
+    text-align: center;
+}
