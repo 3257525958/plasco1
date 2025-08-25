@@ -5,7 +5,7 @@ import datetime
 from jalali_date import date2jalali,datetime2jalali
 from datetime import timedelta
 from cantact_app.models import accuntmodel,savecodphon,dataacont,phonnambermodel
-from cantact_app.forms import accuntform
+# from cantact_app.forms import accuntform
 from kavenegar import *
 import random
 from django.contrib.auth.models import User
@@ -831,7 +831,7 @@ def saveaccantdef(request):
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from .models import accuntmodel
-from .forms import accuntform
+# from .forms import accuntform
 # from  import modify_url, compress_and_move_images, format_phone_number, dateset
 import datetime
 
@@ -1010,8 +1010,20 @@ from .models import Branch, accuntmodel
 from .forms import BranchForm, BranchAdminForm
 from .utils import convert_persian_to_english
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.db.models import Q
+from django.contrib import messages
+import json
 
-# در فایل cantact_app/views.py
+from .models import Branch, accuntmodel
+from .forms import BranchForm, BranchAdminForm
+from .utils import convert_persian_to_english
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class BranchCreateView(View):
     def get(self, request):
@@ -1019,7 +1031,21 @@ class BranchCreateView(View):
         return render(request, 'branch_form.html', {'form': form})
 
     def post(self, request):
-        form = BranchForm(request.POST)
+        # پردازش داده‌های فروشندگان
+        post_data = request.POST.copy()
+        sellers_str = post_data.get('sellers', '')
+
+        if sellers_str:
+            # تبدیل رشته به لیست اعداد
+            try:
+                sellers_list = [int(seller_id) for seller_id in sellers_str.split(',') if seller_id.strip()]
+                post_data.setlist('sellers', sellers_list)
+            except ValueError:
+                messages.error(request, 'فرمت داده فروشندگان نامعتبر است.')
+                form = BranchForm(post_data)
+                return render(request, 'branch_form.html', {'form': form})
+
+        form = BranchForm(post_data)
         if form.is_valid():
             branch = form.save()
             messages.success(request, 'شعبه با موفقیت ایجاد شد.')
@@ -1027,6 +1053,34 @@ class BranchCreateView(View):
         else:
             messages.error(request, 'خطا در ایجاد شعبه. لطفاً اطلاعات را بررسی کنید.')
             return render(request, 'branch_form.html', {'form': form})
+
+
+def branch_edit(request, pk):
+    branch = get_object_or_404(Branch, pk=pk)
+    if request.method == 'POST':
+        # پردازش داده‌های فروشندگان
+        post_data = request.POST.copy()
+        sellers_str = post_data.get('sellers', '')
+
+        if sellers_str:
+            # تبدیل رشته به لیست اعداد
+            try:
+                sellers_list = [int(seller_id) for seller_id in sellers_str.split(',') if seller_id.strip()]
+                post_data.setlist('sellers', sellers_list)
+            except ValueError:
+                messages.error(request, 'فرمت داده فروشندگان نامعتبر است.')
+                form = BranchForm(post_data, instance=branch)
+                return render(request, 'branch_form.html', {'form': form, 'edit_mode': True})
+
+        form = BranchForm(post_data, instance=branch)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'شعبه با موفقیت ویرایش شد.')
+            return redirect('cantact_app:branch_list')
+    else:
+        form = BranchForm(instance=branch)
+
+    return render(request, 'branch_form.html', {'form': form, 'edit_mode': True})
 
 
 def branch_list(request):
@@ -1038,19 +1092,6 @@ def branch_detail(request, pk):
     branch = get_object_or_404(Branch, pk=pk)
     return render(request, 'branch_detail.html', {'branch': branch})
 
-
-def branch_edit(request, pk):
-    branch = get_object_or_404(Branch, pk=pk)
-    if request.method == 'POST':
-        form = BranchForm(request.POST, instance=branch)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'شعبه با موفقیت ویرایش شد.')
-            return redirect('cantact_app:branch_list')
-    else:
-        form = BranchForm(instance=branch)
-
-    return render(request, 'branch_form.html', {'form': form, 'edit_mode': True})
 
 
 def branch_delete(request, pk):

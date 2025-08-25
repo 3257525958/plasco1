@@ -274,154 +274,193 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // تابع تبدیل اعداد فارسی و عربی به انگلیسی
-        function convertPersianToEnglishNumbers(input) {
-            if (!input) return input;
-            
-            const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-            const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-            
-            let output = input;
-            for (let i = 0; i < 10; i++) {
-                let persianRegex = new RegExp(persianNumbers[i], 'g');
-                let arabicRegex = new RegExp(arabicNumbers[i], 'g');
-                output = output.replace(persianRegex, i).replace(arabicRegex, i);
-            }
-            
-            return output;
-        }
 
-        $(document).ready(function() {
-            let selectedSellers = [];
-            
-            // مقداردهی اولیه فروشندگان انتخاب شده در حالت ویرایش
-            {% if form.sellers.value %}
-                {% for seller in form.sellers.value %}
-                    selectedSellers.push({
-                        id: "{{ seller.id }}",
-                        name: "{{ seller.firstname }} {{ seller.lastname }}",
-                        melicode: "{{ seller.melicode }}"
-                    });
-                {% endfor %}
-            {% endif %}
-            
-            // جستجوی فروشنده
-            $('#seller-search').on('input', function() {
-                let query = $(this).val().trim();
-                query = convertPersianToEnglishNumbers(query);
-                const $results = $('#seller-results');
+// تابع تبدیل اعداد فارسی و عربی به انگلیسی
+function convertPersianToEnglishNumbers(input) {
+    if (!input) return input;
+    
+    const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    
+    let output = input;
+    for (let i = 0; i < 10; i++) {
+        let persianRegex = new RegExp(persianNumbers[i], 'g');
+        let arabicRegex = new RegExp(arabicNumbers[i], 'g');
+        output = output.replace(persianRegex, i).replace(arabicRegex, i);
+    }
+    
+    return output;
+}
+
+$(document).ready(function() {
+    let selectedSellers = [];
+    
+    // مقداردهی اولیه فروشندگان انتخاب شده در حالت ویرایش
+    {% if form.sellers.value %}
+        {% for seller in form.sellers.value %}
+            selectedSellers.push({
+                id: "{{ seller.id }}",
+                name: "{{ seller.firstname }} {{ seller.lastname }}",
+                melicode: "{{ seller.melicode }}"
+            });
+        {% endfor %}
+    {% endif %}
+    
+    // جستجوی فروشنده
+    $('#seller-search').on('input', function() {
+        let query = $(this).val().trim();
+        query = convertPersianToEnglishNumbers(query);
+        const $results = $('#seller-results');
+        
+        if (query.length < 2) {
+            $results.empty().hide();
+            return;
+        }
+        
+        $.ajax({
+            url: "{% url 'cantact_app:search_sellers' %}",
+            data: { q: query },
+            dataType: 'json',
+            success: function(data) {
+                $results.empty();
                 
-                if (query.length < 2) {
-                    $results.empty().hide();
-                    return;
-                }
-                
-                $.ajax({
-                    url: "{% url 'cantact_app:search_sellers' %}",
-                    data: { q: query },
-                    dataType: 'json',
-                    success: function(data) {
-                        $results.empty();
-                        
-                        if (data.results.length > 0) {
-                            data.results.forEach(seller => {
-                                // بررسی تکراری نبودن فروشنده
-                                const isSelected = selectedSellers.some(s => s.id == seller.id);
-                                if (!isSelected) {
-                                    $results.append(`
-                                        <div class="seller-result-item" 
-                                             data-id="${seller.id}"
-                                             data-name="${seller.firstname} ${seller.lastname}"
-                                             data-melicode="${seller.melicode}">
-                                            <i class="fas fa-user"></i> 
-                                            ${seller.firstname} ${seller.lastname} - کد ملی: ${seller.melicode}
-                                        </div>
-                                    `);
-                                }
-                            });
-                        } else {
+                if (data.results.length > 0) {
+                    data.results.forEach(seller => {
+                        // بررسی تکراری نبودن فروشنده
+                        const isSelected = selectedSellers.some(s => s.id == seller.id);
+                        if (!isSelected) {
                             $results.append(`
-                                <div class="seller-result-item">
-                                    <i class="fas fa-exclamation-circle"></i> 
-                                    فروشنده ای یافت نشد
+                                <div class="seller-result-item" 
+                                     data-id="${seller.id}"
+                                     data-name="${seller.firstname} ${seller.lastname}"
+                                     data-melicode="${seller.melicode}">
+                                    <i class="fas fa-user"></i> 
+                                    ${seller.firstname} ${seller.lastname} - کد ملی: ${seller.melicode}
                                 </div>
                             `);
                         }
-                        
-                        $results.show();
-                    },
-                    error: function() {
-                        $results.append(`
-                            <div class="seller-result-item">
-                                <i class="fas fa-exclamation-triangle"></i> 
-                                خطا در ارتباط با سرور
-                            </div>
-                        `);
-                        $results.show();
-                    }
-                });
-            });
-            
-            // انتخاب فروشنده از نتایج جستجو
-            $('#seller-results').on('click', '.seller-result-item', function() {
-                const sellerId = $(this).data('id');
-                const sellerName = $(this).data('name');
-                const melicode = $(this).data('melicode');
-                
-                // بررسی تکراری نبودن فروشنده
-                if (!selectedSellers.some(seller => seller.id == sellerId)) {
-                    selectedSellers.push({
-                        id: sellerId,
-                        name: sellerName,
-                        melicode: melicode
                     });
-                    
-                    updateSelectedSellersList();
-                }
-                
-                $('#seller-search').val('');
-                $('#seller-results').empty().hide();
-            });
-            
-            // به روزرسانی لیست فروشندگان انتخاب شده
-            function updateSelectedSellersList() {
-                const $container = $('#selected-sellers-list');
-                $container.empty();
-                
-                selectedSellers.forEach(seller => {
-                    $container.append(`
-                        <div class="selected-seller" data-id="${seller.id}">
-                            <span class="remove-seller" data-id="${seller.id}">
-                                <i class="fas fa-times-circle"></i>
-                            </span>
-                            ${seller.name} (${seller.melicode})
+                } else {
+                    $results.append(`
+                        <div class="seller-result-item">
+                            <i class="fas fa-exclamation-circle"></i> 
+                            فروشنده ای یافت نشد
                         </div>
                     `);
-                });
-                
-                // به روزرسانی فیلد مخفی
-                $('#selected-sellers').val(selectedSellers.map(s => s.id).join(','));
-            }
-            
-            // حذف فروشنده از لیست انتخاب شده
-            $('#selected-sellers-list').on('click', '.remove-seller', function() {
-                const sellerId = $(this).data('id');
-                selectedSellers = selectedSellers.filter(seller => seller.id != sellerId);
-                updateSelectedSellersList();
-            });
-            
-            // مخفی کردن نتایج جستجو هنگام کلیک خارج
-            $(document).on('click', function(e) {
-                if (!$('#seller-results').is(e.target) && 
-                    $('#seller-results').has(e.target).length === 0 &&
-                    !$('#seller-search').is(e.target)) {
-                    $('#seller-results').hide();
                 }
+                
+                $results.show();
+            },
+            error: function() {
+                $results.append(`
+                    <div class="seller-result-item">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        خطا در ارتباط با سرور
+                    </div>
+                `);
+                $results.show();
+            }
+        });
+    });
+    
+    // انتخاب فروشنده از نتایج جستجو
+    $('#seller-results').on('click', '.seller-result-item', function() {
+        const sellerId = $(this).data('id');
+        const sellerName = $(this).data('name');
+        const melicode = $(this).data('melicode');
+        
+        // بررسی تکراری نبودن فروشنده
+        if (!selectedSellers.some(seller => seller.id == sellerId)) {
+            selectedSellers.push({
+                id: sellerId,
+                name: sellerName,
+                melicode: melicode
             });
             
-            // مقداردهی اولیه لیست فروشندگان انتخاب شده
             updateSelectedSellersList();
+        }
+        
+        $('#seller-search').val('');
+        $('#seller-results').empty().hide();
+    });
+    
+    // به روزرسانی لیست فروشندگان انتخاب شده
+    function updateSelectedSellersList() {
+        const $container = $('#selected-sellers-list');
+        $container.empty();
+        
+        selectedSellers.forEach(seller => {
+            $container.append(`
+                <div class="selected-seller" data-id="${seller.id}">
+                    <span class="remove-seller" data-id="${seller.id}">
+                        <i class="fas fa-times-circle"></i>
+                    </span>
+                    ${seller.name} (${seller.melicode})
+                </div>
+            `);
         });
+        
+        // به روزرسانی فیلد مخفی - اطمینان از فرمت صحیح
+        $('#selected-sellers').val(selectedSellers.map(s => s.id).join(','));
+    }
+    
+    // حذف فروشنده از لیست انتخاب شده
+    $('#selected-sellers-list').on('click', '.remove-seller', function() {
+        const sellerId = $(this).data('id');
+        selectedSellers = selectedSellers.filter(seller => seller.id != sellerId);
+        updateSelectedSellersList();
+    });
+    
+    // مخفی کردن نتایج جستجو هنگام کلیک خارج
+    $(document).on('click', function(e) {
+        if (!$('#seller-results').is(e.target) && 
+            $('#seller-results').has(e.target).length === 0 &&
+            !$('#seller-search').is(e.target)) {
+            $('#seller-results').hide();
+        }
+    });
+    
+    // مقداردهی اولیه لیست فروشندگان انتخاب شده
+    updateSelectedSellersList();
+    
+    // اعتبارسنجی فرم
+    $('#branch-form').submit(function(e) {
+        let isValid = true;
+        
+        // بررسی نام شعبه
+        const name = $('input[name="name"]').val().trim();
+        if (!name) {
+            $('input[name="name"]').addClass('is-invalid');
+            isValid = false;
+        } else {
+            $('input[name="name"]').removeClass('is-invalid');
+        }
+        
+        // بررسی آدرس شعبه
+        const address = $('textarea[name="address"]').val().trim();
+        if (!address) {
+            $('textarea[name="address"]').addClass('is-invalid');
+            isValid = false;
+        } else {
+            $('textarea[name="address"]').removeClass('is-invalid');
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            $('#message-container').html(`
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    لطفاً فیلدهای ضروری را پر کنید.
+                </div>
+            `);
+            
+            // اسکرول به بالای فرم برای نمایش خطاها
+            $('html, body').animate({
+                scrollTop: $('.form-container').offset().top
+            }, 500);
+        }
+    });
+});
     </script>
 </body>
 </html>

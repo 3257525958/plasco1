@@ -1,25 +1,4 @@
 from django import forms
-from cantact_app.models import accuntmodel
-
-# class accuntform(forms.ModelForm):
-#     class Meta:
-#         model = accuntmodel
-#         exclude = ('firstname','lastname','melicode','phonnumber','berthday'),
-        # labels = {
-        #     "imageuser" : ('عکسی برای پروفایل خودتان انتخاب کنید'),
-        # }
-        # widgets = {
-        #     "imageuser" : forms.Textarea(attrs = { "class":"box",}),
-        # }
-class accuntform(forms.ModelForm):
-    class Meta:
-        model = accuntmodel
-        fields = '__all__'  # یا فیلدهای مورد نیاز را مشخص کنید
-        widgets = {
-            'profile_picture': forms.FileInput(attrs={'accept': 'image/*'})
-        }
-# ---------------------------------------------------------------------------------
-from django import forms
 from .models import Branch, BranchAdmin
 
 
@@ -36,6 +15,17 @@ class BranchForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['sellers'].required = False
+
+    def clean_sellers(self):
+        # اطمینان از اینکه sellers همیشه یک لیست است
+        sellers = self.cleaned_data.get('sellers')
+        if isinstance(sellers, str):
+            # اگر sellers یک رشته است، آن را به لیست تبدیل کنید
+            try:
+                sellers = [int(seller_id) for seller_id in sellers.split(',') if seller_id.strip()]
+            except ValueError:
+                raise forms.ValidationError('فرمت داده فروشندگان نامعتبر است.')
+        return sellers
 
 
 class BranchAdminForm(forms.ModelForm):
