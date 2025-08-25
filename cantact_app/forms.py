@@ -18,3 +18,31 @@ class accuntform(forms.ModelForm):
         widgets = {
             'profile_picture': forms.FileInput(attrs={'accept': 'image/*'})
         }
+# ---------------------------------------------------------------------------------
+from django import forms
+from .models import Branch, BranchAdmin
+
+
+class BranchForm(forms.ModelForm):
+    class Meta:
+        model = Branch
+        fields = ['name', 'address', 'sellers']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نام شعبه'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'آدرس شعبه'}),
+            'sellers': forms.SelectMultiple(attrs={'class': 'form-control d-none', 'id': 'selected-sellers'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['sellers'].required = False
+
+
+class BranchAdminForm(forms.ModelForm):
+    class Meta:
+        model = BranchAdmin
+        fields = ['branch', 'admin_user']
+        widgets = {
+            'branch': forms.Select(attrs={'class': 'form-control'}),
+            'admin_user': forms.Select(attrs={'class': 'form-control'}),
+        }

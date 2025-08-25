@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حذف شعبه</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>حذف شعبه</h1>
+        <p>آیا از حذف شعبه "{{ branch.name }}" مطمئن هستید؟</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">بله، حذف شود</button>
+            <a href="{% url 'cantact_app:branch_list' %}" class="btn btn-secondary">لغو</a>
+        </form>
+    </div>
+</body>
+</html>
