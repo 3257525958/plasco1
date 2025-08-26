@@ -139,7 +139,6 @@
             transition: all 0.3s;
         }
 
-        /* افزایش سایز فیلدهای قیمت */
         .price-input {
             font-size: 20px !important;
             font-weight: bold;
@@ -152,23 +151,28 @@
             box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
         }
 
-        /* کاهش سایز فیلد محل چیدن جنس */
-        .invoice-table textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            text-align: right;
-            font-size: 14px;
-            resize: vertical;
-            min-height: 50px;
-            font-family: 'Vazirmatn', sans-serif;
+        .invoice-summary {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            border: 1px solid #ddd;
         }
 
-        .invoice-table textarea:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
-            outline: none;
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .summary-item.total-payable {
+            font-weight: bold;
+            font-size: 20px;
+            color: #2E7D32;
+            border-top: 2px solid #ddd;
+            padding-top: 10px;
+            margin-top: 10px;
         }
 
         .actions {
@@ -233,7 +237,6 @@
             font-size: 18px;
         }
 
-        /* افزایش z-index برای باکس جستجو */
         .seller-search-container {
             position: relative;
             width: 100%;
@@ -265,7 +268,7 @@
             border: 2px solid var(--primary-color);
             border-radius: 10px;
             box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-            z-index: 1002; /* افزایش z-index */
+            z-index: 1002;
             display: none;
             max-height: 400px;
             overflow-y: auto;
@@ -315,7 +318,6 @@
             gap: 8px;
         }
 
-        /* افزایش z-index برای باکس جستجوی محصولات */
         .product-search-container {
             position: relative;
             z-index: 1000;
@@ -330,7 +332,7 @@
             border: 2px solid var(--primary-color);
             border-radius: 10px;
             box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-            z-index: 1003; /* افزایش z-index */
+            z-index: 1003;
             display: none;
             max-height: 300px;
             overflow-y: auto;
@@ -364,7 +366,6 @@
             vertical-align: middle !important;
         }
 
-        /* استایل‌های مخصوص موبایل - عمودی */
         @media (max-width: 992px) {
             .header-section {
                 flex-direction: column;
@@ -440,8 +441,7 @@
                 font-size: 16px;
             }
             
-            .invoice-table input,
-            .invoice-table textarea {
+            .invoice-table input {
                 width: 100%;
                 padding: 12px;
                 font-size: 16px;
@@ -449,7 +449,6 @@
                 border: 1px solid #ddd;
             }
             
-            /* تنظیمات موبایل برای فیلدهای قیمت */
             .price-input {
                 font-size: 18px !important;
                 padding: 12px !important;
@@ -506,13 +505,11 @@
                 padding: 8px 0;
             }
             
-            .invoice-table input,
-            .invoice-table textarea {
+            .invoice-table input {
                 padding: 10px;
                 font-size: 14px;
             }
             
-            /* تنظیمات موبایل برای فیلدهای قیمت */
             .price-input {
                 font-size: 16px !important;
                 padding: 10px !important;
@@ -560,12 +557,10 @@
             <table class="invoice-table">
                 <thead>
                     <tr>
-                        <th width="25%">نام کالا</th>
-                        <th width="12%">قیمت واحد (تومان)</th>
-                        <th width="12%">قیمت فروش (تومان)</th>
-                        <th width="8%">تعداد</th>
-                        <th width="8%">تخفیف (%)</th>
-                        <th width="25%">محل چیدن جنس</th>
+                        <th width="40%">نام کالا</th>
+                        <th width="20%">قیمت خرید (تومان)</th>
+                        <th width="15%">تعداد</th>
+                        <th width="15%">تخفیف (تومان)</th>
                         <th width="10%">عملیات</th>
                     </tr>
                 </thead>
@@ -584,15 +579,43 @@
                                 <div class="search-results"></div>
                             </div>
                         </td>
-                        <td data-label="قیمت واحد"><input type="number" name="unit_price[]" class="unit-price price-input" min="0" ></td>
-                        <td data-label="قیمت فروش"><input type="number" name="selling_price[]" class="selling-price price-input" min="0" value="0"></td>
-                        <td data-label="تعداد"><input type="number" name="quantity[]" min="1" value="1" required></td>
-                        <td data-label="تخفیف (%)"><input type="number" name="discount[]" min="0" max="100" value="0"></td>
-                        <td data-label="محل چیدن جنس"><textarea name="location[]" maxlength="300" placeholder="حداکثر 300 کاراکتر"></textarea></td>
-                        <td data-label="عملیات"><button type="button" class="btn btn-danger remove-item"><i class="fas fa-trash"></i></button></td>
+                        <td data-label="قیمت خرید">
+                            <input type="number" name="unit_price[]" class="unit-price price-input" min="0" step="100" required>
+                        </td>
+                        <td data-label="تعداد">
+                            <input type="number" name="quantity[]" min="1" value="1" required>
+                        </td>
+                        <td data-label="تخفیف">
+                            <input type="number" name="discount[]" min="0" value="0" step="100">
+                        </td>
+                        <td data-label="عملیات">
+                            <button type="button" class="btn btn-danger remove-item">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
                     </tr>
                 </tbody>
             </table>
+
+            <!-- خلاصه فاکتور -->
+            <div class="invoice-summary">
+                <div class="summary-item">
+                    <span>تعداد اقلام:</span>
+                    <span id="total-items">0</span>
+                </div>
+                <div class="summary-item">
+                    <span>جمع کل فاکتور:</span>
+                    <span id="total-amount">0 تومان</span>
+                </div>
+                <div class="summary-item">
+                    <span>تخفیف کل:</span>
+                    <span id="total-discount">0 تومان</span>
+                </div>
+                <div class="summary-item total-payable">
+                    <span>قابل پرداخت:</span>
+                    <span id="final-amount">0 تومان</span>
+                </div>
+            </div>
 
             <div class="actions">
                 <button type="button" id="back-to-home" class="btn btn-back">
@@ -627,7 +650,32 @@
         return output;
     }
 
+    // محاسبه实时 جمع‌های فاکتور
+    function calculateTotals() {
+        let totalItems = 0;
+        let totalAmount = 0;
+        let totalDiscount = 0;
+        
+        $('.item-row').each(function() {
+            const quantity = parseInt($(this).find('input[name="quantity[]"]').val()) || 0;
+            const unitPrice = parseFloat($(this).find('input[name="unit_price[]"]').val()) || 0;
+            const discount = parseFloat($(this).find('input[name="discount[]"]').val()) || 0;
+            
+            totalItems += quantity;
+            totalAmount += quantity * unitPrice;
+            totalDiscount += discount;
+        });
+        
+        $('#total-items').text(totalItems);
+        $('#total-amount').text(totalAmount.toLocaleString('fa-IR') + ' تومان');
+        $('#total-discount').text(totalDiscount.toLocaleString('fa-IR') + ' تومان');
+        $('#final-amount').text((totalAmount - totalDiscount).toLocaleString('fa-IR') + ' تومان');
+    }
+
     $(document).ready(function() {
+        // محاسبه اولیه هنگام لود صفحه
+        calculateTotals();
+
         // جستجوی فروشنده
         $('#seller-search').on('input', function() {
             let query = $(this).val().trim();
@@ -754,12 +802,10 @@
                     $row.find('.product-id').val('');
                     $row.find('.product-name').val($(this).data('name'));
                     $row.find('.unit-price').val('').focus();
-                    $row.find('.selling-price').val('0');
                 } else {
                     $row.find('.product-id').val('');
                     $row.find('.product-name').val($(this).data('name'));
                     $row.find('.unit-price').val('').focus();
-                    $row.find('.selling-price').val('0');
                 }
                 
                 $results.empty().hide();
@@ -787,25 +833,42 @@
                         <div class="search-results"></div>
                     </div>
                 </td>
-                <td data-label="قیمت واحد"><input type="number" name="unit_price[]" class="unit-price price-input" min="0" step="1000" required></td>
-                <td data-label="قیمت فروش"><input type="number" name="selling_price[]" class="selling-price price-input" min="0" step="1000" required value="0"></td>
-                <td data-label="تعداد"><input type="number" name="quantity[]" min="1" value="1" required></td>
-                <td data-label="تخفیف (%)"><input type="number" name="discount[]" min="0" max="100" value="0"></td>
-                <td data-label="محل چیدن جنس"><textarea name="location[]" maxlength="300" placeholder="حداکثر 300 کاراکتر"></textarea></td>
-                <td data-label="عملیات"><button type="button" class="btn btn-danger remove-item"><i class="fas fa-trash"></i></button></td>
+                <td data-label="قیمت خرید">
+                    <input type="number" name="unit_price[]" class="unit-price price-input" min="0" step="100" required>
+                </td>
+                <td data-label="تعداد">
+                    <input type="number" name="quantity[]" min="1" value="1" required>
+                </td>
+                <td data-label="تخفیف">
+                    <input type="number" name="discount[]" min="0" value="0" step="100">
+                </td>
+                <td data-label="عملیات">
+                    <button type="button" class="btn btn-danger remove-item">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
             `);
             
             $('#items-container').append(newRow);
             initProductSearch(newRow.find('.product-name'));
+            
+            // محاسبه مجدد جمع‌ها
+            calculateTotals();
         });
         
         // حذف سطر
         $(document).on('click', '.remove-item', function() {
             if ($('#items-container tr').length > 1) {
                 $(this).closest('tr').remove();
+                calculateTotals();
             } else {
                 alert('حداقل یک کالا باید وجود داشته باشد');
             }
+        });
+        
+        // محاسبه مجدد هنگام تغییر مقادیر
+        $(document).on('input', 'input[name="quantity[]"], input[name="unit_price[]"], input[name="discount[]"]', function() {
+            calculateTotals();
         });
         
         // اعتبارسنجی فرم

@@ -53,6 +53,155 @@ from django.urls import reverse
 from django.utils.http import urlencode
 
 
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.utils import timezone
+from django.db import transaction
+from django.db.models import Q
+from django.contrib import messages
+from escpos.printer import Serial
+
+from .models import Froshande, Invoice, InvoiceItem, Product
+import jdatetime
+import datetime
+from decimal import Decimal
+import logging
+from .forms import FroshandeForm, InvoiceEditForm
+logger = logging.getLogger(__name__)
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.utils.http import urlencode
+from django.contrib import messages
+from .models import Froshande, Invoice, InvoiceItem, Product
+import base64
+from io import BytesIO
+import barcode
+from barcode.writer import ImageWriter
+import logging
+
+def create_invoice(request):
+    sellers = Froshande.objects.all()
+
+    # دریافت زمان فعلی با منطقه زمانی
+    now = timezone.localtime(timezone.now())
+
+    # تبدیل به تاریخ شمسی
+    jalali_date = jdatetime.datetime.fromgregorian(datetime=now)
+
+    # تولید شماره سریال با فرمت YYMMDDHHMMSS
+    serial_number = jalali_date.strftime('%y%m%d%H%M%S')
+    serial_number_persian = convert_to_persian_digits(serial_number)
+
+    # تبدیل تاریخ امروز به شمسی برای نمایش در فرم
+    today_jalali = jalali_date.strftime('%Y/%m/%d')
+    today_jalali = convert_to_persian_digits(today_jalali)
+
+    if request.method == 'POST':
+        # بررسی تأیید کاربر
+        if 'confirmed' not in request.POST:
+            # ذخیره داده‌ها به صورت صحیح در session
+            request.session['invoice_data'] = {
+                'seller': request.POST.get('seller'),
+                'product_ids': request.POST.getlist('product_id[]'),
+                'product_names': request.POST.getlist('product_name[]'),
+                'quantities': request.POST.getlist('quantity[]'),
+                'unit_prices': request.POST.getlist('unit_price[]'),
+                'discounts': request.POST.getlist('discount[]'),
+                'serial_number': serial_number,
+            }
+            return redirect('confirm_invoice')
+
+        try:
+            with transaction.atomic():
+                # بازیابی داده‌ها از session
+                invoice_data = request.session.get('invoice_data', {})
+                if not invoice_data:
+                    messages.error(request, 'داده‌های فاکتور یافت نشد. لطفاً دوباره تلاش کنید.')
+                    return redirect('create_invoice')
+
+                seller_id = invoice_data.get('seller')
+                date = now.date()
+
+                # ایجاد فاکتور با شماره سریال جدید
+                invoice = Invoice.objects.create(
+                    seller_id=seller_id,
+                    date=date,
+                    serial_number=serial_number
+                )
+
+                # اضافه کردن آیتم‌ها با استفاده از لیست‌ها
+                product_ids = invoice_data.get('product_ids', [])
+                product_names = invoice_data.get('product_names', [])
+                quantities = invoice_data.get('quantities', [])
+                unit_prices = invoice_data.get('unit_prices', [])
+                discounts = invoice_data.get('discounts', [])
+
+                for i in range(len(product_names)):
+                    if product_names[i]:
+                        product = None
+                        if i < len(product_ids) and product_ids[i]:
+                            try:
+                                product = Product.objects.get(id=product_ids[i])
+                            except Product.DoesNotExist:
+                                logger.warning(f"محصول با شناسه {product_ids[i]} یافت نشد")
+                                pass
+
+                        # تبدیل مقادیر به انواع داده مناسب با مدیریت خطا
+                        try:
+                            quantity_val = int(quantities[i]) if i < len(quantities) else 1
+                        except (ValueError, TypeError):
+                            quantity_val = 1
+
+                        try:
+                            unit_price_val = Decimal(unit_prices[i]) if i < len(unit_prices) else Decimal(0)
+                        except (ValueError, TypeError):
+                            unit_price_val = Decimal(0)
+
+                        try:
+                            discount_val = Decimal(discounts[i]) if i < len(discounts) else Decimal(0)
+                        except (ValueError, TypeError):
+                            discount_val = Decimal(0)
+
+                        # ایجاد آیتم فاکتور
+                        item = InvoiceItem.objects.create(
+                            invoice=invoice,
+                            product=product,
+                            product_name=product_names[i],
+                            quantity=quantity_val,
+                            unit_price=unit_price_val,
+                            discount=discount_val,
+                            item_number=i + 1
+                        )
+
+                # محاسبه و ذخیره جمع کل قابل پرداخت
+                invoice.total_payable = invoice.total_amount - invoice.total_discount
+                invoice.save()
+
+                # حذف داده‌های موقت از session
+                if 'invoice_data' in request.session:
+                    del request.session['invoice_data']
+
+                messages.success(request, 'فاکتور با موفقیت ثبت شد')
+                return redirect('invoice_detail', invoice_id=invoice.id)
+
+        except Exception as e:
+            logger.exception("Error in create_invoice")
+            return render(request, 'invoice_form.html', {
+                'sellers': sellers,
+                'today_jalali': today_jalali,
+                'serial_number': serial_number_persian,
+                'error_message': f'خطا در ایجاد فاکتور: لطفاً داده‌ها را بررسی کنید'
+            })
+
+    return render(request, 'invoice_form.html', {
+        'sellers': sellers,
+        'today_jalali': today_jalali,
+        'serial_number': serial_number_persian
+    })
+
+
 def generate_barcode_base64(barcode_value, module_width=0.2, module_height=15):
     """تولید بارکد به صورت base64 با تنظیم عرض و ارتفاع میله‌ها"""
     try:
@@ -224,139 +373,6 @@ def convert_to_persian_digits(text):
     return ''.join(persian_digits[int(d)] if d.isdigit() else d for d in str(text))
 
 
-def create_invoice(request):
-    sellers = Froshande.objects.all()
-
-    # دریافت زمان فعلی با منطقه زمانی
-    now = timezone.localtime(timezone.now())
-
-    # تبدیل به تاریخ شمسی
-    jalali_date = jdatetime.datetime.fromgregorian(datetime=now)
-
-    # تولید شماره سریال با فرمت YYMMDDHHMMSS
-    serial_number = jalali_date.strftime('%y%m%d%H%M%S')
-    serial_number_persian = convert_to_persian_digits(serial_number)
-
-    # تبدیل تاریخ امروز به شمسی برای نمایش در فرم
-    today_jalali = jalali_date.strftime('%Y/%m/%d')
-    today_jalali = convert_to_persian_digits(today_jalali)
-
-    if request.method == 'POST':
-        # بررسی تأیید کاربر
-        if 'confirmed' not in request.POST:
-            # ذخیره داده‌ها به صورت صحیح در session
-            request.session['invoice_data'] = {
-                'seller': request.POST.get('seller'),
-                'product_ids': request.POST.getlist('product_id[]'),
-                'product_names': request.POST.getlist('product_name[]'),
-                'quantities': request.POST.getlist('quantity[]'),
-                'unit_prices': request.POST.getlist('unit_price[]'),
-                'selling_prices': request.POST.getlist('selling_price[]'),
-                # اضافه کردن فیلدهای جدید
-                'discounts': request.POST.getlist('discount[]'),
-                'locations': request.POST.getlist('location[]'),
-                'serial_number': serial_number,
-            }
-            return redirect('confirm_invoice')
-
-        try:
-            with transaction.atomic():
-                # بازیابی داده‌ها از session
-                invoice_data = request.session.get('invoice_data', {})
-                if not invoice_data:
-                    messages.error(request, 'داده‌های فاکتور یافت نشد. لطفاً دوباره تلاش کنید.')
-                    return redirect('create_invoice')
-
-                seller_id = invoice_data.get('seller')
-                date = now.date()
-
-                # ایجاد فاکتور با شماره سریال جدید
-                invoice = Invoice.objects.create(
-                    seller_id=seller_id,
-                    date=date,
-                    serial_number=serial_number
-                )
-                invoice.save()
-
-                # اضافه کردن آیتم‌ها با استفاده از لیست‌ها
-                product_ids = invoice_data.get('product_ids', [])
-                product_names = invoice_data.get('product_names', [])
-                quantities = invoice_data.get('quantities', [])
-                unit_prices = invoice_data.get('unit_prices', [])
-                selling_prices = invoice_data.get('selling_prices', [])
-                # اضافه کردن فیلدهای جدید
-                discounts = invoice_data.get('discounts', [])
-                locations = invoice_data.get('locations', [])
-
-                for i in range(len(product_names)):
-                    if product_names[i]:
-                        product = None
-                        if i < len(product_ids) and product_ids[i]:
-                            try:
-                                product = Product.objects.get(id=product_ids[i])
-                            except Product.DoesNotExist:
-                                logger.warning(f"محصول با شناسه {product_ids[i]} یافت نشد")
-                                pass
-
-                        # تبدیل مقادیر به انواع داده مناسب با مدیریت خطا
-                        try:
-                            quantity_val = int(quantities[i]) if i < len(quantities) else 1
-                        except (ValueError, TypeError):
-                            quantity_val = 1
-
-                        try:
-                            unit_price_val = Decimal(unit_prices[i]) if i < len(unit_prices) else Decimal(0)
-                        except (ValueError, TypeError):
-                            unit_price_val = Decimal(0)
-
-                        try:
-                            selling_price_val = Decimal(selling_prices[i]) if i < len(selling_prices) else Decimal(0)
-                        except (ValueError, TypeError):
-                            selling_price_val = Decimal(0)
-
-                        # تبدیل مقادیر جدید
-                        try:
-                            discount_val = Decimal(discounts[i]) if i < len(discounts) else Decimal(0)
-                        except (ValueError, TypeError):
-                            discount_val = Decimal(0)
-
-                        location_val = locations[i] if i < len(locations) else ""
-
-                        # ایجاد آیتم فاکتور
-                        item = InvoiceItem.objects.create(
-                            invoice=invoice,
-                            product=product,
-                            product_name=product_names[i],
-                            quantity=quantity_val,
-                            unit_price=unit_price_val,
-                            selling_price=selling_price_val,
-                            # اضافه کردن فیلدهای جدید
-                            discount=discount_val,
-                            location=location_val,
-                            item_number=i + 1
-                        )
-
-                # حذف داده‌های موقت از session
-                if 'invoice_data' in request.session:
-                    del request.session['invoice_data']
-
-                messages.success(request, 'فاکتور با موفقیت ثبت شد')
-                return redirect('invoice_detail', invoice_id=invoice.id)
-
-        except Exception as e:
-            logger.exception("Error in create_invoice")
-            return render(request, 'invoice_form.html', {
-                'sellers': sellers,
-                'today_jalali': today_jalali,
-                'serial_number': serial_number_persian,
-                'error_message': f'خطا در ایجاد فاکتور: لطفاً داده‌ها را بررسی کنید'
-            })
-
-    return render(request, 'invoice_form.html', {
-        'sellers': sellers,
-        'today_jalali': today_jalali,
-        'serial_number': serial_number_persian
-    })
 def search_sellers(request):
     query = request.GET.get('q', '')
 
