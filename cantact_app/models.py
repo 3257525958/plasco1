@@ -53,39 +53,3 @@ class phonnambermodel(models.Model):
     saver = models.CharField(max_length=20 , default="0")
     def __str__(self):
         return f"{self.phonnumber}"
-
-
-# -----------------------------------------------------------
-from django.db import models
-from django.core.exceptions import ValidationError
-import re
-
-
-def validate_english_numbers(value):
-    if value and not re.match(r'^[0-9]*$', value):
-        raise ValidationError('لطفاً فقط از اعداد انگلیسی استفاده کنید.')
-
-
-class Branch(models.Model):
-    name = models.CharField(max_length=100, verbose_name="نام شعبه")
-    address = models.TextField(verbose_name="آدرس شعبه")
-    sellers = models.ManyToManyField('accuntmodel', blank=True, verbose_name="فروشندگان")
-
-    class Meta:
-        verbose_name = "شعبه"
-        verbose_name_plural = "شعب"
-
-    def __str__(self):
-        return self.name
-
-
-class BranchAdmin(models.Model):
-    branch = models.OneToOneField(Branch, on_delete=models.CASCADE, verbose_name="شعبه")
-    admin_user = models.ForeignKey('accuntmodel', on_delete=models.CASCADE, verbose_name="مدیر شعبه")
-
-    class Meta:
-        verbose_name = "مدیر شعبه"
-        verbose_name_plural = "مدیران شعب"
-
-    def __str__(self):
-        return f"{self.admin_user.firstname} {self.admin_user.lastname} - {self.branch.name}"

@@ -1,7 +1,6 @@
 from django.urls import path
 
 from cantact_app import views
-app_name = 'cantact_app'  # این خط را اضافه کنید
 
 urlpatterns = [
     path('login/',views.logindef),
@@ -13,10 +12,5 @@ urlpatterns = [
 
     path('edit-profile/', views.edit_profile, name='edit_profile'),
 
-    path('branch/create/', views.BranchCreateView.as_view(), name='branch_create'),
-    path('branch/list/', views.branch_list, name='branch_list'),
-    path('branch/<int:pk>/', views.branch_detail, name='branch_detail'),
-    path('branch/<int:pk>/edit/', views.branch_edit, name='branch_edit'),
-    path('branch/<int:pk>/delete/', views.branch_delete, name='branch_delete'),
-    path('branch/search-sellers/', views.search_sellers, name='search_sellers'),
+
 ]
