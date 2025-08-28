@@ -997,3 +997,145 @@ def logout_view(request):
     logout(request)
     return redirect('/')
 
+
+# --------------------------ثبت شعب--------------------------------------------------------------
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.db.models import Q
+from django.contrib import messages
+
+from .models import Branch, accuntmodel
+from .forms import BranchForm, BranchAdminForm
+from .utils import convert_persian_to_english
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.db.models import Q
+from django.contrib import messages
+import json
+
+from .models import Branch, accuntmodel
+from .forms import BranchForm, BranchAdminForm
+from .utils import convert_persian_to_english
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class BranchCreateView(View):
+    def get(self, request):
+        form = BranchForm()
+        return render(request, 'branch_form.html', {'form': form})
+
+    def post(self, request):
+        # پردازش داده‌های فروشندگان
+        post_data = request.POST.copy()
+        sellers_str = post_data.get('sellers', '')
+
+        if sellers_str:
+            # تبدیل رشته به لیست اعداد
+            try:
+                sellers_list = [int(seller_id) for seller_id in sellers_str.split(',') if seller_id.strip()]
+                post_data.setlist('sellers', sellers_list)
+            except ValueError:
+                messages.error(request, 'فرمت داده فروشندگان نامعتبر است.')
+                form = BranchForm(post_data)
+                return render(request, 'branch_form.html', {'form': form})
+
+        form = BranchForm(post_data)
+        if form.is_valid():
+            branch = form.save()
+            messages.success(request, 'شعبه با موفقیت ایجاد شد.')
+            return redirect('cantact_app:branch_list')
+        else:
+            messages.error(request, 'خطا در ایجاد شعبه. لطفاً اطلاعات را بررسی کنید.')
+            return render(request, 'branch_form.html', {'form': form})
+
+
+def branch_edit(request, pk):
+    branch = get_object_or_404(Branch, pk=pk)
+    if request.method == 'POST':
+        # پردازش داده‌های فروشندگان
+        post_data = request.POST.copy()
+        sellers_str = post_data.get('sellers', '')
+
+        if sellers_str:
+            # تبدیل رشته به لیست اعداد
+            try:
+                sellers_list = [int(seller_id) for seller_id in sellers_str.split(',') if seller_id.strip()]
+                post_data.setlist('sellers', sellers_list)
+            except ValueError:
+                messages.error(request, 'فرمت داده فروشندگان نامعتبر است.')
+                form = BranchForm(post_data, instance=branch)
+                return render(request, 'branch_form.html', {'form': form, 'edit_mode': True})
+
+        form = BranchForm(post_data, instance=branch)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'شعبه با موفقیت ویرایش شد.')
+            return redirect('cantact_app:branch_list')
+    else:
+        form = BranchForm(instance=branch)
+
+    return render(request, 'branch_form.html', {'form': form, 'edit_mode': True})
+# در فایل cantact_app/views.py
+
+
+def branch_list(request):
+    branches = Branch.objects.all().prefetch_related('sellers')
+    return render(request, 'branch_list.html', {'branches': branches})
+
+
+def branch_detail(request, pk):
+    branch = get_object_or_404(Branch, pk=pk)
+    return render(request, 'branch_detail.html', {'branch': branch})
+
+
+
+
+def branch_delete(request, pk):
+    branch = get_object_or_404(Branch, pk=pk)
+    if request.method == 'POST':
+        branch.delete()
+        messages.success(request, 'شعبه با موفقیت حذف شد.')
+        return redirect('cantact_app:branch_list')
+
+    return render(request, 'branch_confirm_delete.html', {'branch': branch})
+
+
+
+def search_sellers(request):
+    query = request.GET.get('q', '')
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
+    # تبدیل اعداد فارسی به انگلیسی
+    query_english = convert_persian_to_english(query)
+
+    # جستجو در نام، نام خانوادگی و کد ملی
+    sellers = accuntmodel.objects.filter(
+        Q(firstname__icontains=query) |
+        Q(lastname__icontains=query) |
+        Q(melicode__icontains=query) |
+        Q(firstname__icontains=query_english) |
+        Q(lastname__icontains=query_english) |
+        Q(melicode__icontains=query_english)
+    )[:10]
+
+    results = []
+    for seller in sellers:
+        results.append({
+            'id': seller.id,
+            'text': f"{seller.firstname} {seller.lastname} - {seller.melicode}",
+            'firstname': seller.firstname,
+            'lastname': seller.lastname,
+            'melicode': seller.melicode
+        })
+
+    return JsonResponse({'results': results})
+
+
