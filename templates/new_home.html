@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>کلینیک زیبایی دکتر اسدپور</title>
+  <title>فروشگاه پلاستیک و لوازم آشپرخانه موسوی</title>
     <link rel="stylesheet" type="text/css" href="{% static "/css/materialize.min.css" %}">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static  "/css/materialize-rtl.css"%}">
@@ -229,67 +229,78 @@
   <section class="slider-section">
     <div class="carousel slider">
       <div class="carousel-item active">
-        <img src="{% static "/img/login.jpg" %}" alt="تصویر اسلاید 1">
-        <div class="text_style">پاکسازی</div>
+        <img src="{% static "/img/images۱.jpeg" %}" alt="تصویر اسلاید 1">
+        <div class="text_style">با بهترین قیمت</div>
       </div>
       <div class="carousel-item">
-        <img src="{% static "/img/images (1).jpg" %}" alt="تصویر اسلاید 2">
-        <div class="text_style">لیزر موی زائد</div>
+        <img src="{% static "/img/images۲.jpeg" %}" alt="تصویر اسلاید 2">
+        <div class="text_style">با یهترین کیفیت</div>
       </div>
       <div class="carousel-item">
-        <img src="{% static "/img/images (2).jpg" %}" alt="تصویر اسلاید 3">
-        <div class="text_style">جوانسازی و درمان پوست</div>
+        <img src="{% static "/img/images3.jpeg" %}" alt="تصویر اسلاید 3">
+        <div class="text_style">اصیل و با دوام</div>
+      </div>
+      <div class="carousel-item">
+        <img src="{% static "/img/images۴.jpeg" %}" alt="تصویر اسلاید 4">
+        <div class="text_style">تجربه ما در خدمت اعتماد شما</div>
+      </div>
+      <div class="carousel-item">
+        <img src="{% static "/img/images5.jpeg" %}" alt="تصویر اسلاید 5">
+        <div class="text_style">همراه همیشگی</div>
       </div>
     </div>
   </section>
 
 <!-- منوی سریع -->
+
+
+
+<!-- منوی سریع -->
 <section id="quick_section">
   <div class="row menosari">
-    <!-- آیتم ورود همیشه فعال -->
+    <!-- آیتم ورود (همان قبلی) -->
     <a href="cantact/login/" class="quick_item">
       <i class="fas fa-sign-in-alt quick-icon"></i>
       <span>ورود</span>
     </a>
 
-    <!-- سایر آیتم‌ها با شرط فعال بودن -->
-    <a href="{% if profilestatus %}reserv/reserv/{% else %}#{% endif %}" 
-       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">
-      <i class="fas fa-calendar-check quick-icon"></i>
-      <span>رزرو آنلاین</span>
+    <!-- آیتم جدید: صدور فاکتور -->
+    <a href="{% if profilestatus %}dashbord/create-invoice/{% else %}#{% endif %}" 
+       class="quick_item {% if not profilestatus %}disabled{% endif %}">
+      <i class="fas fa-file-export quick-icon"></i>
+      <span>صدور فاکتور</span>
     </a>
 
-    <a href="{% if profilestatus %}dashbord/usb/{% else %}dashbord/usb/{% endif %}"
-       class="quick_item {% if not profilestatus %}{% endif %}">
-{#       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">#}
-      <i class="fas fa-photo-video quick-icon"></i>
-      <span>نمونه کارها</span>
+    <!-- آیتم جدید: انبار -->
+    <a href="{% if profilestatus %}sana/ware/{% else %}#{% endif %}"
+       class="quick_item {% if not profilestatus %}disabled{% endif %}">
+      <i class="fas fa-dolly quick-icon"></i>
+      <span>انبار</span>
     </a>
 
-    <a href="{% if profilestatus %}dashbord/search-invoices/{% else %}dashbord/search-invoices/{% endif %}" 
-       class="quick_item {% if not profilestatus %}{% endif %}">
-{#       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">#}
-      <i class="fas fa-video quick-icon"></i>
-      <span>فیلم آموزشی</span>
+    <!-- آیتم جدید: ثبت فاکتور -->
+    <a href="{% if profilestatus %}dashbord/register-invoice/{% else %}#{% endif %}" 
+       class="quick_item {% if not profilestatus %}disabled{% endif %}">
+      <i class="fas fa-clipboard-list quick-icon"></i>
+      <span>ثبت فاکتور</span>
     </a>
 
-    <a href="{% if profilestatus %}dashbord/create-invoice/{% else %}dashbord/create-invoice/{% endif %}" 
-       class="quick_item {% if not profilestatus %}{% endif %}">
-{#       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">#}
-      <i class="fas fa-file-invoice-dollar quick-icon"></i>
-      <span>صورت حساب</span>
+    <!-- آیتم جدید: چاپ لیبل -->
+    <a href="{% if profilestatus %}dashbord/print-label/{% else %}#{% endif %}" 
+       class="quick_item {% if not profilestatus %}disabled{% endif %}">
+      <i class="fas fa-barcode quick-icon"></i>
+      <span>چاپ لیبل</span>
     </a>
 
-    <a href="{% if profilestatus %}dashbord/sana/froshande/{% else %}dashbord/sana/froshande/{% endif %}" 
-       class="quick_item {% if not profilestatus %}
-{#       disabled#}
-        {% endif %}">
-{#       class="quick_item {% if not profilestatus or user_position == 'دسترسی معمولی' %}disabled{% endif %}">#}
-      <i class="fas fa-tachometer-alt quick-icon"></i>
-      <span>داشبورد من</span>
+    <!-- آیتم جدید: ثبت فروشنده -->
+    <a href="{% if profilestatus %}dashbord/sana/froshande/{% else %}#{% endif %}" 
+       class="quick_item {% if not profilestatus %}disabled{% endif %}">
+      <i class="fas fa-user-plus quick-icon"></i>
+      <span>ثبت فروشنده</span>
     </a> 
   </div>
 </section>
+
   <!-- بخش اخبار -->
   <section id="news_section">
     <div class="news-container">
