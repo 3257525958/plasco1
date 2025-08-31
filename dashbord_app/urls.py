@@ -2,9 +2,17 @@
 
 from django.urls import path
 from . import views
+# app_name = 'dashbord_app'
 
 urlpatterns = [
     path('sana/froshande/', views.froshande_view, name='froshande'),
+    path('sana/froshande/<int:froshande_id>/accounts/', views.froshande_accounts_view, name='froshande_accounts'),
+    path('sana/froshande/<int:froshande_id>/edit/', views.froshande_edit_view, name='froshande_edit'),
+    path('sana/froshande/<int:froshande_id>/delete/', views.froshande_delete_view, name='froshande_delete'),
+    path('sana/froshande/<int:froshande_id>/delete-ajax/', views.froshande_delete_ajax, name='froshande_delete_ajax'),
+    path('sana/froshande/list/', views.froshande_list_view, name='froshande_list'),
+
+
     path('create-invoice/', views.create_invoice, name='create_invoice'),
     path('search-sellers/', views.search_sellers, name='search_sellers'),
     path('search-products/', views.search_products, name='search_products'),
@@ -24,7 +32,5 @@ urlpatterns = [
     path('print-settings/', views.print_settings, name='print_settings'),
 
     path('usb/',views.usb_view, name='usb'),
+
 ]
-
-
-

@@ -45,3 +45,49 @@ class InvoiceEditForm(forms.ModelForm):
             'seller': 'فروشنده',
             'date': 'تاریخ فاکتور',
         }
+
+
+
+# --------------فروشنده----------------------------------
+
+from django import forms
+from .models import Froshande, ContactNumber, BankAccount
+import re
+
+
+class PersianTextValidator:
+    def __call__(self, value):
+        if not re.match(r'^[\u0600-\u06FF\s]+$', value):
+            raise forms.ValidationError('لطفاً فقط از حروف فارسی استفاده کنید.')
+
+
+class FroshandeForm(forms.ModelForm):
+    name = forms.CharField(
+        validators=[PersianTextValidator()],
+        widget=forms.TextInput(attrs={'placeholder': 'نام'})
+    )
+    family = forms.CharField(
+        validators=[PersianTextValidator()],
+        widget=forms.TextInput(attrs={'placeholder': 'نام خانوادگی'})
+    )
+    store_name = forms.CharField(
+        required=False,
+        validators=[PersianTextValidator()],
+        widget=forms.TextInput(attrs={'placeholder': 'اسم فروشگاه'})
+    )
+
+    class Meta:
+        model = Froshande
+        fields = ['name', 'family', 'store_name', 'address']
+
+
+class ContactNumberForm(forms.ModelForm):
+    class Meta:
+        model = ContactNumber
+        fields = ['contact_type', 'number', 'is_primary']
+
+
+class BankAccountForm(forms.ModelForm):
+    class Meta:
+        model = BankAccount
+        fields = ['account_number', 'bank_name', 'card_number', 'sheba_number', 'is_primary']

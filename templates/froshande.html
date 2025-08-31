@@ -7,6 +7,16 @@
   <title>ثبت فروشنده - فروشگاه پلاستیک و لوازم آشپرخانه موسوی</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="{% static 'css/new_froshande.css' %}">
+  <style>
+    .error-message {
+      color: red;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    .persian-only {
+      border-color: red;
+    }
+  </style>
 </head>
 <body>
 
@@ -20,66 +30,83 @@
       <div class="header-section">
         <img src="{% static 'img/logo.jpg' %}" alt="لوگوی کلینیک" class="logo">
         <h2 class="title">ثبت اطلاعات فروشنده</h2>
-        <p class="subtitle">لطفا اطلاعات فروشنده را با دقت وارد نمایید</p>
+        <p class="subtitle">لطفا اطلاعات هویتی فروشنده را با دقت وارد نمایید</p>
       </div>
 
-      <form method="POST" class="signup-form" enctype="multipart/form-data">
+      <form method="POST" class="signup-form" id="froshandeForm">
         {% csrf_token %}
 
         <div class="form-row">
           <div class="input-field">
             <i class="fas fa-user icon"></i>
-            <input type="text" id="name" name="name" placeholder="نام" required>
+            <input type="text" id="name" name="name" placeholder="نام" required 
+                   oninput="validatePersian(this)">
+            <div class="error-message" id="nameError"></div>
           </div>
           <div class="input-field">
             <i class="fas fa-user icon"></i>
-            <input type="text" id="family" name="family" placeholder="نام خانوادگی" required>
+            <input type="text" id="family" name="family" placeholder="نام خانوادگی" required
+                   oninput="validatePersian(this)">
+            <div class="error-message" id="familyError"></div>
           </div>
         </div>
 
         <div class="form-row">
           <div class="input-field">
             <i class="fas fa-store icon"></i>
-            <input type="text" id="store_name" name="store_name" placeholder="اسم فروشگاه">
-          </div>
-          <div class="input-field">
-            <i class="fas fa-mobile-alt icon"></i>
-            <input type="tel" id="mobile" name="mobile" placeholder="تلفن همراه (09...)" >
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="input-field">
-            <i class="fas fa-credit-card icon"></i>
-            <input type="text" id="card_number" name="card_number" placeholder="شماره کارت (16 رقمی)">
-          </div>
-          <div class="input-field">
-            <i class="fas fa-university icon"></i>
-            <input type="text" id="sheba_number" name="sheba_number" placeholder="شماره شبا (IR...)" >
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="input-field">
-            <i class="fas fa-phone-alt icon"></i>
-            <input type="tel" id="phone" name="phone" placeholder="تلفن ثابت">
+            <input type="text" id="store_name" name="store_name" placeholder="اسم فروشگاه"
+                   oninput="validatePersian(this)">
+            <div class="error-message" id="storeError"></div>
           </div>
           <div class="input-field">
             <i class="fas fa-map-marker-alt icon"></i>
-            <input type="text" id="address" name="address" placeholder="آدرس">
+            <input type="text" id="address" name="address" placeholder="آدرس"
+                   oninput="validatePersian(this)">
+            <div class="error-message" id="addressError"></div>
           </div>
         </div>
 
         <button type="submit" class="submit-btn">
-          <i class="fas fa-save"></i>
-          ثبت اطلاعات فروشنده
+          <i class="fas fa-arrow-right"></i>
+          ادامه به ثبت اطلاعات تماس
         </button>
       </form>
     </div>
   </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="{% static 'js/new_froshande.js' %}"></script>
+<script>
+function validatePersian(input) {
+  const persianRegex = /^[\u0600-\u06FF\s]+$/;
+  const errorElement = document.getElementById(input.id + 'Error');
+  
+  if (input.value && !persianRegex.test(input.value)) {
+    input.classList.add('persian-only');
+    errorElement.textContent = 'لطفاً فقط از حروف فارسی استفاده کنید.';
+    return false;
+  } else {
+    input.classList.remove('persian-only');
+    errorElement.textContent = '';
+    return true;
+  }
+}
+
+document.getElementById('froshandeForm').addEventListener('submit', function(e) {
+  const inputs = document.querySelectorAll('input[type="text"]');
+  let isValid = true;
+  
+  inputs.forEach(input => {
+    if (!validatePersian(input)) {
+      isValid = false;
+    }
+  });
+  
+  if (!isValid) {
+    e.preventDefault();
+    alert('لطفاً اطلاعات را به فارسی وارد کنید.');
+  }
+});
+</script>
+
 </body>
 </html>

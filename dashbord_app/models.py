@@ -16,6 +16,8 @@ from django.dispatch import receiver
 
 logger = logging.getLogger(__name__)
 
+from django.db import models
+
 
 class Froshande(models.Model):
     name = models.CharField(
@@ -43,32 +45,6 @@ class Froshande(models.Model):
         null=True,
         help_text="نام فروشگاه یا کسب و کار"
     )
-    card_number = models.CharField(
-        max_length=16,
-        verbose_name="شماره کارت",
-        blank=True,
-        null=True,
-        help_text="شماره کارت بانکی ۱۶ رقمی"
-    )
-    sheba_number = models.CharField(
-        max_length=26,
-        verbose_name="شماره شبا",
-        blank=False,
-        help_text="شماره شبا بانکی ۲۶ رقمی"
-    )
-    phone = models.CharField(
-        max_length=11,
-        verbose_name="تلفن ثابت",
-        blank=True,
-        null=True,
-        help_text="شماره تلفن ثابت با پیش‌شماره"
-    )
-    mobile = models.CharField(
-        max_length=11,
-        verbose_name="تلفن همراه",
-        blank=False,
-        help_text="شماره همراه ۱۱ رقمی"
-    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="تاریخ ایجاد"
@@ -84,14 +60,6 @@ class Froshande(models.Model):
     def get_full_name(self):
         return f"{self.name} {self.family}"
 
-    def get_contact_info(self):
-        return {
-            'mobile': self.mobile,
-            'phone': self.phone,
-            'card': self.card_number,
-            'sheba': self.sheba_number
-        }
-
     class Meta:
         verbose_name = "فروشنده"
         verbose_name_plural = "فروشندگان"
@@ -99,21 +67,86 @@ class Froshande(models.Model):
         indexes = [
             models.Index(fields=['name', 'family']),
             models.Index(fields=['store_name']),
-            models.Index(fields=['mobile']),
-            models.Index(fields=['card_number']),
-            models.Index(fields=['sheba_number']),
         ]
+
+
+class ContactNumber(models.Model):
+    CONTACT_TYPES = [
+        ('mobile', 'تلفن همراه'),
+        ('phone', 'تلفن ثابت'),
+    ]
+
+    froshande = models.ForeignKey(
+        Froshande,
+        on_delete=models.CASCADE,
+        related_name='contact_numbers',
+        verbose_name="فروشنده"
+    )
+    contact_type = models.CharField(
+        max_length=10,
+        choices=CONTACT_TYPES,
+        verbose_name="نوع تماس"
+    )
+    number = models.CharField(
+        max_length=11,
+        verbose_name="شماره تماس",
+        blank=False
+    )
+    is_primary = models.BooleanField(
+        default=False,
+        verbose_name="شماره اصلی"
+    )
+
+    class Meta:
+        verbose_name = "شماره تماس"
+        verbose_name_plural = "شماره‌های تماس"
         constraints = [
             models.UniqueConstraint(
-                fields=['mobile'],
-                name='unique_mobile'
-            ),
-            models.UniqueConstraint(
-                fields=['sheba_number'],
-                name='unique_sheba'
+                fields=['froshande', 'number'],
+                name='unique_contact_per_froshande'
             )
         ]
 
+
+class BankAccount(models.Model):
+    froshande = models.ForeignKey(
+        Froshande,
+        on_delete=models.CASCADE,
+        related_name='bank_accounts',
+        verbose_name="فروشنده"
+    )
+    account_number = models.CharField(
+        max_length=30,
+        verbose_name="شماره حساب",
+        blank=True,
+        null=True
+    )
+    bank_name = models.CharField(
+        max_length=100,
+        verbose_name="نام بانک",
+        blank=True,
+        null=True
+    )
+    card_number = models.CharField(
+        max_length=16,
+        verbose_name="شماره کارت",
+        blank=True,
+        null=True
+    )
+    sheba_number = models.CharField(
+        max_length=26,
+        verbose_name="شماره شبا",
+        blank=True,
+        null=True
+    )
+    is_primary = models.BooleanField(
+        default=False,
+        verbose_name="حساب اصلی"
+    )
+
+    class Meta:
+        verbose_name = "حساب بانکی"
+        verbose_name_plural = "حساب‌های بانکی"
 class Product(models.Model):
     name = models.CharField(max_length=200, verbose_name="نام کالا", unique=True)
     barcode = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, verbose_name="بارکد")
@@ -325,3 +358,5 @@ class InvoiceItem(models.Model):
 
     class eta:
         ordering = ['item_number']
+
+

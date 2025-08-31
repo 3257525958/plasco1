@@ -81,27 +81,20 @@ import barcode
 from barcode.writer import ImageWriter
 import logging
 
+
+
+
 def create_invoice(request):
     sellers = Froshande.objects.all()
-
-    # دریافت زمان فعلی با منطقه زمانی
     now = timezone.localtime(timezone.now())
-
-    # تبدیل به تاریخ شمسی
     jalali_date = jdatetime.datetime.fromgregorian(datetime=now)
-
-    # تولید شماره سریال با فرمت YYMMDDHHMMSS
     serial_number = jalali_date.strftime('%y%m%d%H%M%S')
     serial_number_persian = convert_to_persian_digits(serial_number)
-
-    # تبدیل تاریخ امروز به شمسی برای نمایش در فرم
     today_jalali = jalali_date.strftime('%Y/%m/%d')
     today_jalali = convert_to_persian_digits(today_jalali)
 
     if request.method == 'POST':
-        # بررسی تأیید کاربر
         if 'confirmed' not in request.POST:
-            # ذخیره داده‌ها به صورت صحیح در session
             request.session['invoice_data'] = {
                 'seller': request.POST.get('seller'),
                 'product_ids': request.POST.getlist('product_id[]'),
@@ -115,7 +108,6 @@ def create_invoice(request):
 
         try:
             with transaction.atomic():
-                # بازیابی داده‌ها از session
                 invoice_data = request.session.get('invoice_data', {})
                 if not invoice_data:
                     messages.error(request, 'داده‌های فاکتور یافت نشد. لطفاً دوباره تلاش کنید.')
@@ -124,14 +116,18 @@ def create_invoice(request):
                 seller_id = invoice_data.get('seller')
                 date = now.date()
 
-                # ایجاد فاکتور با شماره سریال جدید
+                # ایجاد فاکتور
                 invoice = Invoice.objects.create(
                     seller_id=seller_id,
                     date=date,
                     serial_number=serial_number
                 )
 
-                # اضافه کردن آیتم‌ها با استفاده از لیست‌ها
+                # محاسبه جمع‌های فاکتور
+                total_amount = Decimal(0)
+                total_discount = Decimal(0)
+
+                # اضافه کردن آیتم‌ها
                 product_ids = invoice_data.get('product_ids', [])
                 product_names = invoice_data.get('product_names', [])
                 quantities = invoice_data.get('quantities', [])
@@ -148,7 +144,6 @@ def create_invoice(request):
                                 logger.warning(f"محصول با شناسه {product_ids[i]} یافت نشد")
                                 pass
 
-                        # تبدیل مقادیر به انواع داده مناسب با مدیریت خطا
                         try:
                             quantity_val = int(quantities[i]) if i < len(quantities) else 1
                         except (ValueError, TypeError):
@@ -175,8 +170,14 @@ def create_invoice(request):
                             item_number=i + 1
                         )
 
-                # محاسبه و ذخیره جمع کل قابل پرداخت
-                invoice.total_payable = invoice.total_amount - invoice.total_discount
+                        # محاسبه جمع‌ها
+                        total_amount += quantity_val * unit_price_val
+                        total_discount += discount_val
+
+                # به روزرسانی فاکتور با مقادیر محاسبه شده
+                invoice.total_amount = total_amount
+                invoice.total_discount = total_discount
+                invoice.total_payable = total_amount - total_discount
                 invoice.save()
 
                 # حذف داده‌های موقت از session
@@ -200,6 +201,126 @@ def create_invoice(request):
         'today_jalali': today_jalali,
         'serial_number': serial_number_persian
     })
+
+# def create_invoice(request):
+#     sellers = Froshande.objects.all()
+#
+#     # دریافت زمان فعلی با منطقه زمانی
+#     now = timezone.localtime(timezone.now())
+#
+#     # تبدیل به تاریخ شمسی
+#     jalali_date = jdatetime.datetime.fromgregorian(datetime=now)
+#
+#     # تولید شماره سریال با فرمت YYMMDDHHMMSS
+#     serial_number = jalali_date.strftime('%y%m%d%H%M%S')
+#     serial_number_persian = convert_to_persian_digits(serial_number)
+#
+#     # تبدیل تاریخ امروز به شمسی برای نمایش در فرم
+#     today_jalali = jalali_date.strftime('%Y/%m/%d')
+#     today_jalali = convert_to_persian_digits(today_jalali)
+#
+#     if request.method == 'POST':
+#         # بررسی تأیید کاربر
+#         if 'confirmed' not in request.POST:
+#             # ذخیره داده‌ها به صورت صحیح در session
+#             request.session['invoice_data'] = {
+#                 'seller': request.POST.get('seller'),
+#                 'product_ids': request.POST.getlist('product_id[]'),
+#                 'product_names': request.POST.getlist('product_name[]'),
+#                 'quantities': request.POST.getlist('quantity[]'),
+#                 'unit_prices': request.POST.getlist('unit_price[]'),
+#                 'discounts': request.POST.getlist('discount[]'),
+#                 'serial_number': serial_number,
+#             }
+#             return redirect('confirm_invoice')
+#
+#         try:
+#             with transaction.atomic():
+#                 # بازیابی داده‌ها از session
+#                 invoice_data = request.session.get('invoice_data', {})
+#                 if not invoice_data:
+#                     messages.error(request, 'داده‌های فاکتور یافت نشد. لطفاً دوباره تلاش کنید.')
+#                     return redirect('create_invoice')
+#
+#                 seller_id = invoice_data.get('seller')
+#                 date = now.date()
+#
+#                 # ایجاد فاکتور با شماره سریال جدید
+#                 invoice = Invoice.objects.create(
+#                     seller_id=seller_id,
+#                     date=date,
+#                     serial_number=serial_number
+#                 )
+#
+#                 # اضافه کردن آیتم‌ها با استفاده از لیست‌ها
+#                 product_ids = invoice_data.get('product_ids', [])
+#                 product_names = invoice_data.get('product_names', [])
+#                 quantities = invoice_data.get('quantities', [])
+#                 unit_prices = invoice_data.get('unit_prices', [])
+#                 discounts = invoice_data.get('discounts', [])
+#
+#                 for i in range(len(product_names)):
+#                     if product_names[i]:
+#                         product = None
+#                         if i < len(product_ids) and product_ids[i]:
+#                             try:
+#                                 product = Product.objects.get(id=product_ids[i])
+#                             except Product.DoesNotExist:
+#                                 logger.warning(f"محصول با شناسه {product_ids[i]} یافت نشد")
+#                                 pass
+#
+#                         # تبدیل مقادیر به انواع داده مناسب با مدیریت خطا
+#                         try:
+#                             quantity_val = int(quantities[i]) if i < len(quantities) else 1
+#                         except (ValueError, TypeError):
+#                             quantity_val = 1
+#
+#                         try:
+#                             unit_price_val = Decimal(unit_prices[i]) if i < len(unit_prices) else Decimal(0)
+#                         except (ValueError, TypeError):
+#                             unit_price_val = Decimal(0)
+#
+#                         try:
+#                             discount_val = Decimal(discounts[i]) if i < len(discounts) else Decimal(0)
+#                         except (ValueError, TypeError):
+#                             discount_val = Decimal(0)
+#
+#                         # ایجاد آیتم فاکتور
+#                         item = InvoiceItem.objects.create(
+#                             invoice=invoice,
+#                             product=product,
+#                             product_name=product_names[i],
+#                             quantity=quantity_val,
+#                             unit_price=unit_price_val,
+#                             discount=discount_val,
+#                             item_number=i + 1
+#                         )
+#
+#                 # محاسبه و ذخیره جمع کل قابل پرداخت
+#                 invoice.total_payable = invoice.total_amount - invoice.total_discount
+#                 invoice.save()
+#
+#                 # حذف داده‌های موقت از session
+#                 if 'invoice_data' in request.session:
+#                     del request.session['invoice_data']
+#
+#                 messages.success(request, 'فاکتور با موفقیت ثبت شد')
+#                 return redirect('invoice_detail', invoice_id=invoice.id)
+#
+#         except Exception as e:
+#             logger.exception("Error in create_invoice")
+#             return render(request, 'invoice_form.html', {
+#                 'sellers': sellers,
+#                 'today_jalali': today_jalali,
+#                 'serial_number': serial_number_persian,
+#                 'error_message': f'خطا در ایجاد فاکتور: لطفاً داده‌ها را بررسی کنید'
+#             })
+#
+#     return render(request, 'invoice_form.html', {
+#         'sellers': sellers,
+#         'today_jalali': today_jalali,
+#         'serial_number': serial_number_persian
+#     })
 
 
 def generate_barcode_base64(barcode_value, module_width=0.2, module_height=15):
@@ -373,37 +494,124 @@ def convert_to_persian_digits(text):
     return ''.join(persian_digits[int(d)] if d.isdigit() else d for d in str(text))
 
 
+from django.db.models import Q
+from django.http import JsonResponse
+from .models import Froshande, ContactNumber, BankAccount
+
+
+# views.py
 def search_sellers(request):
     query = request.GET.get('q', '')
 
     # تبدیل اعداد فارسی و عربی به انگلیسی
     query_english = convert_persian_arabic_to_english(query)
 
+    # جستجو با prefetch_related برای بهینه‌سازی
     sellers = Froshande.objects.filter(
         Q(name__icontains=query_english) |
         Q(family__icontains=query_english) |
-        Q(store_name__icontains=query_english) |
-        Q(mobile__icontains=query_english) |
-        Q(sheba_number__icontains=query_english) |
-        Q(card_number__icontains=query_english)
+        Q(store_name__icontains=query_english)
+    ).prefetch_related(
+        'contact_numbers',
+        'bank_accounts'
     )[:10]
 
-    results = [
-        {
+    results = []
+    for seller in sellers:
+        # پیدا کردن شماره موبایل اصلی
+        mobile = None
+        for contact in seller.contact_numbers.all():
+            if contact.contact_type == 'mobile' and contact.is_primary:
+                mobile = contact.number
+                break
+
+        # اگر شماره موبایل اصلی پیدا نشد، اولین شماره موبایل را برمی‌گردانیم
+        if not mobile:
+            for contact in seller.contact_numbers.all():
+                if contact.contact_type == 'mobile':
+                    mobile = contact.number
+                    break
+
+        # پیدا کردن اطلاعات بانکی اصلی
+        sheba = None
+        card = None
+        for bank in seller.bank_accounts.all():
+            if bank.is_primary:
+                sheba = bank.sheba_number
+                card = bank.card_number
+                break
+
+        results.append({
             'id': seller.id,
             'text': f"{seller.name} {seller.family} - {seller.store_name or 'بدون نام فروشگاه'}",
-            'mobile': seller.mobile,
-            'sheba': seller.sheba_number,
-            'card': seller.card_number,
+            'mobile': mobile or '---',
+            'sheba': sheba or '---',
+            'card': card or '---',
             'name': seller.name,
             'family': seller.family,
-            'store': seller.store_name
-        }
-        for seller in sellers
-    ]
-
+            'store': seller.store_name or 'بدون نام فروشگاه',
+            'address': seller.address or '---'  # اضافه کردن آدرس
+        })
     return JsonResponse({'results': results})
-
+# def search_sellers(request):
+#     query = request.GET.get('q', '')
+#
+#     # تبدیل اعداد فارسی و عربی به انگلیسی
+#     query_english = convert_persian_arabic_to_english(query)
+#
+#     # جستجو در اطلاعات اصلی فروشنده
+#     sellers = Froshande.objects.filter(
+#         Q(name__icontains=query_english) |
+#         Q(family__icontains=query_english) |
+#         Q(store_name__icontains=query_english)
+#     )[:10]
+#
+#     # اگر نتیجه‌ای پیدا نشد، در شماره تماس‌ها جستجو کن
+#     if not sellers:
+#         contact_numbers = ContactNumber.objects.filter(
+#             Q(number__icontains=query_english)
+#         )[:10]
+#
+#         # پیدا کردن فروشندگان مرتبط با شماره تماس‌های یافت شده
+#         seller_ids = contact_numbers.values_list('froshande_id', flat=True)
+#         sellers = Froshande.objects.filter(id__in=seller_ids)
+#
+#     # اگر هنوز نتیجه‌ای پیدا نشد، در اطلاعات بانکی جستجو کن
+#     if not sellers:
+#         bank_accounts = BankAccount.objects.filter(
+#             Q(account_number__icontains=query_english) |
+#             Q(card_number__icontains=query_english) |
+#             Q(sheba_number__icontains=query_english)
+#         )[:10]
+#
+#         # پیدا کردن فروشندگان مرتبط با حساب‌های بانکی یافت شده
+#         seller_ids = bank_accounts.values_list('froshande_id', flat=True)
+#         sellers = Froshande.objects.filter(id__in=seller_ids)
+#
+#     # آماده کردن نتایج برای پاسخ JSON
+#     results = []
+#     for seller in sellers:
+#         # پیدا کردن شماره تماس اصلی
+#         primary_contact = seller.contact_numbers.filter(is_primary=True).first()
+#         mobile = primary_contact.number if primary_contact and primary_contact.contact_type == 'mobile' else None
+#
+#         # پیدا کردن اطلاعات بانکی اصلی
+#         primary_bank = seller.bank_accounts.filter(is_primary=True).first()
+#         sheba = primary_bank.sheba_number if primary_bank else None
+#         card = primary_bank.card_number if primary_bank else None
+#
+#         results.append({
+#             'id': seller.id,
+#             'text': f"{seller.name} {seller.family} - {seller.store_name or 'بدون نام فروشگاه'}",
+#             'mobile': mobile,
+#             'sheba': sheba,
+#             'card': card,
+#             'name': seller.name,
+#             'family': seller.family,
+#             'store': seller.store_name
+#         })
+#
+#     return JsonResponse({'results': results})
 
 def search_products(request):
     query = request.GET.get('q', '')
@@ -625,19 +833,6 @@ def print_labels(request, invoice_id):
 
     return redirect(f"{base_url}?{query_string}")
 
-def froshande_view(request):
-    if request.method == 'POST':
-        form = FroshandeForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'اطلاعات فروشنده با موفقیت ثبت شد')
-            return redirect('froshande')
-        else:
-            messages.error(request, 'خطا در ثبت اطلاعات. لطفا فرم را بررسی کنید')
-    else:
-        form = FroshandeForm()
-
-    return render(request, 'froshande.html', {'form': form})
 
 #
 # -----------------------------------------------------------------------------------------
@@ -651,3 +846,153 @@ def usb_view(request):
     printer.text("قیمت: 50,000 تومان\n")
     printer.cut()
     return render(request, 'froshande.html', {'printer': printer})
+# ------------------------فرو شنده--------------------------------------------------------------------------
+from django.shortcuts import render, redirect, get_object_or_404
+from django.forms import formset_factory, inlineformset_factory
+from django.contrib import messages
+from .models import Froshande, ContactNumber, BankAccount
+from .forms import FroshandeForm, ContactNumberForm, BankAccountForm
+import re
+
+
+def is_persian(text):
+    return bool(re.match(r'^[\u0600-\u06FF\s]+$', text))
+
+
+def froshande_view(request):
+    if request.method == 'POST':
+        for field in ['name', 'family', 'store_name', 'address']:
+            if field in request.POST and request.POST[field]:
+                if not is_persian(request.POST[field]):
+                    messages.error(request, 'لطفاً فقط از حروف فارسی استفاده کنید.')
+                    return render(request, 'froshande.html', {'form': FroshandeForm(request.POST)})
+
+        form = FroshandeForm(request.POST)
+        if form.is_valid():
+            froshande = form.save()
+            messages.success(request, 'اطلاعات فروشنده با موفقیت ثبت شد')
+            return redirect('froshande_accounts', froshande_id=froshande.id)
+        else:
+            messages.error(request, 'خطا در ثبت اطلاعات. لطفا فرم را بررسی کنید')
+    else:
+        form = FroshandeForm()
+
+    return render(request, 'froshande.html', {'form': form})
+
+
+def froshande_accounts_view(request, froshande_id):
+    froshande = get_object_or_404(Froshande, id=froshande_id)
+
+    # استفاده از inlineformset_factory برای مدیریت بهتر روابط
+    ContactFormSet = inlineformset_factory(
+        Froshande,
+        ContactNumber,
+        form=ContactNumberForm,
+        extra=1,
+        can_delete=True
+    )
+
+    BankFormSet = inlineformset_factory(
+        Froshande,
+        BankAccount,
+        form=BankAccountForm,
+        extra=1,
+        can_delete=True
+    )
+
+    if request.method == 'POST':
+        contact_formset = ContactFormSet(request.POST, instance=froshande, prefix='contacts')
+        bank_formset = BankFormSet(request.POST, instance=froshande, prefix='banks')
+
+        if contact_formset.is_valid() and bank_formset.is_valid():
+            # ذخیره فرم‌ها
+            contact_formset.save()
+            bank_formset.save()
+
+            messages.success(request, 'اطلاعات تماس و حساب بانکی با موفقیت ثبت شد')
+            return redirect('froshande_list')  # تغییر به مسیر مناسب
+
+        else:
+            # نمایش خطاهای فرم
+            messages.error(request, 'لطفاً خطاهای زیر را بررسی کنید:')
+            for form in contact_formset:
+                if form.errors:
+                    for field, errors in form.errors.items():
+                        for error in errors:
+                            messages.error(request, f'خطا در شماره تماس: {error}')
+
+            for form in bank_formset:
+                if form.errors:
+                    for field, errors in form.errors.items():
+                        for error in errors:
+                            messages.error(request, f'خطا در حساب بانکی: {error}')
+
+    else:
+        contact_formset = ContactFormSet(instance=froshande, prefix='contacts')
+        bank_formset = BankFormSet(instance=froshande, prefix='banks')
+
+    context = {
+        'froshande': froshande,
+        'contact_formset': contact_formset,
+        'bank_formset': bank_formset,
+    }
+
+    return render(request, 'froshande_accounts.html', context)
+
+# -------------------------------------------ویرایش فروشنده------------------------------------------------------------------
+def froshande_edit_view(request, froshande_id):
+    froshande = get_object_or_404(Froshande, id=froshande_id)
+
+    if request.method == 'POST':
+        form = FroshandeForm(request.POST, instance=froshande)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'اطلاعات فروشنده با موفقیت ویرایش شد')
+            return redirect('froshande_accounts', froshande_id=froshande.id)
+    else:
+        form = FroshandeForm(instance=froshande)
+
+    return render(request, 'froshande_edit.html', {'form': form, 'froshande': froshande})
+
+
+def froshande_list_view(request):
+    froshandes = Froshande.objects.all().prefetch_related('contact_numbers', 'bank_accounts')
+    return render(request, 'froshande_list.html', {'froshandes': froshandes})
+
+
+
+# -------------------------حذف فروشنده----------------------------------------------------------------------------------
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from django.http import JsonResponse
+
+
+def froshande_delete_view(request, froshande_id):
+    froshande = get_object_or_404(Froshande, id=froshande_id)
+
+    if request.method == 'POST':
+        # حذف فروشنده و تمام اطلاعات مرتبط
+        froshande_name = f"{froshande.name} {froshande.family}"
+        froshande.delete()
+
+        messages.success(request, f'فروشنده "{froshande_name}" با موفقیت حذف شد')
+        return redirect('froshande_list')
+
+    return JsonResponse({'error': 'متد غیرمجاز'}, status=405)
+
+
+def froshande_delete_ajax(request, froshande_id):
+    # برای حذف با درخواست AJAX
+    if request.method == 'POST' and request.is_ajax():
+        froshande = get_object_or_404(Froshande, id=froshande_id)
+        froshande_name = f"{froshande.name} {froshande.family}"
+        froshande.delete()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'فروشنده "{froshande_name}" با موفقیت حذف شد'
+        })
+
+    return JsonResponse({'error': 'متد غیرمجاز'}, status=405)

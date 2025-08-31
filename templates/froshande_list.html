@@ -1,0 +1,230 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لیست فروشندگان</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .table th, .table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        .table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 2px;
+        }
+        .btn-edit {
+            background-color: #2196F3;
+            color: white;
+        }
+        .btn-accounts {
+            background-color: #FF9800;
+            color: white;
+        }
+        .btn-delete {
+            background-color: #f44336;
+            color: white;
+        }
+        .modal-confirm {
+            color: #636363;
+        }
+        .modal-confirm .modal-content {
+            border-radius: 8px;
+            border: none;
+        }
+        .modal-confirm .modal-header {
+            border-bottom: none;
+            position: relative;
+            background-color: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+        .modal-confirm .modal-body {
+            padding: 30px;
+            text-align: center;
+        }
+        .modal-confirm .modal-footer {
+            border: none;
+            text-align: center;
+            border-radius: 0 0 8px 8px;
+            background-color: #f8f9fa;
+        }
+        .modal-confirm .icon-box {
+            color: #fff;
+            position: absolute;
+            margin: 0 auto;
+            left: 0;
+            right: 0;
+            top: -70px;
+            width: 95px;
+            height: 95px;
+            border-radius: 50%;
+            z-index: 9;
+            background: #f44336;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.1);
+        }
+        .modal-confirm .icon-box i {
+            font-size: 58px;
+            position: relative;
+            top: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center my-4">لیست فروشندگان</h1>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>نام</th>
+                    <th>نام خانوادگی</th>
+                    <th>فروشگاه</th>
+                    <th>تعداد شماره تماس</th>
+                    <th>تعداد حساب بانکی</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for froshande in froshandes %}
+                    <tr id="froshande-{{ froshande.id }}">
+                        <td>{{ froshande.name }}</td>
+                        <td>{{ froshande.family }}</td>
+                        <td>{{ froshande.store_name|default:"-" }}</td>
+                        <td>{{ froshande.contact_numbers.count }}</td>
+                        <td>{{ froshande.bank_accounts.count }}</td>
+                        <td>
+                            <a href="{% url 'froshande_edit' froshande.id %}" class="btn btn-edit">
+                                <i class="fas fa-edit"></i> ویرایش
+                            </a>
+                            <a href="{% url 'froshande_accounts' froshande.id %}" class="btn btn-accounts">
+                                <i class="fas fa-phone"></i> تماس و بانک
+                            </a>
+                            <button class="btn btn-delete" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" 
+                                    data-froshande-id="{{ froshande.id }}" 
+                                    data-froshande-name="{{ froshande.name }} {{ froshande.family }}">
+                                <i class="fas fa-trash"></i> حذف
+                            </button>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center">هیچ فروشنده ای ثبت نشده است</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <a href="{% url 'froshande' %}" class="btn btn-success">
+            <i class="fas fa-plus"></i> افزودن فروشنده جدید
+        </a>
+    </div>
+
+    <!-- Modal حذف -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeleteModalLabel">تأیید حذف</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="icon-box">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h4>آیا مطمئن هستید؟</h4>
+                    <p>آیا می‌خواهید فروشنده "<span id="froshande-name-to-delete"></span>" را حذف کنید؟ این عمل غیرقابل برگشت است!</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <form id="delete-form" method="POST" action="">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">حذف</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // مدیریت modal حذف
+            $('#confirmDeleteModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var froshandeId = button.data('froshande-id');
+                var froshandeName = button.data('froshande-name');
+                
+                var modal = $(this);
+                modal.find('#froshande-name-to-delete').text(froshandeName);
+                
+                // تنظیم action فرم
+                var deleteUrl = "{% url 'froshande_delete' 0 %}".replace('0', froshandeId);
+                modal.find('#delete-form').attr('action', deleteUrl);
+            });
+            
+            // حذف با AJAX (اختیاری)
+            $('.btn-delete-ajax').click(function() {
+                var froshandeId = $(this).data('froshande-id');
+                var froshandeName = $(this).data('froshande-name');
+                
+                if (confirm(`آیا مطمئن هستید که می‌خواهید فروشنده "${froshandeName}" را حذف کنید؟`)) {
+                    $.ajax({
+                        url: "{% url 'froshande_delete_ajax' 0 %}".replace('0', froshandeId),
+                        type: 'POST',
+                        data: {
+                            'csrfmiddlewaretoken': '{{ csrf_token }}'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                // حذف ردیف از جدول
+                                $('#froshande-' + froshandeId).remove();
+                                
+                                // نمایش پیام موفقیت
+                                alert(response.message);
+                                
+                                // اگر جدول خالی شد، پیام مناسب نمایش دهید
+                                if ($('.table tbody tr').length === 1) {
+                                    $('.table tbody').html('<tr><td colspan="6" class="text-center">هیچ فروشنده ای ثبت نشده است</td></tr>');
+                                }
+                            }
+                        },
+                        error: function() {
+                            alert('خطایی در حذف فروشنده رخ داد');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

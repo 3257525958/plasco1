@@ -677,58 +677,90 @@
         calculateTotals();
 
         // جستجوی فروشنده
+        // جستجوی فروشنده
         $('#seller-search').on('input', function() {
-            let query = $(this).val().trim();
-            query = convertPersianToEnglishNumbers(query);
-            const $results = $('#seller-results');
+    let query = $(this).val().trim();
+    query = convertPersianToEnglishNumbers(query);
+    const $results = $('#seller-results');
+    
+    if (query.length < 2) {
+        $results.empty().hide();
+        return;
+    }
+    
+    $.ajax({
+        url: "{% url 'search_sellers' %}",
+        data: { q: query },
+        dataType: 'json',
+        success: function(data) {
+            $results.empty();
             
-            if (query.length < 2) {
-                $results.empty().hide();
-                return;
-            }
-            
-            $.ajax({
-                url: "{% url 'search_sellers' %}",
-                data: { q: query },
-                dataType: 'json',
-                success: function(data) {
-                    $results.empty();
-                    
-                    if (data.results.length > 0) {
-                        data.results.forEach(seller => {
-                            $results.append(`
-                                <div class="seller-result-item" 
-                                     data-id="${seller.id}"
-                                     data-name="${seller.text}">
-                                    <div class="seller-info">
-                                        <div class="seller-name">
-                                            <i class="fas fa-store"></i> 
-                                            ${seller.store || 'بدون نام فروشگاه'}
-                                        </div>
-                                        <div class="seller-details">
-                                            <div><i class="fas fa-user"></i> ${seller.name} ${seller.family}</div>
-                                            <div><i class="fas fa-mobile-alt"></i> ${seller.mobile}</div>
-                                            <div><i class="fas fa-credit-card"></i> ${seller.card || '---'}</div>
-                                            <div><i class="fas fa-bank"></i> ${seller.sheba || '---'}</div>
-                                        </div>
-                                    </div>
+            if (data.results && data.results.length > 0) {
+                data.results.forEach(seller => {
+                    // ایجاد HTML برای هر نتیجه جستجو
+                    let sellerHtml = `
+                        <div class="seller-result-item" 
+                             data-id="${seller.id}"
+                             data-name="${seller.name} ${seller.family} - ${seller.store || 'بدون نام فروشگاه'}">
+                            <div class="seller-info">
+                                <div class="seller-name">
+                                    <i class="fas fa-store"></i> 
+                                    ${seller.store || 'بدون نام فروشگاه'}
                                 </div>
-                            `);
-                        });
-                    } else {
-                        $results.append(`
-                            <div class="seller-result-item new-seller" 
-                                 data-name="${query}">
-                                <i class="fas fa-plus-circle"></i> 
-                                ایجاد فروشنده جدید: "${query}"
-                            </div>
-                        `);
+                                <div class="seller-details">`;
+                    
+                    // اضافه کردن اطلاعات اگر وجود دارند
+                    if (seller.name || seller.family) {
+                        sellerHtml += `<div><i class="fas fa-user"></i> ${seller.name} ${seller.family}</div>`;
                     }
                     
-                    $results.show();
-                }
-            });
-        });
+                    if (seller.mobile) {
+                        sellerHtml += `<div><i class="fas fa-mobile-alt"></i> ${seller.mobile}</div>`;
+                    }
+                    if (seller.address && seller.address !== '---') {
+                        sellerHtml += `<div><i class="fas fa-map-marker-alt"></i> ${seller.address}</div>`;
+                    }
+                    
+                    if (seller.card) {
+                        sellerHtml += `<div><i class="fas fa-credit-card"></i> ${seller.card || '---'}</div>`;
+                    }
+                    
+                    if (seller.sheba) {
+                        sellerHtml += `<div><i class="fas fa-bank"></i> ${seller.sheba || '---'}</div>`;
+                    }
+                    
+                    sellerHtml += `</div></div></div>`;
+                    
+                    $results.append(sellerHtml);
+                });
+            } else {
+                $results.append(`
+                    <div class="seller-result-item new-seller" 
+                         data-name="${query}">
+                        <i class="fas fa-plus-circle"></i> 
+                        ایجاد فروشنده جدید: "${query}"
+                    </div>
+                `);
+            }
+            
+            $results.show();
+        },
+        error: function(xhr, status, error) {
+            console.error('Error in seller search:', error);
+            $results.empty().append(`
+                <div class="seller-result-item">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    خطا در دریافت اطلاعات فروشندگان
+                </div>
+            `).show();
+        }
+    });
+});
+        
+        
+        
+        
+        
         
         // انتخاب فروشنده
         $('#seller-results').on('click', '.seller-result-item', function() {

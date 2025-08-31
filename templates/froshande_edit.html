@@ -1,0 +1,123 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ویرایش فروشنده</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>ویرایش فروشنده: {{ froshande.name }} {{ froshande.family }}</h1>
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label>نام</label>
+                {{ form.name }}
+            </div>
+            
+            <div class="form-group">
+                <label>نام خانوادگی</label>
+                {{ form.family }}
+            </div>
+            
+            <div class="form-group">
+                <label>نام فروشگاه</label>
+                {{ form.store_name }}
+            </div>
+            
+            <div class="form-group">
+                <label>آدرس</label>
+                {{ form.address }}
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> ذخیره تغییرات
+                </button>
+                <a href="{% url 'froshande_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> انصراف
+                </a>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
+                    <i class="fas fa-trash"></i> حذف فروشنده
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal حذف -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeleteModalLabel">تأیید حذف</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="icon-box" style="color: #fff; background: #f44336; width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <h4>آیا مطمئن هستید؟</h4>
+                    <p>آیا می‌خواهید فروشنده "{{ froshande.name }} {{ froshande.family }}" را حذف کنید؟ این عمل غیرقابل برگشت است و تمام اطلاعات مرتبط (شماره تماس‌ها و حساب‌های بانکی) نیز حذف خواهند شد.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <form action="{% url 'froshande_delete' froshande.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">حذف</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

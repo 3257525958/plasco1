@@ -1,0 +1,292 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ثبت اطلاعات تماس و بانکی - فروشگاه پلاستیک و لوازم آشپرخانه موسوی</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/new_froshande.css' %}">
+  <style>
+    .form-section {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 25px;
+    }
+    .form-section h3 {
+      color: #4CAF50;
+      border-bottom: 2px solid #4CAF50;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      font-size: 22px;
+    }
+    .dynamic-form {
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      background-color: #f9f9f9;
+    }
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .form-group {
+      flex: 1;
+      min-width: 200px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #555;
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .form-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 15px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+    .btn-danger {
+      background-color: #dc3545;
+      color: white;
+    }
+    .btn-success {
+      background-color: #28a745;
+      color: white;
+    }
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container-wrapper">
+  <div class="image-section">
+    <img src="{% static 'img/login.jpg' %}" alt="تصویر پس زمینه">
+  </div>
+
+  <div class="signup-container">
+    <div class="form-content">
+      <div class="header-section">
+        <img src="{% static 'img/logo.jpg' %}" alt="لوگوی فروشگاه" class="logo">
+        <h2 class="title">ثبت اطلاعات تماس و بانکی</h2>
+        <p class="subtitle">لطفا اطلاعات تماس و بانکی را برای {{ froshande.name }} {{ froshande.family }} وارد نمایید</p>
+      </div>
+
+      <form method="POST" class="signup-form" id="accountsForm">
+        {% csrf_token %}
+        
+        <!-- مدیریت فرم‌های تماس -->
+        <div class="form-section">
+          <h3><i class="fas fa-phone"></i> شماره‌های تماس</h3>
+          
+          {{ contact_formset.management_form }}
+          <div id="contact-forms">
+            {% for form in contact_formset %}
+              <div class="dynamic-form contact-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>نوع تماس</label>
+                    {{ form.contact_type }}
+                  </div>
+                  <div class="form-group">
+                    <label>شماره تماس</label>
+                    {{ form.number }}
+                  </div>
+                  <div class="form-group">
+                    <label>شماره اصلی</label>
+                    <div class="form-check">
+                      {{ form.is_primary }}
+                      <label>این شماره اصلی است</label>
+                    </div>
+                  </div>
+                </div>
+                {% if form.DELETE %}
+                  <div class="form-check">
+                    {{ form.DELETE }}
+                    <label>حذف این شماره</label>
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+          
+          <button type="button" class="btn btn-success" id="add-contact">
+            <i class="fas fa-plus"></i> افزودن شماره تماس
+          </button>
+        </div>
+
+        <!-- مدیریت فرم‌های بانکی -->
+        <div class="form-section">
+          <h3><i class="fas fa-university"></i> حساب‌های بانکی</h3>
+          
+          {{ bank_formset.management_form }}
+          <div id="bank-forms">
+            {% for form in bank_formset %}
+              <div class="dynamic-form bank-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>شماره حساب</label>
+                    {{ form.account_number }}
+                  </div>
+                  <div class="form-group">
+                    <label>نام بانک</label>
+                    {{ form.bank_name }}
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>شماره کارت</label>
+                    {{ form.card_number }}
+                  </div>
+                  <div class="form-group">
+                    <label>شماره شبا</label>
+                    {{ form.sheba_number }}
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <div class="form-check">
+                      {{ form.is_primary }}
+                      <label>این حساب اصلی است</label>
+                    </div>
+                  </div>
+                </div>
+                {% if form.DELETE %}
+                  <div class="form-check">
+                    {{ form.DELETE }}
+                    <label>حذف این حساب</label>
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+          
+          <button type="button" class="btn btn-success" id="add-bank">
+            <i class="fas fa-plus"></i> افزودن حساب بانکی
+          </button>
+        </div>
+
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> ذخیره اطلاعات
+          </button>
+          <a href="{% url 'froshande' %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> انصراف
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // افزودن فرم تماس جدید
+  document.getElementById('add-contact').addEventListener('click', function() {
+    const totalForms = document.getElementById('id_contacts-TOTAL_FORMS');
+    const formNum = parseInt(totalForms.value);
+    const formsContainer = document.getElementById('contact-forms');
+    
+    // ایجاد یک فرم جدید با استفاده از الگوی اولین فرم
+    const newForm = document.querySelector('.contact-form').cloneNode(true);
+    
+    // جایگزینی پیشوندهای فرم
+    newForm.innerHTML = newForm.innerHTML.replace(/contacts-\d+-/g, `contacts-${formNum}-`);
+    newForm.innerHTML = newForm.innerHTML.replace(/contacts\['\d+'\]/g, `contacts['${formNum}']`);
+    
+    // پاک کردن مقادیر
+    newForm.querySelectorAll('input:not([type="hidden"]), select').forEach(field => {
+      field.value = '';
+    });
+    newForm.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.checked = false;
+    });
+    
+    formsContainer.appendChild(newForm);
+    totalForms.value = formNum + 1;
+  });
+  
+  // افزودن فرم بانکی جدید
+  document.getElementById('add-bank').addEventListener('click', function() {
+    const totalForms = document.getElementById('id_banks-TOTAL_FORMS');
+    const formNum = parseInt(totalForms.value);
+    const formsContainer = document.getElementById('bank-forms');
+    
+    // ایجاد یک فرم جدید با استفاده از الگوی اولین فرم
+    const newForm = document.querySelector('.bank-form').cloneNode(true);
+    
+    // جایگزینی پیشوندهای فرم
+    newForm.innerHTML = newForm.innerHTML.replace(/banks-\d+-/g, `banks-${formNum}-`);
+    newForm.innerHTML = newForm.innerHTML.replace(/banks\['\d+'\]/g, `banks['${formNum}']`);
+    
+    // پاک کردن مقادیر
+    newForm.querySelectorAll('input:not([type="hidden"]), select').forEach(field => {
+      field.value = '';
+    });
+    newForm.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.checked = false;
+    });
+    
+    formsContainer.appendChild(newForm);
+    totalForms.value = formNum + 1;
+  });
+  
+  // مدیریت حذف فرم‌ها
+  document.addEventListener('click', function(e) {
+    if (e.target.type === 'checkbox' && e.target.name.includes('-DELETE')) {
+      const form = e.target.closest('.dynamic-form');
+      if (e.target.checked) {
+        form.style.opacity = '0.5';
+      } else {
+        form.style.opacity = '1';
+      }
+    }
+  });
+});
+</script>
+
+</body>
+</html>
