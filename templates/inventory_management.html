@@ -1,0 +1,999 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم انبارداری</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* استایل‌های کامل مانند قبل */
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #388E3C;
+            --accent-color: #2E7D32;
+            --text-color: #2c3e50;
+            --light-bg: #f9f9f9;
+            --border-color: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --input-bg: #f1f8e9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .inventory-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .inventory-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-bottom: -1px;
+        }
+        
+        .inventory-tab.active {
+            border-color: var(--border-color);
+            border-bottom-color: white;
+            border-radius: 5px 5px 0 0;
+            background: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+        .search-section {
+            margin-bottom: 30px;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        #invoice-search {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            transition: all 0.3s;
+            background: var(--input-bg);
+        }
+
+        #invoice-search:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(46, 125, 50, 0.3);
+            outline: none;
+        }
+
+        .search-hint {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .invoice-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 16px;
+            color: #757575;
+            margin-bottom: 8px;
+        }
+
+        .info-value {
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .items-table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .items-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .items-table input,
+        .items-table select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .items-table input:focus,
+        .items-table select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 5px rgba(46, 125, 50, 0.3);
+            outline: none;
+        }
+
+        .distribution-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        .distribution-table th {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        .distribution-table td {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .distribution-row {
+            margin-bottom: 10px;
+        }
+
+        .add-distribution {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .remove-distribution {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, var(--accent-color), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-back {
+            background: #9e9e9e;
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: #757575;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .error-message {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #d32f2f;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .success-message {
+            color: #2E7D32;
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #2E7D32;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-message {
+            color: #1976d2;
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #1976d2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .inventory-summary {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .inventory-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .inventory-table th,
+        .inventory-table td {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        
+        .inventory-table th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .transfer-form {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+        }
+
+        .search-results {
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .search-result-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .search-result-item:hover {
+            background-color: var(--light-bg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>سیستم انبارداری پیشرفته</h1>
+        </div>
+
+        <div class="inventory-tabs">
+            <div class="inventory-tab active" data-tab="search">جستجوی فاکتور</div>
+            <div class="inventory-tab" data-tab="branch">موجودی شعب</div>
+            <div class="inventory-tab" data-tab="product">موجودی محصولات</div>
+            <div class="inventory-tab" data-tab="transfer">انتقال بین شعب</div>
+        </div>
+
+        <!-- تب جستجوی فاکتور -->
+        <div class="tab-content active" id="search-tab">
+            <div class="search-section">
+                <div class="search-container">
+                    <label class="search-label">لطفا فاکتور مد نظرتان را جستجو کنید</label>
+                    <input type="text" id="invoice-search" placeholder="شماره فاکتور، نام فروشنده یا نام کالا را وارد کنید..." autocomplete="off">
+                    <div class="search-hint">حداقل ۲ کاراکتر وارد کنید تا جستجو آغاز شود</div>
+                </div>
+            </div>
+
+            <div id="invoice-details" style="display: none;">
+                <div class="invoice-info">
+                    <div class="info-item">
+                        <span class="info-label">شماره فاکتور</span>
+                        <span class="info-value" id="invoice-serial"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">فروشنده</span>
+                        <span class="info-value" id="invoice-seller"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">تاریخ فاکتور</span>
+                        <span class="info-value" id="invoice-date"></span>
+                    </div>
+                </div>
+
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>نام کالا</th>
+                            <th>تعداد فاکتور</th>
+                            <th>توزیع بین شعب</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-container">
+                        <!-- آیتم‌ها توسط جاوااسکریپت اضافه خواهند شد -->
+                    </tbody>
+                </table>
+
+                <div class="actions">
+                    <button type="button" id="back-btn" class="btn btn-back">
+                        <i class="fas fa-arrow-right"></i> بازگشت
+                    </button>
+                    <button type="button" id="submit-btn" class="btn btn-primary">
+                        <i class="fas fa-save"></i> ثبت اطلاعات انبار
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- تب موجودی شعب -->
+        <div class="tab-content" id="branch-tab">
+            <h2>مدیریت موجودی شعب</h2>
+            
+            <div class="form-group">
+                <label for="branch-select">انتخاب شعبه:</label>
+                <select id="branch-select" class="form-control">
+                    <option value="main">انبار اصلی</option>
+                    {% for branch in branches %}
+                    <option value="{{ branch.id }}">{{ branch.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button id="load-inventory-btn" class="btn btn-primary">
+                <i class="fas fa-sync"></i> نمایش موجودی
+            </button>
+            
+            <div id="branch-inventory-result" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- تب موجودی محصولات -->
+        <div class="tab-content" id="product-tab">
+            <h2>موجودی محصولات</h2>
+            
+            <div class="form-group">
+                <label for="product-search">جستجوی محصول:</label>
+                <input type="text" id="product-search" placeholder="نام محصول را وارد کنید..." class="form-control">
+                <div id="product-search-results" class="search-results" style="display: none;"></div>
+            </div>
+            
+            <div id="product-inventory-details" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- تب انتقال بین شعب -->
+        <div class="tab-content" id="transfer-tab">
+            <h2>انتقال بین شعب</h2>
+            
+            <div class="transfer-form">
+                <div class="form-group">
+                    <label for="transfer-product">محصول:</label>
+                    <select id="transfer-product" class="form-control">
+                        <option value="">انتخاب محصول</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="transfer-from">از:</label>
+                    <select id="transfer-from" class="form-control">
+                        <option value="main">انبار اصلی</option>
+                        {% for branch in branches %}
+                        <option value="{{ branch.id }}">{{ branch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="transfer-to">به:</label>
+                    <select id="transfer-to" class="form-control">
+                        <option value="main">انبار اصلی</option>
+                        {% for branch in branches %}
+                        <option value="{{ branch.id }}">{{ branch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="transfer-quantity">تعداد:</label>
+                    <input type="number" id="transfer-quantity" min="1" class="form-control">
+                </div>
+                
+                <button id="transfer-btn" class="btn btn-primary">
+                    <i class="fas fa-exchange-alt"></i> انتقال
+                </button>
+            </div>
+            
+            <div id="transfer-result" style="margin-top: 20px;"></div>
+        </div>
+
+        <div id="messages"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+
+$(document).ready(function() {
+    let lastBranchId = localStorage.getItem('lastBranchId');
+    let searchTimeout = null;
+    
+    // مدیریت تب‌ها
+    $('.inventory-tab').click(function() {
+        $('.inventory-tab').removeClass('active');
+        $('.tab-content').removeClass('active');
+        
+        $(this).addClass('active');
+        const tabId = $(this).data('tab');
+        $(`#${tabId}-tab`).addClass('active');
+    });
+    
+    // جستجوی فاکتور
+    $('#invoice-search').on('input', function() {
+        const query = $(this).val().trim();
+        
+        if (query.length < 2) {
+            $('#invoice-details').hide();
+            return;
+        }
+        
+        clearTimeout(searchTimeout);
+        
+        showMessage('در حال جستجو...', 'info');
+        
+        searchTimeout = setTimeout(function() {
+            $.ajax({
+                url: "{% url 'search_invoice' %}",
+                data: { q: query },
+                dataType: 'json',
+                success: function(data) {
+                    if (data.error) {
+                        showMessage(data.error, 'error');
+                        return;
+                    }
+                    
+                    $('#messages').empty();
+                    displayInvoiceData(data);
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX error:", status, error);
+                    if (xhr.status === 404) {
+                        showMessage('فاکتور یافت نشد', 'error');
+                    } else {
+                        showMessage('خطا در دریافت اطلاعات فاکتور: ' + error, 'error');
+                    }
+                }
+            });
+        }, 500);
+    });
+    
+    function displayInvoiceData(data) {
+        $('#invoice-serial').text(data.invoice.serial_number);
+        $('#invoice-seller').text(data.invoice.seller);
+        $('#invoice-date').text(data.invoice.date);
+        $('#invoice-details').show();
+        
+        const $itemsContainer = $('#items-container');
+        $itemsContainer.empty();
+        
+        data.items.forEach(item => {
+            const row = `
+                <tr data-item-id="${item.id}" data-max-quantity="${item.quantity}">
+                    <td>${item.product_name}</td>
+                    <td>${item.quantity}</td>
+                    <td>
+                        <div class="distribution-container">
+                            <table class="distribution-table">
+                                <thead>
+                                    <tr>
+                                        <th>شعبه</th>
+                                        <th>تعداد</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="distribution-row">
+                                        <td>
+                                            <select class="branch-select">
+                                                <option value="main">انبار اصلی</option>
+                                                {% for branch in branches %}
+                                                <option value="{{ branch.id }}">{{ branch.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="number" class="distribution-quantity" min="0" max="${item.quantity}" value="0">
+                                        </td>
+                                        <td>
+                                            <button class="remove-distribution" style="display: none;">حذف</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <button class="add-distribution">افزودن محل ذخیره</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            $itemsContainer.append(row);
+        });
+    }
+    
+    // افزودن سطر توزیع جدید
+    $(document).on('click', '.add-distribution', function() {
+        const $container = $(this).closest('.distribution-container');
+        const $table = $container.find('.distribution-table tbody');
+        const maxQuantity = $(this).closest('tr').data('max-quantity');
+        
+        const newRow = `
+            <tr class="distribution-row">
+                <td>
+                    <select class="branch-select">
+                        <option value="main">انبار اصلی</option>
+                        {% for branch in branches %}
+                        <option value="{{ branch.id }}">{{ branch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="distribution-quantity" min="0" max="${maxQuantity}" value="0">
+                </td>
+                <td>
+                    <button class="remove-distribution">حذف</button>
+                </td>
+            </tr>
+        `;
+        
+        $table.append(newRow);
+        $table.find('.remove-distribution').show();
+    });
+    
+    // حذف سطر توزیع
+    $(document).on('click', '.remove-distribution', function() {
+        $(this).closest('.distribution-row').remove();
+    });
+    
+    // ثبت اطلاعات انبار
+    $('#submit-btn').click(function() {
+        const items = [];
+        let hasError = false;
+        let errorMessage = '';
+        
+        $('#items-container tr').each(function() {
+            const itemId = $(this).data('item-id');
+            const maxQuantity = $(this).data('max-quantity');
+            const distributions = [];
+            let totalDistributed = 0;
+            
+            $(this).find('.distribution-row').each(function() {
+                const branchId = $(this).find('.branch-select').val();
+                const quantity = parseInt($(this).find('.distribution-quantity').val()) || 0;
+                
+                if (branchId && quantity > 0) {
+                    distributions.push({
+                        branch_id: branchId,
+                        quantity: quantity
+                    });
+                    totalDistributed += quantity;
+                }
+            });
+            
+            if (totalDistributed > maxQuantity) {
+                hasError = true;
+                errorMessage = `تعداد توزیع شده برای کالای ${$(this).find('td:first').text()} بیشتر از تعداد فاکتور است`;
+                return false;
+            }
+            
+            if (distributions.length === 0) {
+                hasError = true;
+                errorMessage = 'لطفاً برای همه کالاها حداقل یک محل ذخیره سازی انتخاب کنید';
+                return false;
+            }
+            
+            items.push({
+                item_id: itemId,
+                distributions: distributions
+            });
+        });
+        
+        if (hasError) {
+            showMessage(errorMessage, 'error');
+            return;
+        }
+        
+        showMessage('در حال ثبت اطلاعات...', 'info');
+        
+        $('#submit-btn').prop('disabled', true).html('<div class="loading"></div> در حال ثبت...');
+        
+        $.ajax({
+            url: "{% url 'update_inventory' %}",
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                items: items
+            }),
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(data) {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    $('#submit-btn').prop('disabled', true).html('<i class="fas fa-check"></i> ثبت شد');
+                } else {
+                    showMessage('خطا در ثبت اطلاعات: ' + data.error, 'error');
+                    $('#submit-btn').prop('disabled', false).html('<i class="fas fa-save"></i> ثبت اطلاعات انبار');
+                }
+            },
+            error: function(xhr) {
+                showMessage('خطا در ارتباط با سرور', 'error');
+                $('#submit-btn').prop('disabled', false).html('<i class="fas fa-save"></i> ثبت اطلاعات انبار');
+            }
+        });
+    });
+    
+    // بارگذاری موجودی شعبه
+    $('#load-inventory-btn').click(function() {
+        const branchId = $('#branch-select').val();
+        
+        $.ajax({
+            url: `/inventory/branch-inventory/${branchId}/`,
+            method: 'GET',
+            success: function(data) {
+                if (data.error) {
+                    showMessage(data.error, 'error');
+                    return;
+                }
+                
+                let html = `
+                    <div class="inventory-summary">
+                        <h3>موجودی ${data.branch_name}</h3>
+                    </div>
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>نام محصول</th>
+                                <th>تعداد</th>
+                                <th>آخرین بروزرسانی</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                if (data.items.length === 0) {
+                    html += `
+                        <tr>
+                            <td colspan="3">هیچ موجودی یافت نشد</td>
+                        </tr>
+                    `;
+                } else {
+                    data.items.forEach(item => {
+                        html += `
+                            <tr>
+                                <td>${item.product_name}</td>
+                                <td>${item.quantity}</td>
+                                <td>${item.last_updated}</td>
+                            </tr>
+                        `;
+                    });
+                }
+                
+                html += `</tbody></table>`;
+                $('#branch-inventory-result').html(html);
+            },
+            error: function(xhr) {
+                showMessage('خطا در دریافت اطلاعات موجودی', 'error');
+            }
+        });
+    });
+    
+    // جستجوی محصول
+    $('#product-search').on('input', function() {
+        const query = $(this).val().trim();
+        
+        if (query.length < 2) {
+            $('#product-search-results').hide().empty();
+            return;
+        }
+        
+        $.ajax({
+            url: "{% url 'search_products' %}",
+            data: { q: query },
+            dataType: 'json',
+            success: function(data) {
+                if (data.error) {
+                    showMessage(data.error, 'error');
+                    return;
+                }
+                
+                if (data.products.length === 0) {
+                    $('#product-search-results').html('<div class="search-result-item">هیچ محصولی یافت نشد</div>').show();
+                    return;
+                }
+                
+                let html = '';
+                data.products.forEach(product => {
+                    html += `
+                        <div class="search-result-item" data-product-id="${product.id}">
+                            <strong>${product.name}</strong> (موجودی کل: ${product.total_inventory})
+                        </div>
+                    `;
+                });
+                
+                $('#product-search-results').html(html).show();
+            },
+            error: function(xhr) {
+                showMessage('خطا در جستجوی محصولات', 'error');
+            }
+        });
+    });
+    
+    // انتخاب محصول از نتایج جستجو
+    $(document).on('click', '.search-result-item', function() {
+        const productId = $(this).data('product-id');
+        const productName = $(this).find('strong').text();
+        
+        $('#product-search').val(productName);
+        $('#product-search-results').hide();
+        
+        // بارگذاری اطلاعات موجودی محصول
+        $.ajax({
+            url: `/inventory/product-inventory/${productId}/`,
+            method: 'GET',
+            success: function(data) {
+                if (data.error) {
+                    showMessage(data.error, 'error');
+                    return;
+                }
+                
+                let html = `
+                    <div class="inventory-summary">
+                        <h3>موجودی محصول: ${data.product_name}</h3>
+                        <p>موجودی انبار اصلی: ${data.main_inventory}</p>
+                    </div>
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>شعبه</th>
+                                <th>تعداد</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                if (data.branches.length === 0) {
+                    html += `
+                        <tr>
+                            <td colspan="2">هیچ موجودی در شعب یافت نشد</td>
+                        </tr>
+                    `;
+                } else {
+                    data.branches.forEach(branch => {
+                        html += `
+                            <tr>
+                                <td>${branch.branch_name}</td>
+                                <td>${branch.quantity}</td>
+                            </tr>
+                        `;
+                    });
+                }
+                
+                html += `</tbody></table>`;
+                $('#product-inventory-details').html(html);
+            },
+            error: function(xhr) {
+                showMessage('خطا در دریافت اطلاعات موجودی', 'error');
+            }
+        });
+    });
+    
+    // انتقال بین شعب
+    $('#transfer-btn').click(function() {
+        const productId = $('#transfer-product').val();
+        const fromBranch = $('#transfer-from').val();
+        const toBranch = $('#transfer-to').val();
+        const quantity = $('#transfer-quantity').val();
+        
+        if (!productId || !fromBranch || !toBranch || !quantity) {
+            showMessage('لطفاً همه فیلدها را پر کنید', 'error');
+            return;
+        }
+        
+        if (fromBranch === toBranch) {
+            showMessage('مبدأ و مقصد نمی‌توانند یکسان باشند', 'error');
+            return;
+        }
+        
+        $.ajax({
+            url: "{% url 'transfer_inventory' %}",
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                product_id: productId,
+                from_branch_id: fromBranch,
+                to_branch_id: toBranch,
+                quantity: quantity
+            }),
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(data) {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    $('#transfer-quantity').val('');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            },
+            error: function(xhr) {
+                showMessage('خطا در انجام انتقال', 'error');
+            }
+        });
+    });
+    
+    // بازگشت به صفحه اصلی
+    $('#back-btn').click(function() {
+        if (confirm('تغییرات ذخیره نشده از بین خواهند رفت. آیا مطمئن هستید؟')) {
+            window.location.href = "{% url 'home' %}";
+        }
+    });
+    
+    function showMessage(message, type) {
+        const messageClass = type === 'error' ? 'error-message' : 
+                           type === 'success' ? 'success-message' : 'info-message';
+        const icon = type === 'error' ? 'fa-exclamation-circle' : 
+                   type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+        
+        $('#messages').html(`
+            <div class="${messageClass}">
+                <i class="fas ${icon}"></i> ${message}
+            </div>
+        `);
+        
+        // پنهان کردن خودکار پیام پس از 5 ثانیه (به جز خطاها)
+        if (type !== 'error') {
+            setTimeout(() => {
+                $('#messages').empty();
+            }, 5000);
+        }
+    }
+    
+    // تابع برای دریافت cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+
+    </script>
+</body>
+</html>
