@@ -269,29 +269,172 @@ def transfer_inventory(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-@require_GET
-def search_products(request):
-    query = request.GET.get('q', '').strip()
+# @require_GET
+# def search_products(request):
+#     query = request.GET.get('q', '').strip()
+#
+#     if len(query) < 2:
+#         return JsonResponse({'error': 'لطفاً حداقل ۲ کاراکتر وارد کنید'}, status=400)
+#
+#     try:
+#         products = Product.objects.filter(name__icontains=query)[:10]
+#
+#         results = []
+#         for product in products:
+#             total_inventory = Inventory.objects.filter(
+#                 product=product
+#             ).aggregate(total=Sum('quantity'))['total'] or 0
+#
+#             results.append({
+#                 'id': product.id,
+#                 'name': product.name,
+#                 'total_inventory': total_inventory
+#             })
+#
+#         return JsonResponse({'products': results})
+#
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
-    if len(query) < 2:
-        return JsonResponse({'error': 'لطفاً حداقل ۲ کاراکتر وارد کنید'}, status=400)
 
+
+
+
+# ----------------------------------------------------------------------
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.db.models import Q
+import json
+import logging
+from .models import InventoryCount, Branch, Product
+from .utils import convert_persian_arabic_to_english
+
+logger = logging.getLogger(__name__)
+
+
+def get_branches(request):
     try:
-        products = Product.objects.filter(name__icontains=query)[:10]
+        branches = Branch.objects.all().values('id', 'name', 'address')
+        return JsonResponse({
+            'success': True,
+            'branches': list(branches)
+        })
+    except Exception as e:
+        logger.error(f"Error in get_branches: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'خطا در دریافت اطلاعات شعب'
+        })
+
+
+def search_products(request):
+    try:
+        query = request.GET.get('q', '')
+        branch_id = request.GET.get('branch_id', '')
+
+        # تبدیل اعداد فارسی/عربی به انگلیسی
+        query_english = convert_persian_arabic_to_english(query)
+
+        if len(query_english) < 2:
+            return JsonResponse({'results': []})
+
+        # جستجو در محصولات از مدل InventoryCount بدون در نظر گرفتن شعبه
+        products_query = InventoryCount.objects.filter(
+            Q(product_name__icontains=query_english) |
+            Q(product_name__icontains=query)
+        )
+
+        # دریافت نام محصولات متمایز (بدون در نظر گرفتن شعبه)
+        products = products_query.values_list('product_name', flat=True).distinct()[:10]
 
         results = []
-        for product in products:
-            total_inventory = Inventory.objects.filter(
-                product=product
-            ).aggregate(total=Sum('quantity'))['total'] or 0
-
+        for product_name in products:
             results.append({
-                'id': product.id,
-                'name': product.name,
-                'total_inventory': total_inventory
+                'id': product_name,  # استفاده از نام محصول به عنوان ID
+                'text': product_name,
+                'type': 'product'
             })
 
-        return JsonResponse({'products': results})
+        return JsonResponse({'results': results})
 
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        logger.error(f"Error in product search: {str(e)}")
+        return JsonResponse({'results': []})
+def check_product(request):
+    try:
+        product_name = request.GET.get('product_name', '')
+        branch_id = request.GET.get('branch_id', '')
+
+        if not product_name or not branch_id:
+            return JsonResponse({
+                'exists': False,
+                'last_counts': []
+            })
+
+        # بررسی وجود محصول در انبار
+        exists = InventoryCount.objects.filter(
+            product_name=product_name,
+            branch_id=branch_id
+        ).exists()
+
+        last_counts = []
+        if exists:
+            # دریافت تاریخچه شمارش‌های قبلی
+            last_counts = InventoryCount.objects.filter(
+                product_name=product_name,
+                branch_id=branch_id
+            ).order_by('-created_at')[:5].values('count_date', 'counter__username', 'quantity')
+
+        return JsonResponse({
+            'exists': exists,
+            'last_counts': list(last_counts)
+        })
+
+    except Exception as e:
+        logger.error(f"Error in check_product: {str(e)}")
+        return JsonResponse({
+            'exists': False,
+            'last_counts': []
+        })
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UpdateInventoryCount(View):
+    def post(self, request):
+        try:
+            # بررسی اینکه کاربر لاگین کرده است یا نه
+            if not request.user.is_authenticated:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'لطفاً ابتدا وارد سیستم شوید'
+                })
+
+            data = json.loads(request.body)
+            items = data.get('items', [])
+            user = request.user
+
+            for item in items:
+                # ایجاد یا به روزرسانی رکورد شمارش
+                inventory_count, created = InventoryCount.objects.update_or_create(
+                    product_name=item['productName'],
+                    branch_id=item['branchId'],
+                    defaults={
+                        'is_new': item['productType'] == 'new',
+                        'quantity': item['quantity'],
+                        'counter': user
+                    }
+                )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'انبار با موفقیت به روزرسانی شد'
+            })
+
+        except Exception as e:
+            logger.error(f"Error in update_inventory_count: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
