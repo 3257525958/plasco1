@@ -24,9 +24,9 @@ urlpatterns = [
     path('search-products/', views.search_products, name='search_products'),
     path('check-product/', views.check_product, name='check_product'),
     path('update-inventory-count/', views.UpdateInventoryCount.as_view(), name='update_inventory_count'),
-    path('search-invoices/', views.search_invoices, name='search_invoices'),
-    path('get-invoice-details/', views.get_invoice_details, name='get_invoice_details'),
     path('store-invoice-items/', views.StoreInvoiceItems.as_view(), name='store_invoice_items'),
+    path('search_invoices/', views.search_invoices, name='search_invoices'),
+    path('get_invoice_details/', views.get_invoice_details, name='get_invoice_details'),
 
 
 # -----------------------مالی-------------------------------------------
