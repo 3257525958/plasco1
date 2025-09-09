@@ -183,7 +183,6 @@ class Invoice(models.Model):
         return f"فاکتور {self.serial_number} - {self.seller}"
 
 
-
 class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
@@ -197,59 +196,40 @@ class InvoiceItem(models.Model):
         decimal_places=2,
         verbose_name="قیمت واحد"
     )
-    selling_price = models.DecimalField(
+    selling_price = models.DecimalField(  # اضافه کردن این فیلد
         max_digits=15,
         decimal_places=2,
-        verbose_name="قیمت فروش",
-        default=0
+        default=0,
+        verbose_name="قیمت فروش"
     )
     quantity = models.IntegerField(
         verbose_name="تعداد",
         validators=[MinValueValidator(1)]
     )
-    # فیلدهای جدید
-    discount = models.DecimalField(
-        max_digits=5,
+    discount = models.DecimalField(  # اضافه کردن این فیلد
+        max_digits=15,
         decimal_places=2,
         default=0,
-        verbose_name="تخفیف (%)"
+        verbose_name="تخفیف"
     )
-    location = models.CharField(
-        max_length=300,
+    item_number = models.IntegerField(  # اضافه کردن این فیلد
+        verbose_name="شماره آیتم",
+        default=1
+    )
+    location = models.CharField(  # اضافه کردن این فیلد
+        max_length=100,
+        verbose_name="مکان",
         blank=True,
-        verbose_name="محل چیدن جنس"
+        null=True
     )
-    item_number = models.PositiveIntegerField(
-        verbose_name="شماره کالا",
+    remaining_quantity = models.IntegerField(
+        verbose_name="تعداد باقیمانده",
         default=0
     )
 
+    def __str__(self):
+        return f"{self.product_name} - {self.quantity}"
+
     @property
     def total_price(self):
-        # محاسبه قیمت نهایی با احتساب تخفیف
-        price_before_discount = self.selling_price * self.quantity
-        discount_amount = (price_before_discount * self.discount) / 100
-        return price_before_discount - discount_amount
-
-    @property
-    def barcode_base(self):
-        """تولید کد بارکد بر اساس شماره سریال فاکتور و شماره ردیف کالا"""
-        try:
-            # شماره سریال فاکتور (12 رقم)
-            serial_part = self.invoice.serial_number
-
-            # شماره ردیف کالا (4 رقم)
-            item_part = str(self.item_number).zfill(4)
-
-            return f"{serial_part}{item_part}"
-        except Exception as e:
-            logger.error(f"Error in barcode_base: {str(e)}")
-            return "0000000000000000"
-
-    def __str__(self):
-        return f"{self.product_name} - {self.quantity}x"
-
-    class eta:
-        ordering = ['item_number']
-
-
+        return (self.quantity * self.unit_price) - self.discount

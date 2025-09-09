@@ -731,6 +731,15 @@ class StoreInvoiceItems(View):
                     inventory_count.quantity += quantity
                     inventory_count.save()
 
+            for invoice_item in invoice_items:
+                product_name = invoice_item.product_name
+
+                if product_name in stored_quantities:
+                    # کسر مقدار ثبت شده از مقدار باقیمانده
+                    invoice_item.remaining_quantity = max(0, invoice_item.remaining_quantity - stored_quantities[
+                        product_name])
+                    invoice_item.save()
+
             # تبدیل داده‌های موقت به فرمت مورد نیاز برای چاپ
             for key, data in product_branch_totals.items():
                 product_name = data['product_name']
@@ -763,7 +772,7 @@ class StoreInvoiceItems(View):
 
             return JsonResponse({
                 'success': True,
-                'message': 'اطلاعات انبار با موفقیت ثبت شد',
+                'message': 'اطلاعات انبار با موفقیت ثبت شد و مقادیر فاکتور به روز شدند',
                 'print_url': '/account/print-invoice/'  # تغییر این خط
             })
 
@@ -911,3 +920,20 @@ def persian_print(text):
         print(text)
 
 
+# ---------------------------------------------------------------------------------------
+
+def invoice_status(request, invoice_id):
+    """نمایش وضعیت فاکتور و مقادیر باقیمانده"""
+    try:
+        invoice = Invoice.objects.get(id=invoice_id)
+        items = invoice.items.all()
+
+        context = {
+            'invoice': invoice,
+            'items': items,
+        }
+
+        return render(request, 'invoice_status.html', context)
+
+    except Invoice.DoesNotExist:
+        return HttpResponse("فاکتور یافت نشد")

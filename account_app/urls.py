@@ -29,7 +29,8 @@ urlpatterns = [
     path('store-invoice-items/', views.StoreInvoiceItems.as_view(), name='store_invoice_items'),
 
 
-
+# -----------------------مالی-------------------------------------------
+path('invoice-status/<int:invoice_id>/', views.invoice_status, name='invoice_status'),
 
 
 ]

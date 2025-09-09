@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>وضعیت فاکتور {{ invoice.serial_number }}</title>
+    <style>
+        body { font-family: Tahoma, sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; }
+        .remaining { color: #d32f2f; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>وضعیت فاکتور: {{ invoice.serial_number }}</h1>
+    <p>تاریخ: {{ invoice.jalali_date }}</p>
+    <p>فروشنده: {{ invoice.seller.name }} {{ invoice.seller.family }}</p>
+    
+    <h2>موارد فاکتور</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>کالا</th>
+                <th>تعداد اولیه</th>
+                <th>تعداد باقیمانده</th>
+                <th>وضعیت</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.product_name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td class="remaining">{{ item.remaining_quantity }}</td>
+                <td>
+                    {% if item.remaining_quantity == 0 %}
+                    تکمیل شده
+                    {% else %}
+                    در حال انجام
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <a href="{% url 'admin:dashbord_app_invoice_change' invoice.id %}">مشاهده در ادمین</a>
+</body>
+</html>
