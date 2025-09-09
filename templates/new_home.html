@@ -264,25 +264,13 @@
       <span>ورود</span>
     </a>
 
-    <!-- آیتم جدید: صدور فاکتور -->
-    <a href="{% if profilestatus %}dashbord/create-invoice/{% else %}dashbord/create-invoice/{% endif %}" 
-       class="quick_item {% if not profilestatus %}disabled{% endif %}">
-      <i class="fas fa-file-export quick-icon"></i>
-      <span>صدور فاکتور</span>
-    </a>
 
-    <!-- آیتم جدید: انبار -->
-    <a href="{% if profilestatus %}account/inventory/{% else %}account/inventory/{% endif %}"
-       class="quick_item {% if not profilestatus %}disabled{% endif %}">
-      <i class="fas fa-dolly quick-icon"></i>
-      <span>انبار</span>
-    </a>
 
     <!-- آیتم جدید: ثبت فاکتور -->
     <a href="{% if profilestatus %}dashbord/register-invoice/{% else %}dashbord/register-invoice/{% endif %}" 
        class="quick_item {% if not profilestatus %}disabled{% endif %}">
       <i class="fas fa-clipboard-list quick-icon"></i>
-      <span>ثبت فاکتور</span>
+      <span>صدور فاکتور مشتری</span>
     </a>
 
     <!-- آیتم جدید: چاپ لیبل -->
@@ -290,6 +278,19 @@
        class="quick_item {% if not profilestatus %}disabled{% endif %}">
       <i class="fas fa-barcode quick-icon"></i>
       <span>چاپ لیبل</span>
+    </a>
+      <!-- آیتم جدید: انبار -->
+    <a href="{% if profilestatus %}account/inventory/{% else %}account/inventory/{% endif %}"
+       class="quick_item {% if not profilestatus %}disabled{% endif %}">
+      <i class="fas fa-dolly quick-icon"></i>
+      <span>انبار</span>
+    </a>
+
+    <!-- آیتم جدید: صدور فاکتور -->
+    <a href="{% if profilestatus %}dashbord/create-invoice/{% else %}dashbord/create-invoice/{% endif %}" 
+       class="quick_item {% if not profilestatus %}disabled{% endif %}">
+      <i class="fas fa-file-export quick-icon"></i>
+      <span>ثبت فاکتور</span>
     </a>
 
     <!-- آیتم جدید: ثبت فروشنده -->
