@@ -455,41 +455,6 @@ from django.shortcuts import render
 
 
 
-# Search invoices by seller name, family or invoice serial number
-# def search_invoices(request):
-#     print('1')
-#     try:
-#         query = request.GET.get('q', '')
-#
-#         # تبدیل اعداد فارسی/عربی به انگلیسی در صورت نیاز
-#         query_english = convert_persian_arabic_to_english(query)
-#
-#         if len(query_english) < 2:
-#             return JsonResponse({'results': []})
-#
-#         # جستجو در فاکتورها بر اساس نام فروشنده، نام خانوادگی یا شماره سریال
-#         invoices = Invoice.objects.filter(
-#             Q(seller__name__icontains=query_english) |
-#             Q(seller__family__icontains=query_english) |
-#             Q(serial_number__icontains=query_english)
-#         ).select_related('seller')[:10]
-#
-#         results = []
-#         for invoice in invoices:
-#             results.append({
-#                 'id': invoice.id,
-#                 'text': f"{invoice.serial_number} - {invoice.seller.name} {invoice.seller.family}",
-#                 'serial_number': invoice.serial_number,
-#                 'seller_name': f"{invoice.seller.name} {invoice.seller.family}",
-#                 'date': invoice.jalali_date
-#             })
-#
-#         return JsonResponse({'results': results})
-#
-#     except Exception as e:
-#         logger.error(f"Error in invoice search: {str(e)}")
-#         return JsonResponse({'results': []})
-
 def search_invoices(request):
     try:
         query = request.GET.get('q', '')
@@ -566,45 +531,383 @@ def get_invoice_details(request):
 
 
 # Store invoice items in inventory0
+# @method_decorator(csrf_exempt, name='dispatch')
+# class StoreInvoiceItems(View):
+#     def post(self, request):
+#         try:
+#             if not request.user.is_authenticated:
+#                 return JsonResponse({'success': False, 'error': 'لطفاً ابتدا وارد سیستم شوید'})
+#
+#             data = json.loads(request.body)
+#             items = data.get('items', [])
+#
+#             for item in items:
+#                 branch_id = item.get('branch_id')
+#                 quantity = item.get('quantity')
+#                 product_name = item.get('product_name')
+#
+#                 # Check if branch exists
+#                 try:
+#                     branch = Branch.objects.get(id=branch_id)
+#                 except Branch.DoesNotExist:
+#                     return JsonResponse({'success': False, 'error': f'شعبه با شناسه {branch_id} یافت نشد'})
+#
+#                 # Create or update inventory count
+#                 inventory_count, created = InventoryCount.objects.update_or_create(
+#                     product_name=product_name,
+#                     branch=branch,
+#                     defaults={
+#                         'quantity': quantity,
+#                         'counter': request.user,
+#                         'is_new': True
+#                     }
+#                 )
+#
+#             # این خط کلمه success را در logهای Python چاپ می‌کند
+#             print('succes')
+#             # یا می‌توانید از print استفاده کنید:
+#             # print("success")
+#
+#             return JsonResponse({'success': True, 'message': 'اطلاعات انبار با موفقیت ثبت شد'})
+#
+#         except Exception as e:
+#             logger.error(f"Error storing invoice items: {str(e)}")
+#             return JsonResponse({'success': False, 'error': str(e)})
+import sys
+import arabic_reshaper
+from bidi.algorithm import get_display
+from django.http import JsonResponse, HttpResponse
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+import json
+import logging
+
+# تنظیم encoding پیشفرض به UTF-8
+sys.stdout.reconfigure(encoding='utf-8')
+
+# تنظیمات reshaper برای فارسی
+arabic_reshaper.configuration_for_arabic_letters = {
+    'delete_harakat': False,
+    'support_ligatures': True,
+    'language': 'Farsi',
+}
+
+import sys
+import arabic_reshaper
+from bidi.algorithm import get_display
+from django.http import JsonResponse, HttpResponse
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.db import transaction
+import json
+import logging
+from decimal import Decimal
+from datetime import datetime
+
+# مدل‌های مورد نیاز را import کنید
+from .models import InventoryCount, Branch
+from dashbord_app.models import Invoice, InvoiceItem
+from account_app.models import FinancialDocument, FinancialDocumentItem  # فرض می‌کنیم این مدل‌ها وجود دارند
+
+
+
+def persian_print(text):
+    """تابع کمکی برای نمایش متن فارسی در کنسول"""
+    reshaped_text = arabic_reshaper.reshape(text)
+    bidi_text = get_display(reshaped_text)
+    print(bidi_text)
+
+# تنظیمات reshaper برای فارسی
+arabic_reshaper.configuration_for_arabic_letters = {
+    'delete_harakat': False,
+    'support_ligatures': True,
+    'language': 'Farsi',
+}
+from django.core.cache import cache
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.db import transaction
+import json
+import logging
+from decimal import Decimal
+from datetime import datetime
 @method_decorator(csrf_exempt, name='dispatch')
 class StoreInvoiceItems(View):
+    @transaction.atomic
     def post(self, request):
         try:
+            # بررسی توکن یکبار مصرف
+            data = json.loads(request.body)
+            request_id = data.get('request_id')
+
+            if request_id:
+                cache_key = f"invoice_request_{request_id}"
+                if cache.get(cache_key):
+                    return JsonResponse({'success': False, 'error': 'این درخواست قبلاً پردازش شده است'})
+
+                # ذخیره توکن به مدت 5 دقیقه
+                cache.set(cache_key, True, timeout=300)
+
             if not request.user.is_authenticated:
                 return JsonResponse({'success': False, 'error': 'لطفاً ابتدا وارد سیستم شوید'})
 
-            data = json.loads(request.body)
             items = data.get('items', [])
+            invoice_id = data.get('invoice_id')
+
+            # بررسی وجود invoice_id
+            if not invoice_id:
+                return JsonResponse({'success': False, 'error': 'شناسه فاکتور الزامی است'})
+
+            # دریافت اطلاعات فاکتور
+            try:
+                invoice = Invoice.objects.get(id=invoice_id)
+                invoice_items = InvoiceItem.objects.filter(invoice=invoice)
+            except Invoice.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'فاکتور یافت نشد'})
+
+            # ایجاد یک دیکشنری برای ذخیره مقادیر هر محصول در هر شعبه
+            product_branch_totals = {}
+            print_data = {
+                'invoice_number': invoice.serial_number if invoice else 'نامشخص',
+                'items': {}
+            }
 
             for item in items:
                 branch_id = item.get('branch_id')
-                quantity = item.get('quantity')
+                quantity = int(item.get('quantity'))
                 product_name = item.get('product_name')
 
-                # Check if branch exists
+                # بررسی وجود مقادیر ضروری
+                if not branch_id or not product_name:
+                    continue
+
+                # بررسی وجود شعبه
                 try:
                     branch = Branch.objects.get(id=branch_id)
                 except Branch.DoesNotExist:
                     return JsonResponse({'success': False, 'error': f'شعبه با شناسه {branch_id} یافت نشد'})
 
-                # Create or update inventory count
-                inventory_count, created = InventoryCount.objects.update_or_create(
-                    product_name=product_name,
-                    branch=branch,
-                    defaults={
-                        'quantity': quantity,
-                        'counter': request.user,
-                        'is_new': True
+                # ایجاد کلید منحصر به فرد برای هر محصول در هر شعبه
+                product_branch_key = f"{product_name}_{branch_id}"
+
+                # اگر این ترکیب قبلاً پردازش نشده، مقدار را اضافه کن
+                if product_branch_key not in product_branch_totals:
+                    product_branch_totals[product_branch_key] = {
+                        'product_name': product_name,
+                        'branch': branch,
+                        'quantity': quantity
                     }
-                )
 
-            # این خط کلمه success را در logهای Python چاپ می‌کند
-            print('succes')
-            # یا می‌توانید از print استفاده کنید:
-            # print("success")
+                    # به روزرسانی موجودی انبار
+                    try:
+                        inventory_count = InventoryCount.objects.get(
+                            product_name=product_name,
+                            branch=branch
+                        )
+                        inventory_count.quantity += quantity
+                        inventory_count.save()
+                    except InventoryCount.DoesNotExist:
+                        inventory_count = InventoryCount.objects.create(
+                            product_name=product_name,
+                            branch=branch,
+                            quantity=quantity,
+                            counter=request.user,
+                            is_new=True
+                        )
+                else:
+                    # اگر قبلاً پردازش شده، فقط مقدار را افزایش بده
+                    product_branch_totals[product_branch_key]['quantity'] += quantity
 
-            return JsonResponse({'success': True, 'message': 'اطلاعات انبار با موفقیت ثبت شد'})
+                    # به روزرسانی موجودی انبار
+                    inventory_count = InventoryCount.objects.get(
+                        product_name=product_name,
+                        branch=branch
+                    )
+                    inventory_count.quantity += quantity
+                    inventory_count.save()
+
+            # تبدیل داده‌های موقت به فرمت مورد نیاز برای چاپ
+            for key, data in product_branch_totals.items():
+                product_name = data['product_name']
+                branch = data['branch']
+                quantity = data['quantity']
+
+                if product_name not in print_data['items']:
+                    print_data['items'][product_name] = {
+                        'total': 0,
+                        'branches': {}
+                    }
+
+                print_data['items'][product_name]['total'] += quantity
+
+                if branch.name not in print_data['items'][product_name]['branches']:
+                    print_data['items'][product_name]['branches'][branch.name] = 0
+                print_data['items'][product_name]['branches'][branch.name] += quantity
+
+            # به روزرسانی مقدار باقیمانده فاکتور
+            self.update_invoice_remaining_quantities(invoice, print_data)
+
+            # ایجاد یا به روزرسانی سند مالی
+            self.create_or_update_financial_document(invoice, invoice_items)
+
+            # چاپ اطلاعات در کنسول
+            self.print_invoice_data(print_data)
+
+            # ذخیره اطلاعات برای استفاده در صفحه چاپ
+            request.session['print_data'] = print_data
+
+            return JsonResponse({
+                'success': True,
+                'message': 'اطلاعات انبار با موفقیت ثبت شد',
+                'print_url': '/account/print-invoice/'  # تغییر این خط
+            })
 
         except Exception as e:
             logger.error(f"Error storing invoice items: {str(e)}")
             return JsonResponse({'success': False, 'error': str(e)})
+    def update_invoice_remaining_quantities(self, invoice, print_data):
+        """به روزرسانی مقادیر باقیمانده فاکتور بر اساس موجودی اضافه شده"""
+        for invoice_item in invoice.items.all():
+            product_name = invoice_item.product_name
+            if product_name in print_data['items']:
+                # محاسبه کل مقداری که به انبار اضافه شده
+                total_stored = print_data['items'][product_name]['total']
+
+                # به روزرسانی مقدار باقیمانده در فاکتور
+                # فرض می‌کنیم فیلدی به نام remaining_quantity در InvoiceItem وجود دارد
+                if hasattr(invoice_item, 'remaining_quantity'):
+                    invoice_item.remaining_quantity = max(0, invoice_item.quantity - total_stored)
+                    invoice_item.save()
+
+    def create_or_update_financial_document(self, invoice, invoice_items):
+        """ایجاد یا به روزرسانی سند مالی"""
+        try:
+            # بررسی وجود سند مالی برای این فاکتور
+            financial_doc, created = FinancialDocument.objects.get_or_create(
+                invoice=invoice,
+                defaults={
+                    'document_date': datetime.now(),
+                    'total_amount': Decimal('0'),
+                    'paid_amount': Decimal('0'),
+                    'status': 'unpaid'
+                }
+            )
+
+            # اگر سند مالی از قبل وجود داشته، آیتم‌های آن را پاک می‌کنیم
+            if not created:
+                FinancialDocumentItem.objects.filter(document=financial_doc).delete()
+
+            # محاسبه جمع کل فاکتور
+            total_amount = Decimal('0')
+
+            # ایجاد آیتم‌های سند مالی
+            for item in invoice_items:
+                # محاسبه قیمت نهایی با احتساب تخفیف
+                price_before_discount = item.selling_price * item.quantity
+                discount_amount = (price_before_discount * item.discount) / Decimal('100')
+                final_price = price_before_discount - discount_amount
+
+                # ایجاد آیتم سند مالی
+                FinancialDocumentItem.objects.create(
+                    document=financial_doc,
+                    product_name=item.product_name,
+                    quantity=item.quantity,
+                    unit_price=item.unit_price,
+                    discount=item.discount,
+                    total_price=final_price
+                )
+
+                total_amount += final_price
+
+            # به روزرسانی جمع کل سند مالی
+            financial_doc.total_amount = total_amount
+
+            # بررسی وضعیت پرداخت
+            if financial_doc.paid_amount >= total_amount:
+                financial_doc.status = 'settled'
+            elif financial_doc.paid_amount > Decimal('0'):
+                financial_doc.status = 'partially_paid'
+            else:
+                financial_doc.status = 'unpaid'
+
+            financial_doc.save()
+
+        except Exception as e:
+            logger.error(f"Error creating financial document: {str(e)}")
+            # در صورت خطا، عملیات را متوقف نمی‌کنیم اما خطا را لاگ می‌کنیم
+
+    def print_invoice_data(self, print_data):
+        """چاپ اطلاعات فاکتور در کنسول"""
+        persian_print("=" * 50)
+        persian_print(f"شماره فاکتور: {print_data['invoice_number']}")
+        persian_print("=" * 50)
+
+        for product_name, data in print_data['items'].items():
+            persian_print(f"\nکالا: {product_name}")
+            persian_print(f"جمع کل: {data['total']}")
+            persian_print("توزیع بین شعب:")
+
+            for branch_name, quantity in data['branches'].items():
+                persian_print(f"  - {branch_name}: {quantity}")
+
+        persian_print("\n" + "=" * 50)
+        persian_print("پایان گزارش")
+
+
+def print_invoice_view(request):
+    """ویو برای نمایش صفحه چاپ فاکتور"""
+    print_data = request.session.get('print_data', {})
+
+    if not print_data:
+        return HttpResponse("داده‌ای برای چاپ موجود نیست")
+
+    # رندر کردن template با داده‌های فاکتور
+    html_content = render_to_string('print_invoice.html', {
+        'print_data': print_data
+    })
+
+    return HttpResponse(html_content)
+
+
+import sys
+import arabic_reshaper
+from bidi.algorithm import get_display
+from django.http import JsonResponse, HttpResponse
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.db import transaction
+import json
+import logging
+from decimal import Decimal
+from datetime import datetime
+
+# تنظیم encoding پیشفرض به UTF-8
+if sys.stdout.encoding != 'UTF-8':
+    sys.stdout.reconfigure(encoding='utf-8')
+
+# تنظیمات reshaper برای فارسی
+arabic_reshaper.configuration_for_arabic_letters = {
+    'delete_harakat': False,
+    'support_ligatures': True,
+    'language': 'Farsi',
+}
+
+
+def persian_print(text):
+    """تابع کمکی برای نمایش متن فارسی در کنسول"""
+    try:
+        reshaped_text = arabic_reshaper.reshape(text)
+        bidi_text = get_display(reshaped_text)
+        print(bidi_text)
+    except Exception as e:
+        # اگر خطایی رخ داد، متن را بدون تغییر چاپ کنید
+        print(text)
+
+

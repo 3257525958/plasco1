@@ -1973,9 +1973,76 @@ $(document).on('click', function(e) {
         $('.search-results').hide();
     }
 });
+{#-----------------------------------------------------------------#}
+// اضافه کردن متغیر global برای جلوگیری از ارسال تکراری
+let isSubmitting = false;
 
-
-
+// تغییرات در تابع کلیک روی دکمه ثبت
+$('#invoice-submit-btn').click(function() {
+    if (isSubmitting) {
+        showMessage('در حال پردازش درخواست قبلی... لطفاً صبر کنید', 'info');
+        return false;
+    }
+    
+    if (storageEntries.length === 0) {
+        showMessage('هیچ اطلاعاتی برای ثبت وجود ندارد', 'error');
+        return;
+    }
+    
+    if (!confirm('آیا از ثبت اطلاعات انبار مطمئن هستید؟')) {
+        return;
+    }
+    
+    // غیرفعال کردن دکمه و تغییر متن آن
+    isSubmitting = true;
+    $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال ثبت...');
+    
+    // ایجاد شناسه یکتا برای این درخواست
+    const requestId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    
+    showMessage('در حال ثبت اطلاعات...', 'info');
+    
+    // ارسال داده‌ها به سرور
+    $.ajax({
+        url: "{% url 'store_invoice_items' %}",
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            items: storageEntries,
+            invoice_id: selectedInvoice.id,
+            request_id: requestId
+        }),
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        success: function(data) {
+            if (data.success) {
+                showMessage(data.message, 'success');
+                
+                // هدایت به صفحه چاپ
+                if (data.print_url) {
+                    window.open(data.print_url, '_blank');
+                }
+                
+                // پاکسازی فرم و بازگشت به صفحه اصلی بعد از 2 ثانیه
+                setTimeout(() => {
+                    window.location.href = "{% url 'home' %}";
+                }, 2000);
+            } else {
+                showMessage(data.error, 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error storing invoice items:', error);
+            showMessage('خطا در ثبت اطلاعات', 'error');
+        },
+        complete: function() {
+            // فعال کردن دکمه و بازگرداندن متن اصلی
+            isSubmitting = false;
+            $('#invoice-submit-btn').prop('disabled', false).html('<i class="fas fa-save"></i> ثبت اطلاعات انبار');
+        }
+    });
+});
     </script>
 </body>
 </html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چاپ فاکتور</title>
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-container, .print-container * {
+                visibility: visible;
+            }
+            .print-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #000;
+            background: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .print-container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+            background: #fff;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #333;
+        }
+        .invoice-info {
+            margin-bottom: 20px;
+        }
+        .invoice-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .branch-list {
+            margin-right: 20px;
+        }
+        .branch-item {
+            padding: 5px 0;
+            border-bottom: 1px dashed #ddd;
+        }
+        .total {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .print-btn {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-container">
+        <div class="header">
+            <h1>فاکتور انبار</h1>
+        </div>
+        
+        <div class="invoice-info">
+            <h2>شماره فاکتور: {{ print_data.invoice_number }}</h2>
+        </div>
+        
+        <div class="items-list">
+            {% for product_name, data in print_data.items.items %}
+            <div class="invoice-item">
+                <h3>کالا: {{ product_name }}</h3>
+                <div class="branch-list">
+                    <h4>توزیع بین شعب:</h4>
+                    {% for branch_name, quantity in data.branches.items %}
+                    <div class="branch-item">
+                        {{ branch_name }}: {{ quantity }} عدد
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="total">جمع کل: {{ data.total }} عدد</div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="footer">
+            <p>تاریخ چاپ: {% now "Y/m/d H:i" %}</p>
+        </div>
+    </div>
+    
+    <div class="print-btn no-print">
+        <button onclick="window.print()">چاپ فاکتور</button>
+        <button onclick="window.close()">بستن</button>
+    </div>
+
+</body>
+</html>
