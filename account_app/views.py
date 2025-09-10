@@ -129,6 +129,46 @@ def check_product(request):
         })
 
 
+# @method_decorator(csrf_exempt, name='dispatch')
+# class UpdateInventoryCount(View):
+#     def post(self, request):
+#         try:
+#             # بررسی اینکه کاربر لاگین کرده است یا نه
+#             if not request.user.is_authenticated:
+#                 return JsonResponse({
+#                     'success': False,
+#                     'error': 'لطفاً ابتدا وارد سیستم شوید'
+#                 })
+#
+#             data = json.loads(request.body)
+#             items = data.get('items', [])
+#             user = request.user
+#
+#             for item in items:
+#                 # ایجاد یا به روزرسانی رکورد شمارش
+#                 inventory_count, created = InventoryCount.objects.update_or_create(
+#                     product_name=item['productName'],
+#                     branch_id=item['branchId'],
+#                     defaults={
+#                         'is_new': item['productType'] == 'new',
+#                         'quantity': item['quantity'],
+#                         'counter': user
+#                     }
+#                 )
+#
+#             return JsonResponse({
+#                 'success': True,
+#                 'message': 'انبار با موفقیت به روزرسانی شد'
+#             })
+#
+#         except Exception as e:
+#             logger.error(f"Error in update_inventory_count: {str(e)}")
+#             return JsonResponse({
+#                 'success': False,
+#                 'error': str(e)
+#             })
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class UpdateInventoryCount(View):
     def post(self, request):
@@ -144,13 +184,19 @@ class UpdateInventoryCount(View):
             items = data.get('items', [])
             user = request.user
 
+            # لاگ کردن اطلاعات دریافتی برای دیباگ
+            logger.info(f"Received items: {items}")
+
             for item in items:
+                # لاگ کردن هر آیتم برای دیباگ
+                logger.info(f"Processing item: {item}")
+
                 # ایجاد یا به روزرسانی رکورد شمارش
                 inventory_count, created = InventoryCount.objects.update_or_create(
                     product_name=item['productName'],
                     branch_id=item['branchId'],
                     defaults={
-                        'is_new': item['productType'] == 'new',
+                        'is_new': item.get('productType', 'new') == 'new',  # استفاده از get با مقدار پیشفرض
                         'quantity': item['quantity'],
                         'counter': user
                     }
@@ -167,6 +213,7 @@ class UpdateInventoryCount(View):
                 'success': False,
                 'error': str(e)
             })
+
 
 # ------------------------------------------------------------------------------------------
 # views.py

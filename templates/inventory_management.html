@@ -1101,11 +1101,11 @@ $(document).on('click', '#invoice-search-results .search-result-item', function(
 function updateInvoiceItemsList() {
     const $itemsList = $('#invoice-items-list');
     $itemsList.empty();
-    
+
     invoiceItems.forEach((item, index) => {
         const itemEntries = storageEntries.filter(entry => entry.item_index === index);
         const totalStored = itemEntries.reduce((sum, entry) => sum + parseInt(entry.quantity), 0);
-        
+
         // تغییر اول: نمایش remaining_quantity به جای quantity
         const row = `
             <tr data-item-index="${index}">
@@ -1144,7 +1144,7 @@ function updateInvoiceItemsList() {
         `;
         $itemsList.append(row);
     });
-    
+
     if (storageEntries.length > 0) {
         $('#storage-actions').show();
     } else {

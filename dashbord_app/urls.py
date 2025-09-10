@@ -26,9 +26,10 @@ urlpatterns = [
     # path('print-settings/', views.print_settings, name='print_settings'),
     # تغییر مسیر چاپ به پیش‌نمایش
     path('print-preview/<int:invoice_id>/', views.print_preview, name='print_preview'),
-
     # مسیر تنظیمات چاپ
     path('print-settings/', views.print_settings, name='print_settings'),
+
+
 
     path('usb/',views.usb_view, name='usb'),
 

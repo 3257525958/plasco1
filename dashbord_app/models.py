@@ -186,6 +186,20 @@ class Invoice(models.Model):
 class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class InvoiceItem(models.Model):
+        PRODUCT_TYPE_CHOICES = [
+            ('new', 'کالای جدید'),
+            ('old', 'کالای قدیمی'),
+        ]
+
+        # فیلدهای موجود...
+        product_type = models.CharField(
+            max_length=10,
+            choices=PRODUCT_TYPE_CHOICES,
+            default='new',
+            verbose_name="نوع کالا"
+        )
     product_name = models.CharField(
         max_length=200,
         verbose_name="نام کالا",

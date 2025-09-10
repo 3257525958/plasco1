@@ -167,8 +167,7 @@ def create_invoice(request):
                             quantity=quantity_val,
                             unit_price=unit_price_val,
                             discount=discount_val,
-                            item_number=i + 1,
-                            remaining_quantity=quantity_val,
+                            item_number=i + 1
                         )
 
                         # محاسبه جمع‌ها
@@ -435,65 +434,6 @@ def search_sellers(request):
             'address': seller.address or '---'  # اضافه کردن آدرس
         })
     return JsonResponse({'results': results})
-# def search_sellers(request):
-#     query = request.GET.get('q', '')
-#
-#     # تبدیل اعداد فارسی و عربی به انگلیسی
-#     query_english = convert_persian_arabic_to_english(query)
-#
-#     # جستجو در اطلاعات اصلی فروشنده
-#     sellers = Froshande.objects.filter(
-#         Q(name__icontains=query_english) |
-#         Q(family__icontains=query_english) |
-#         Q(store_name__icontains=query_english)
-#     )[:10]
-#
-#     # اگر نتیجه‌ای پیدا نشد، در شماره تماس‌ها جستجو کن
-#     if not sellers:
-#         contact_numbers = ContactNumber.objects.filter(
-#             Q(number__icontains=query_english)
-#         )[:10]
-#
-#         # پیدا کردن فروشندگان مرتبط با شماره تماس‌های یافت شده
-#         seller_ids = contact_numbers.values_list('froshande_id', flat=True)
-#         sellers = Froshande.objects.filter(id__in=seller_ids)
-#
-#     # اگر هنوز نتیجه‌ای پیدا نشد، در اطلاعات بانکی جستجو کن
-#     if not sellers:
-#         bank_accounts = BankAccount.objects.filter(
-#             Q(account_number__icontains=query_english) |
-#             Q(card_number__icontains=query_english) |
-#             Q(sheba_number__icontains=query_english)
-#         )[:10]
-#
-#         # پیدا کردن فروشندگان مرتبط با حساب‌های بانکی یافت شده
-#         seller_ids = bank_accounts.values_list('froshande_id', flat=True)
-#         sellers = Froshande.objects.filter(id__in=seller_ids)
-#
-#     # آماده کردن نتایج برای پاسخ JSON
-#     results = []
-#     for seller in sellers:
-#         # پیدا کردن شماره تماس اصلی
-#         primary_contact = seller.contact_numbers.filter(is_primary=True).first()
-#         mobile = primary_contact.number if primary_contact and primary_contact.contact_type == 'mobile' else None
-#
-#         # پیدا کردن اطلاعات بانکی اصلی
-#         primary_bank = seller.bank_accounts.filter(is_primary=True).first()
-#         sheba = primary_bank.sheba_number if primary_bank else None
-#         card = primary_bank.card_number if primary_bank else None
-#
-#         results.append({
-#             'id': seller.id,
-#             'text': f"{seller.name} {seller.family} - {seller.store_name or 'بدون نام فروشگاه'}",
-#             'mobile': mobile,
-#             'sheba': sheba,
-#             'card': card,
-#             'name': seller.name,
-#             'family': seller.family,
-#             'store': seller.store_name
-#         })
-#
-#     return JsonResponse({'results': results})
 
 def search_products(request):
     query = request.GET.get('q', '')
