@@ -322,8 +322,6 @@ class StoreInvoiceItems(View):
                 cache_key = f"invoice_request_{request_id}"
                 if cache.get(cache_key):
                     return JsonResponse({'success': False, 'error': 'این درخواست قبلاً پردازش شده است'})
-
-                # ذخیره توکن به مدت 5 دقیقه
                 cache.set(cache_key, True, timeout=300)
 
             if not request.user.is_authenticated:
@@ -332,7 +330,6 @@ class StoreInvoiceItems(View):
             items = data.get('items', [])
             invoice_id = data.get('invoice_id')
 
-            # بررسی وجود invoice_id
             if not invoice_id:
                 return JsonResponse({'success': False, 'error': 'شناسه فاکتور الزامی است'})
 
@@ -342,6 +339,25 @@ class StoreInvoiceItems(View):
                 invoice_items = InvoiceItem.objects.filter(invoice=invoice)
             except Invoice.DoesNotExist:
                 return JsonResponse({'success': False, 'error': 'فاکتور یافت نشد'})
+
+            # ایجاد دیکشنری برای جمع‌بندی مقادیر ذخیره‌شده برای هر محصول
+            stored_quantities = {}
+            for item in items:
+                product_name = item.get('product_name')
+                quantity = int(item.get('quantity', 0))
+                if product_name in stored_quantities:
+                    stored_quantities[product_name] += quantity
+                else:
+                    stored_quantities[product_name] = quantity
+
+            # به روزرسانی مقدار remaining_quantity برای هر آیتم فاکتور
+            for invoice_item in invoice_items:
+                product_name = invoice_item.product_name
+                if product_name in stored_quantities:
+                    # کسر مقدار ثبت شده از مقدار باقیمانده
+                    new_remaining = invoice_item.remaining_quantity - stored_quantities[product_name]
+                    invoice_item.remaining_quantity = max(0, new_remaining)
+                    invoice_item.save()
 
             # ایجاد یک دیکشنری برای ذخیره مقادیر هر محصول در هر شعبه
             product_branch_totals = {}
@@ -355,11 +371,9 @@ class StoreInvoiceItems(View):
                 quantity = int(item.get('quantity'))
                 product_name = item.get('product_name')
 
-                # بررسی وجود مقادیر ضروری
                 if not branch_id or not product_name:
                     continue
 
-                # بررسی وجود شعبه
                 try:
                     branch = Branch.objects.get(id=branch_id)
                 except Branch.DoesNotExist:
@@ -368,7 +382,6 @@ class StoreInvoiceItems(View):
                 # ایجاد کلید منحصر به فرد برای هر محصول در هر شعبه
                 product_branch_key = f"{product_name}_{branch_id}"
 
-                # اگر این ترکیب قبلاً پردازش نشده، مقدار را اضافه کن
                 if product_branch_key not in product_branch_totals:
                     product_branch_totals[product_branch_key] = {
                         'product_name': product_name,
@@ -393,25 +406,13 @@ class StoreInvoiceItems(View):
                             is_new=True
                         )
                 else:
-                    # اگر قبلاً پردازش شده، فقط مقدار را افزایش بده
                     product_branch_totals[product_branch_key]['quantity'] += quantity
-
-                    # به روزرسانی موجودی انبار
                     inventory_count = InventoryCount.objects.get(
                         product_name=product_name,
                         branch=branch
                     )
                     inventory_count.quantity += quantity
                     inventory_count.save()
-
-            for invoice_item in invoice_items:
-                product_name = invoice_item.product_name
-
-                if product_name in stored_quantities:
-                    # کسر مقدار ثبت شده از مقدار باقیمانده
-                    invoice_item.remaining_quantity = max(0, invoice_item.remaining_quantity - stored_quantities[
-                        product_name])
-                    invoice_item.save()
 
             # تبدیل داده‌های موقت به فرمت مورد نیاز برای چاپ
             for key, data in product_branch_totals.items():
@@ -431,9 +432,6 @@ class StoreInvoiceItems(View):
                     print_data['items'][product_name]['branches'][branch.name] = 0
                 print_data['items'][product_name]['branches'][branch.name] += quantity
 
-            # به روزرسانی مقدار باقیمانده فاکتور
-            self.update_invoice_remaining_quantities(invoice, print_data)
-
             # ایجاد یا به روزرسانی سند مالی
             self.create_or_update_financial_document(invoice, invoice_items)
 
@@ -446,12 +444,13 @@ class StoreInvoiceItems(View):
             return JsonResponse({
                 'success': True,
                 'message': 'اطلاعات انبار با موفقیت ثبت شد و مقادیر فاکتور به روز شدند',
-                'print_url': '/account/print-invoice/'  # تغییر این خط
+                'print_url': '/account/print-invoice/'
             })
 
         except Exception as e:
             logger.error(f"Error storing invoice items: {str(e)}")
             return JsonResponse({'success': False, 'error': str(e)})
+
     def update_invoice_remaining_quantities(self, invoice, print_data):
         """به روزرسانی مقادیر باقیمانده فاکتور بر اساس موجودی اضافه شده"""
         for invoice_item in invoice.items.all():
@@ -469,7 +468,6 @@ class StoreInvoiceItems(View):
     def create_or_update_financial_document(self, invoice, invoice_items):
         """ایجاد یا به روزرسانی سند مالی"""
         try:
-            # بررسی وجود سند مالی برای این فاکتور
             financial_doc, created = FinancialDocument.objects.get_or_create(
                 invoice=invoice,
                 defaults={
@@ -480,21 +478,16 @@ class StoreInvoiceItems(View):
                 }
             )
 
-            # اگر سند مالی از قبل وجود داشته، آیتم‌های آن را پاک می‌کنیم
             if not created:
                 FinancialDocumentItem.objects.filter(document=financial_doc).delete()
 
-            # محاسبه جمع کل فاکتور
             total_amount = Decimal('0')
 
-            # ایجاد آیتم‌های سند مالی
             for item in invoice_items:
-                # محاسبه قیمت نهایی با احتساب تخفیف
                 price_before_discount = item.selling_price * item.quantity
                 discount_amount = (price_before_discount * item.discount) / Decimal('100')
                 final_price = price_before_discount - discount_amount
 
-                # ایجاد آیتم سند مالی
                 FinancialDocumentItem.objects.create(
                     document=financial_doc,
                     product_name=item.product_name,
@@ -506,10 +499,8 @@ class StoreInvoiceItems(View):
 
                 total_amount += final_price
 
-            # به روزرسانی جمع کل سند مالی
             financial_doc.total_amount = total_amount
 
-            # بررسی وضعیت پرداخت
             if financial_doc.paid_amount >= total_amount:
                 financial_doc.status = 'settled'
             elif financial_doc.paid_amount > Decimal('0'):
@@ -521,7 +512,6 @@ class StoreInvoiceItems(View):
 
         except Exception as e:
             logger.error(f"Error creating financial document: {str(e)}")
-            # در صورت خطا، عملیات را متوقف نمی‌کنیم اما خطا را لاگ می‌کنیم
 
     def print_invoice_data(self, print_data):
         """چاپ اطلاعات فاکتور در کنسول"""
@@ -539,7 +529,6 @@ class StoreInvoiceItems(View):
 
         persian_print("\n" + "=" * 50)
         persian_print("پایان گزارش")
-
 
 def print_invoice_view(request):
     """ویو برای نمایش صفحه چاپ فاکتور"""

@@ -167,7 +167,8 @@ def create_invoice(request):
                             quantity=quantity_val,
                             unit_price=unit_price_val,
                             discount=discount_val,
-                            item_number=i + 1
+                            item_number=i + 1,
+                            remaining_quantity=quantity_val,
                         )
 
                         # محاسبه جمع‌ها
