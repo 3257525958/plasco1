@@ -1,6 +1,10 @@
 from django import forms
 from .models import Froshande
 
+from django import forms
+from .models import Froshande, ContactNumber, BankAccount
+import re
+
 class FroshandeForm(forms.ModelForm):
     class Meta:
         model = Froshande
@@ -50,9 +54,6 @@ class InvoiceEditForm(forms.ModelForm):
 
 # --------------فروشنده----------------------------------
 
-from django import forms
-from .models import Froshande, ContactNumber, BankAccount
-import re
 
 
 class PersianTextValidator:
@@ -91,3 +92,44 @@ class BankAccountForm(forms.ModelForm):
     class Meta:
         model = BankAccount
         fields = ['account_number', 'bank_name', 'card_number', 'sheba_number', 'is_primary']
+
+
+
+
+# -------------------------------------------------تولید و چاپ بارکد-----------------------------------------------------
+from django import forms
+from .models import Froshande, ContactNumber, BankAccount, Product
+from cantact_app.models import Branch
+
+# فرم‌های جدید برای Branch و Product
+# forms.py
+
+class BranchForm(forms.ModelForm):
+    class Meta:
+        model = Branch
+        fields = ['name', 'address', 'sellers']  # فقط فیلدهای موجود در مدل
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'sellers': forms.SelectMultiple(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'name': 'نام شعبه',
+            'address': 'آدرس شعبه',
+            'sellers': 'فروشندگان',
+        }
+class ProductForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = ['name', 'unit_price']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'validate', 'required': 'required'}),
+            'unit_price': forms.NumberInput(attrs={'class': 'validate', 'required': 'required', 'step': '0.01'}),
+        }
+        labels = {
+            'name': 'نام کالا',
+            'unit_price': 'قیمت واحد',
+        }
+
+#
+# *---------برای چاپ لیبل رو---------------------------------------------------

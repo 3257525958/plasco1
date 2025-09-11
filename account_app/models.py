@@ -6,16 +6,21 @@ from cantact_app.models import Branch
 
 User = get_user_model()
 
+import jdatetime
+import uuid
+from django.db import models
+from django.utils.text import slugify
+
 
 class InventoryCount(models.Model):
     product_name = models.CharField(max_length=100, verbose_name="نام کالا")
     is_new = models.BooleanField(default=True, verbose_name="کالای جدید")
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="شعبه")
     quantity = models.PositiveIntegerField(verbose_name="تعداد")
-    # is_new = models.BooleanField(default=True)  # True برای جدید، False برای قدیمی
     count_date = models.CharField(max_length=10, verbose_name="تاریخ شمارش", default="")
     counter = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="شمارنده")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    barcode_data = models.CharField(max_length=100, blank=True, null=True, verbose_name="داده بارکد")
 
     class Meta:
         verbose_name = "شمارش انبار"
@@ -27,11 +32,18 @@ class InventoryCount(models.Model):
         if not self.count_date:
             jalali_date = jdatetime.datetime.now().strftime('%Y/%m/%d')
             self.count_date = jalali_date
+
+        # تولید خودکار بارکد اگر وجود نداشته باشد
+        if not self.barcode_data:
+            # ایجاد یک بارکد منحصر به فرد بر اساس ترکیب نام محصول و شناسه
+            base_barcode = slugify(self.product_name)[:20]  # استفاده از نام محصول برای بخشی از بارکد
+            unique_id = str(uuid.uuid4())[:8]  # ایجاد یک شناسه منحصر به فرد
+            self.barcode_data = f"{base_barcode}-{unique_id}"
+
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.product_name} - {self.branch.name} - {self.quantity}"
-
 from django.db import models
 from django.core.validators import MinValueValidator
 from decimal import Decimal

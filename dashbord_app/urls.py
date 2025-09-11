@@ -25,12 +25,25 @@ urlpatterns = [
 
     # path('print-settings/', views.print_settings, name='print_settings'),
     # تغییر مسیر چاپ به پیش‌نمایش
-    path('print-preview/<int:invoice_id>/', views.print_preview, name='print_preview'),
+    path('print-preview/<int:invoice_id>/', views.print_preview, name='print_preview_invoice'),
+    path('print-preview/', views.print_preview, name='print_preview_inventory'),
     # مسیر تنظیمات چاپ
     path('print-settings/', views.print_settings, name='print_settings'),
 
-
-
     path('usb/',views.usb_view, name='usb'),
+
+    # URLهای جدید برای چاپ سریع لیبل
+    path('quick-label-print/', views.quick_label_print, name='quick_label_print'),
+    path('generate-label-barcode/', views.generate_label_barcode, name='generate_label_barcode'),
+    path('search-products-label/', views.search_products_for_label, name='search_products_label'),
+    path('search-branches-label/', views.search_branches_for_label, name='search_branches_label'),
+
+    path('quick-label-print/', views.quick_label_print_page, name='quick_label_print_page'),
+    path('search-inventory-label/', views.search_inventory_for_label, name='search_inventory_for_label'),
+    path('add-to-print-list/', views.add_to_print_list, name='add_to_print_list'),
+    path('get-print-list/', views.get_print_list, name='get_print_list'),
+    path('clear-print-list/', views.clear_print_list, name='clear_print_list'),
+    path('go-to-print-settings/', views.go_to_print_settings, name='go_to_print_settings'),
+    path('print-settings/', views.print_settings, name='print_settings'),
 
 ]

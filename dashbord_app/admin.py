@@ -21,3 +21,6 @@ class InvoiceItemAdmin(admin.ModelAdmin):
         return obj.invoice.serial_number
 
     invoice_number.short_description = 'شماره فاکتور'
+
+
+

@@ -696,3 +696,5 @@ def get_invoice_details(request):
         return JsonResponse({'success': False, 'error': 'فاکتور پیدا نشد'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+

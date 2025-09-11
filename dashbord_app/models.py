@@ -247,3 +247,8 @@ class InvoiceItem(models.Model):
     @property
     def total_price(self):
         return (self.quantity * self.unit_price) - self.discount
+
+
+from django.db import models
+
+# ------------------------------------------------------------برای چاپ لیبل-----------------------------------------------
