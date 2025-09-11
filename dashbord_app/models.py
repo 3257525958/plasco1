@@ -187,19 +187,17 @@ class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
 
-    class InvoiceItem(models.Model):
-        PRODUCT_TYPE_CHOICES = [
-            ('new', 'کالای جدید'),
-            ('old', 'کالای قدیمی'),
-        ]
+    PRODUCT_TYPE_CHOICES = [
+        ('new', 'کالای جدید'),
+        ('old', 'کالای قدیمی'),
+    ]
 
-        # فیلدهای موجود...
-        product_type = models.CharField(
-            max_length=10,
-            choices=PRODUCT_TYPE_CHOICES,
-            default='new',
-            verbose_name="نوع کالا"
-        )
+    product_type = models.CharField(
+        max_length=10,
+        choices=PRODUCT_TYPE_CHOICES,
+        default='new',
+        verbose_name="نوع کالا"
+    )
     product_name = models.CharField(
         max_length=200,
         verbose_name="نام کالا",
@@ -210,7 +208,7 @@ class InvoiceItem(models.Model):
         decimal_places=2,
         verbose_name="قیمت واحد"
     )
-    selling_price = models.DecimalField(  # اضافه کردن این فیلد
+    selling_price = models.DecimalField(
         max_digits=15,
         decimal_places=2,
         default=0,
@@ -220,17 +218,17 @@ class InvoiceItem(models.Model):
         verbose_name="تعداد",
         validators=[MinValueValidator(1)]
     )
-    discount = models.DecimalField(  # اضافه کردن این فیلد
+    discount = models.DecimalField(
         max_digits=15,
         decimal_places=2,
         default=0,
         verbose_name="تخفیف"
     )
-    item_number = models.IntegerField(  # اضافه کردن این فیلد
+    item_number = models.IntegerField(
         verbose_name="شماره آیتم",
         default=1
     )
-    location = models.CharField(  # اضافه کردن این فیلد
+    location = models.CharField(
         max_length=100,
         verbose_name="مکان",
         blank=True,
@@ -244,10 +242,17 @@ class InvoiceItem(models.Model):
     def __str__(self):
         return f"{self.product_name} - {self.quantity}"
 
+    def save(self, *args, **kwargs):
+        # اگر این یک رکورد جدید است (هنوز در دیتابیس ذخیره نشده)
+        if self._state.adding:
+            # تعداد باقیمانده را برابر با تعداد اصلی قرار بده
+            self.remaining_quantity = self.quantity
+
+        super().save(*args, **kwargs)
+
     @property
     def total_price(self):
         return (self.quantity * self.unit_price) - self.discount
-
 
 from django.db import models
 
