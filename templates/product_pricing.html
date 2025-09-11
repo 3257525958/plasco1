@@ -1,0 +1,333 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم قیمت‌گذاری کالاها</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .search-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            max-height: 200px;
+            overflow-y: auto;
+            width: calc(100% - 30px);
+            z-index: 1000;
+            display: none;
+        }
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .profit-input {
+            width: 80px;
+            text-align: center;
+            padding: 5px;
+        }
+        .price-display {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>سیستم قیمت‌گذاری کالاها</h1>
+        
+        <!-- بخش جستجوی شعبه -->
+        <div class="search-section">
+            <div class="form-group">
+                <label for="branch-search">جستجوی شعبه:</label>
+                <input type="text" id="branch-search" placeholder="نام شعبه را وارد کنید...">
+                <div id="branch-suggestions" class="suggestions"></div>
+            </div>
+            <div id="selected-branch" class="hidden">
+                <p>شعبه انتخاب شده: <span id="branch-name"></span></p>
+            </div>
+        </div>
+        
+        <!-- بخش جستجوی کالا (فقط پس از انتخاب شعبه نمایش داده می‌شود) -->
+        <div id="product-section" class="search-section hidden">
+            <div class="form-group">
+                <label for="product-search">جستجوی کالا:</label>
+                <input type="text" id="product-search" placeholder="حداقل دو کاراکتر وارد کنید...">
+            </div>
+            
+            <!-- جدول نمایش کالاها -->
+            <table id="products-table">
+                <thead>
+                    <tr>
+                        <th>نام کالا</th>
+                        <th>قیمت معیار (تومان)</th>
+                        <th>درصد سود</th>
+                        <th>قیمت فروش (تومان)</th>
+                    </tr>
+                </thead>
+                <tbody id="products-body">
+                    <!-- محتوای جدول توسط JavaScript پر می‌شود -->
+                </tbody>
+            </table>
+            
+            <button id="submit-prices">ثبت قیمت‌های فروش</button>
+        </div>
+    </div>
+
+    <script>
+        // متغیرهای全局
+        let selectedBranchId = null;
+        let basePrices = {}; // ذخیره قیمت‌های معیار بر اساس نام کالا
+        let allProducts = []; // تمام محصولات شعبه انتخاب شده
+        
+        // مدیریت جستجوی شعبه
+        document.getElementById('branch-search').addEventListener('input', function(e) {
+            const query = e.target.value;
+            if (query.length < 2) {
+                document.getElementById('branch-suggestions').style.display = 'none';
+                return;
+            }
+            
+            // درخواست به سرور برای دریافت شعبه‌های مطابق
+            fetch(`/api/branches/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const suggestions = document.getElementById('branch-suggestions');
+                    suggestions.innerHTML = '';
+                    
+                    if (data.length > 0) {
+                        data.forEach(branch => {
+                            const div = document.createElement('div');
+                            div.className = 'suggestion-item';
+                            div.textContent = branch.name;
+                            div.addEventListener('click', () => {
+                                selectBranch(branch.id, branch.name);
+                                suggestions.style.display = 'none';
+                            });
+                            suggestions.appendChild(div);
+                        });
+                        suggestions.style.display = 'block';
+                    } else {
+                        suggestions.style.display = 'none';
+                    }
+                });
+        });
+        
+        // انتخاب شعبه
+        function selectBranch(branchId, branchName) {
+            selectedBranchId = branchId;
+            document.getElementById('branch-search').value = branchName;
+            document.getElementById('branch-name').textContent = branchName;
+            document.getElementById('selected-branch').classList.remove('hidden');
+            document.getElementById('product-section').classList.remove('hidden');
+            
+            // بارگذاری محصولات این شعبه
+            loadBranchProducts(branchId);
+        }
+        
+        // بارگذاری محصولات شعبه انتخاب شده
+        function loadBranchProducts(branchId, productQuery = '') {
+            fetch(`/api/inventory/?branch_id=${branchId}&product_query=${encodeURIComponent(productQuery)}`)
+                .then(response => response.json())
+                .then(data => {
+                    allProducts = data.products;
+                    displayProducts(allProducts);
+                    
+                    // دریافت قیمت‌های معیار برای تمام محصولات
+                    const productNames = allProducts.map(p => p.product_name);
+                    fetchBasePrices(productNames);
+                });
+        }
+        
+        // دریافت قیمت‌های معیار از سرور
+        function fetchBasePrices(productNames) {
+            fetch('/api/base-prices/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({products: productNames})
+            })
+            .then(response => response.json())
+            .then(data => {
+                basePrices = data;
+                // پس از دریافت قیمت‌ها، جدول را به روز کنیم
+                displayProducts(allProducts);
+            });
+        }
+        
+        // نمایش محصولات در جدول
+        function displayProducts(products) {
+            const tbody = document.getElementById('products-body');
+            tbody.innerHTML = '';
+            
+            products.forEach(product => {
+                const basePrice = basePrices[product.product_name] || 0;
+                const defaultProfit = 30;
+                const sellingPrice = calculateSellingPrice(basePrice, defaultProfit);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.product_name}</td>
+                    <td>${basePrice.toLocaleString()}</td>
+                    <td>
+                        <input type="number" class="profit-input" value="${defaultProfit}" 
+                               min="0" max="1000" 
+                               oninput="updateSellingPrice(this, ${basePrice}, ${product.id})">
+                        %
+                    </td>
+                    <td class="price-display" id="price-${product.id}">${sellingPrice.toLocaleString()}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // محاسبه قیمت فروش بر اساس قیمت معیار و درصد سود
+        function calculateSellingPrice(basePrice, profitPercent) {
+            if (!basePrice) return 0;
+            const profit = basePrice * (profitPercent / 100);
+            let sellingPrice = basePrice + profit;
+            
+            // گرد کردن به نزدیکترین 1000 تومان
+            sellingPrice = Math.round(sellingPrice / 1000) * 1000;
+            return sellingPrice;
+        }
+        
+        // به‌روزرسانی قیمت فروش هنگام تغییر درصد سود
+        function updateSellingPrice(input, basePrice, productId) {
+            const profitPercent = parseInt(input.value) || 0;
+            const sellingPrice = calculateSellingPrice(basePrice, profitPercent);
+            document.getElementById(`price-${productId}`).textContent = sellingPrice.toLocaleString();
+        }
+        
+        // مدیریت جستجوی محصول
+        document.getElementById('product-search').addEventListener('input', function(e) {
+            const query = e.target.value;
+            if (query.length < 2) {
+                // اگر کمتر از ۲ کاراکتر است، همه محصولات نمایش داده شوند
+                displayProducts(allProducts);
+                return;
+            }
+            
+            // فیلتر کردن محصولات بر اساس query
+            const filteredProducts = allProducts.filter(product => 
+                product.product_name.includes(query)
+            );
+            displayProducts(filteredProducts);
+        });
+        
+        // ثبت قیمت‌های فروش
+        document.getElementById('submit-prices').addEventListener('click', function() {
+            const prices = [];
+            const rows = document.querySelectorAll('#products-body tr');
+            
+            rows.forEach(row => {
+                const productName = row.cells[0].textContent;
+                const profitInput = row.querySelector('.profit-input');
+                const profitPercent = parseInt(profitInput.value) || 30;
+                const sellingPrice = parseInt(
+                    row.cells[3].textContent.replace(/,/g, '')
+                );
+                
+                prices.push({
+                    product_name: productName,
+                    branch_id: selectedBranchId,
+                    profit_percentage: profitPercent,
+                    selling_price: sellingPrice
+                });
+            });
+            
+            // ارسال قیمت‌ها به سرور
+            fetch('/api/save-prices/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({prices: prices})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('قیمت‌ها با موفقیت ثبت شدند!');
+                } else {
+                    alert('خطا در ثبت قیمت‌ها!');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

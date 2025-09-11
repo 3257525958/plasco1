@@ -36,4 +36,12 @@ path('invoice-status/<int:invoice_id>/', views.invoice_status, name='invoice_sta
 path('store-invoice-items/', views.StoreInvoiceItems.as_view(), name='store_invoice_items'),
 path('update-product-pricing/', views.UpdateProductPricing.as_view(), name='update_product_pricing'),
 
+    path('search-branches-pricing/', views.search_branches_pricing, name='search_branches_pricing'),
+    path('get-branch-products/', views.get_branch_products, name='get_branch_products'),
+    path('search-products-pricing/', views.search_products_pricing, name='search_products_pricing'),
+    path('update-product-pricing/', views.update_product_pricing, name='update_product_pricing'),
+    path('update-all-product-pricing/', views.update_all_product_pricing, name='update_all_product_pricing'),
+    path('pricing-management/', views.pricing_management, name='pricing_management'),
+
+
 ]

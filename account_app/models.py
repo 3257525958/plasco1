@@ -21,6 +21,7 @@ class InventoryCount(models.Model):
     counter = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="شمارنده")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     barcode_data = models.CharField(max_length=100, blank=True, null=True, verbose_name="داده بارکد")
+    selling_price = models.PositiveIntegerField(verbose_name="قیمت فروش", blank=True, null=True)
 
     class Meta:
         verbose_name = "شمارش انبار"
@@ -35,13 +36,14 @@ class InventoryCount(models.Model):
 
         # تولید خودکار بارکد اگر وجود نداشته باشد
         if not self.barcode_data:
-            # ایجاد یک بارکد منحصر به فرد بر اساس ترکیب نام محصول و شناسه
-            base_barcode = slugify(self.product_name)[:20]  # استفاده از نام محصول برای بخشی از بارکد
-            unique_id = str(uuid.uuid4())[:8]  # ایجاد یک شناسه منحصر به فرد
-            self.barcode_data = f"{base_barcode}-{unique_id}"
+            # ایجاد بارکد بر اساس هش نام محصول
+            import hashlib
+            hash_object = hashlib.md5(self.product_name.encode())
+            hex_dig = hash_object.hexdigest()
+            # استفاده از 12 کاراکتر اول هش به عنوان بارکد
+            self.barcode_data = hex_dig[:12]
 
         super().save(*args, **kwargs)
-
     def __str__(self):
         return f"{self.product_name} - {self.branch.name} - {self.quantity}"
 from django.db import models

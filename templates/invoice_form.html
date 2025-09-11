@@ -800,32 +800,41 @@
                     url: "{% url 'search_products' %}",
                     data: { q: query },
                     dataType: 'json',
-                    success: function(data) {
-                        $results.empty();
-                        
-                        if (data.results.length > 0) {
-                            data.results.forEach(item => {
-                                $results.append(`
-                                    <div class="search-result-item" 
-                                         data-name="${item.text}">
-                                        <i class="fas fa-file-invoice"></i>
-                                        ${item.text}
-                                    </div>
-                                `);
-                            });
-                        }
-                        
-                        $results.append(`
-                            <div class="search-result-item new-product" 
-                                 data-name="${query}">
-                                <i class="fas fa-plus-circle"></i> 
-                                ایجاد کالای جدید: "${query}"
-                            </div>
-                        `);
-                        
-                        $results.show();
-                    }
-                });
+success: function(data) {
+    $results.empty();
+    
+    // ایجاد یک شیء برای ذخیره نام‌های منحصر به فرد
+    const uniqueProducts = {};
+    
+    if (data.results.length > 0) {
+        data.results.forEach(item => {
+            // اگر این نام محصول قبلاً نیامده باشد، اضافه کن
+            if (!uniqueProducts[item.text]) {
+                uniqueProducts[item.text] = true;
+                $results.append(`
+                    <div class="search-result-item" 
+                         data-name="${item.text}">
+                        <i class="fas fa-file-invoice"></i>
+                        ${item.text}
+                    </div>
+                `);
+            }
+        });
+    }
+    
+    // اطمینان از اینکه محصول جدید نیز تکراری نباشد
+    if (!uniqueProducts[query]) {
+        $results.append(`
+            <div class="search-result-item new-product" 
+                 data-name="${query}">
+                <i class="fas fa-plus-circle"></i> 
+                ایجاد کالای جدید: "${query}"
+            </div>
+        `);
+    }
+    
+    $results.show();
+}                });
             });
             
             // انتخاب نتیجه جستجو

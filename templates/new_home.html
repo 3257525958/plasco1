@@ -274,6 +274,12 @@
     </a>
 
     <!-- آیتم جدید: چاپ لیبل -->
+    <a href="{% if profilestatus %}account/pricing-management/{% else %}account/pricing-management/{% endif %}" 
+       class="quick_item {% if not profilestatus %}disabled{% endif %}">
+      <i class="fas fa-barcode quick-icon"></i>
+      <span>قیمت گذاری</span>
+    </a>
+    <!-- آیتم جدید: چاپ لیبل -->
     <a href="{% if profilestatus %}dashbord/quick-label-print/{% else %}dashbord/quick-label-print/{% endif %}" 
        class="quick_item {% if not profilestatus %}disabled{% endif %}">
       <i class="fas fa-barcode quick-icon"></i>

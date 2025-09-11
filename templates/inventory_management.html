@@ -350,25 +350,25 @@
                 padding: 5px;
                 font-size: 13px;
             }
-            
+
             .container {
                 padding: 10px;
                 border-radius: 8px;
             }
-            
+
             .header h1 {
                 font-size: 1.3rem;
             }
-            
+
             .inventory-tab {
                 padding: 6px 10px;
                 font-size: 0.8rem;
             }
-            
+
             .count-form {
                 padding: 10px;
             }
-            
+
             .btn {
                 padding: 8px 15px;
                 font-size: 0.85rem;
@@ -413,11 +413,11 @@
             background-color: #f8f9fa;
             border-radius: 5px;
         }
-        
+
         .selected-branches {
             margin-top: 10px;
         }
-        
+
         .selected-branch {
             display: flex;
             align-items: center;
@@ -427,7 +427,7 @@
             border-radius: 3px;
             margin-bottom: 5px;
         }
-        
+
         .storage-info {
             margin-top: 5px;
             font-size: 0.8em;
@@ -450,7 +450,7 @@
 </div>        <!-- تب جستجوی فاکتور -->
         <div class="tab-content  active " id="search-tab">
             <h2>جستجوی فاکتور</h2>
-            
+
             <div class="search-section">
                 <div class="search-container">
                     <label class="search-label">جستجوی فاکتور:</label>
@@ -462,11 +462,11 @@
                 </div>
                 <div class="search-hint">برای جستجو، حداقل 2 کاراکتر وارد کنید</div>
             </div>
-            
+
             <div id="invoice-details" style="display: none;">
                 <h3>مشخصات فاکتور</h3>
                 <div id="invoice-info" class="count-form"></div>
-                
+
                 <h3>لیست کالاهای فاکتور</h3>
                 <div class="table-container">
                     <table class="count-table">
@@ -484,7 +484,7 @@
                         </tbody>
                     </table>
                 </div>
-                
+
                 <div id="storage-actions" class="actions" style="display: none;">
                     <button id="invoice-back-btn" class="btn btn-back">
                         <i class="fas fa-arrow-right"></i> بازگشت
@@ -498,7 +498,7 @@
         <!-- تب انبارگردانی -->
         <div class="tab-content" id="count-tab">
             <h2>انبارگردانی</h2>
-            
+
             <div class="count-form">
                 <div class="form-group">
                     <label for="count-branch">شعبه:</label>
@@ -512,7 +512,7 @@
                     <input type="hidden" id="count-branch">
                     <div id="selected-branch" class="search-hint" style="display: none;"></div>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="count-product">نام کالا:</label>
                     <div class="search-container">
@@ -523,7 +523,7 @@
                         <div id="product-search-results" class="search-results"></div>
                     </div>
                 </div>
-                
+
                 <div id="product-type-container" style="display: none;">
                     <div class="form-group">
                         <label>نوع کالا:</label>
@@ -539,22 +539,22 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="product-history" class="count-history" style="display: none;">
                     <strong>تاریخچه آخرین شمارش:</strong>
                     <div id="last-count-info" class="last-count-info"></div>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="count-quantity">تعداد شمارش شده:</label>
                     <input type="number" id="count-quantity" class="form-control" min="0" value="0">
                 </div>
-                
+
                 <button id="add-count-btn" class="btn btn-primary">
                     <i class="fas fa-plus"></i> افزودن به لیست
                 </button>
             </div>
-            
+
             <div id="count-list-container" style="display: none;">
                 <h3>لیست کالاهای شمارش شده</h3>
                 <div class="table-container">
@@ -573,7 +573,7 @@
                         </tbody>
                     </table>
                 </div>
-                
+
                 <div class="actions">
                     <button id="count-back-btn" class="btn btn-back">
                         <i class="fas fa-arrow-right"></i> بازگشت
@@ -627,7 +627,7 @@
             $(this).addClass('active');
             const tabId = $(this).data('tab');
             $(`#${tabId}-tab`).addClass('active');
-            
+
             // اگر تب انبارگردانی انتخاب شد، مقادیر را ریست کنیم
             if (tabId === 'count') {
                 resetCountForm();
@@ -637,12 +637,12 @@
         // جستجوی فاکتور
         $('#invoice-search').on('input', function() {
             const query = $(this).val().trim();
-            
+
             if (query.length < 2) {
                 $('#invoice-search-results').hide().empty();
                 return;
             }
-            
+
             clearTimeout(invoiceSearchTimeout);
             invoiceSearchTimeout = setTimeout(function() {
                 $.ajax({
@@ -681,7 +681,7 @@
             const invoiceText = $(this).find('strong').text();
             $('#invoice-search').val(invoiceText);
             $('#invoice-search-results').hide();
-            
+
             // دریافت جزئیات فاکتور
             $.ajax({
                 url: "{% url 'get_invoice_details' %}",
@@ -693,17 +693,17 @@
                         selectedInvoice = data.invoice;
                         invoiceItems = data.items;
                         storageEntries = [];
-                        
+
                         // نمایش اطلاعات فاکتور
                         $('#invoice-info').html(`
                             <div class="invoice-info-item"><strong>شماره فاکتور:</strong> ${selectedInvoice.serial_number}</div>
                             <div class="invoice-info-item"><strong>فروشنده:</strong> ${selectedInvoice.seller_name}</div>
                             <div class="invoice-info-item"><strong>تاریخ:</strong> ${selectedInvoice.date}</div>
                         `);
-                        
+
                         // نمایش آیتم‌های فاکتور
                         updateInvoiceItemsList();
-                        
+
                         $('#invoice-details').show();
                         $('#storage-actions').show();
                     } else {
@@ -774,21 +774,21 @@
         $(document).on('input', '.branch-search', function() {
             const query = $(this).val().trim();
             const $results = $(this).siblings('.branch-search-results');
-            
+
             if (query.length < 1) {
                 $results.hide().empty();
                 return;
             }
-            
-            const filteredBranches = branches.filter(branch => 
+
+            const filteredBranches = branches.filter(branch =>
                 branch.name.includes(query) || branch.address.includes(query)
             );
-            
+
             if (filteredBranches.length === 0) {
                 $results.html('<div class="search-result-item">هیچ شعبه‌ای یافت نشد</div>').show();
                 return;
             }
-            
+
             let html = '';
             filteredBranches.forEach(branch => {
                 html += `
@@ -798,7 +798,7 @@
                     </div>
                 `;
             });
-            
+
             $results.html(html).show();
         });
 
@@ -806,7 +806,7 @@
         $(document).on('click', '.branch-search-results .search-result-item', function() {
             const branchId = $(this).data('branch-id');
             const branchName = $(this).data('branch-name');
-            
+
             const $searchInput = $(this).closest('.search-container').find('.branch-search');
             $searchInput.val(branchName);
             $searchInput.data('branch-id', branchId);
@@ -820,33 +820,33 @@
             const branchName = $row.find('.branch-search').val().trim();
             const branchId = $row.find('.branch-search').data('branch-id');
             const quantity = parseInt($row.find('.quantity-input').val());
-            
+
             if (!branchName || !branchId) {
                 showMessage('لطفاً شعبه را انتخاب کنید', 'error');
                 return;
             }
-            
+
             if (quantity <= 0) {
                 showMessage('لطفاً تعداد معتبر وارد کنید', 'error');
                 return;
             }
-            
+
             const branch = branches.find(b => b.id == branchId);
             if (!branch) {
                 showMessage('شعبه انتخاب شده معتبر نیست', 'error');
                 return;
             }
-            
+
             const item = invoiceItems[itemIndex];
             const currentTotal = storageEntries
                 .filter(entry => entry.item_index === itemIndex)
                 .reduce((sum, entry) => sum + parseInt(entry.quantity), 0);
-            
+
             if (currentTotal + quantity > item.quantity) {
                 showMessage('تعداد وارد شده از مقدار فاکتور بیشتر است', 'error');
                 return;
             }
-            
+
             const entryIndex = storageEntries.length;
             storageEntries.push({
                 entry_index: entryIndex,
@@ -856,7 +856,7 @@
                 branch_name: branchName,
                 quantity: quantity
             });
-            
+
             updateInvoiceItemsList();
             $row.find('.branch-search').val('');
             $row.find('.branch-search').removeData('branch-id');
@@ -876,25 +876,25 @@
                 showMessage('در حال پردازش درخواست قبلی... لطفاً صبر کنید', 'info');
                 return false;
             }
-            
+
             if (storageEntries.length === 0) {
                 showMessage('هیچ اطلاعاتی برای ثبت وجود ندارد', 'error');
                 return;
             }
-            
+
             if (!confirm('آیا از ثبت اطلاعات انبار مطمئن هستید؟')) {
                 return;
             }
-            
+
             // غیرفعال کردن دکمه و تغییر متن آن
             isSubmitting = true;
             $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال ثبت...');
-            
+
             // ایجاد شناسه یکتا برای این درخواست
             const requestId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-            
+
             showMessage('در حال ثبت اطلاعات...', 'info');
-            
+
             // ارسال داده‌ها به سرور برای ثبت انبار
             $.ajax({
                 url: "{% url 'store_invoice_items' %}",
@@ -911,7 +911,7 @@
                 success: function(data) {
                     if (data.success) {
                         showMessage(data.message, 'success');
-                        
+
                         // پس از موفقیت آمیز بودن ثبت انبار، قیمت‌گذاری محصولات را به روز کنید
                         $.ajax({
                             url: "{% url 'update_product_pricing' %}",
@@ -934,12 +934,12 @@
                                 console.error('خطا در به‌روزرسانی قیمت‌گذاری محصولات');
                             }
                         });
-                        
+
                         // هدایت به صفحه چاپ
                         if (data.print_url) {
                             window.open(data.print_url, '_blank');
                         }
-                        
+
                         // پاکسازی فرم و بازگشت به صفحه اصلی بعد از 2 ثانیه
                         setTimeout(() => {
                             window.location.href = "{% url 'home' %}";
@@ -967,7 +967,7 @@
                     return;
                 }
             }
-            
+
             window.location.href = "{% url 'home' %}";
         });
 
@@ -1018,7 +1018,7 @@
         let countItems = [];
         let currentProductType = 'new';
         let searchTimeout = null;
-        
+
         function resetCountForm() {
             $('#count-product').val('');
             $('#count-quantity').val('0');
