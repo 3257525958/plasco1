@@ -136,3 +136,49 @@ class FinancialDocumentItem(models.Model):
     class Meta:
         verbose_name = "آیتم سند مالی"
         verbose_name_plural = "آیتم‌های سند مالی"
+
+
+
+# -----------------------مدل برای کشف قیمت به روز-------------------------------------------------
+from django.db import models
+from decimal import Decimal
+import math
+
+class ProductPricing(models.Model):
+    product_name = models.CharField(max_length=100, verbose_name="نام کالا", unique=True)
+    highest_purchase_price = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        verbose_name="بالاترین قیمت خرید"
+    )
+    invoice_date = models.CharField(max_length=10, verbose_name="تاریخ فاکتور", blank=True, null=True)
+    invoice_number = models.CharField(max_length=50, verbose_name="شماره فاکتور", blank=True, null=True)
+    adjustment_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        verbose_name="درصد تعدیل قیمت خرید"
+    )
+    standard_price = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        verbose_name="قیمت معیار",
+        blank=True, null=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین بروزرسانی")
+
+    class Meta:
+        verbose_name = "قیمت‌گذاری محصول"
+        verbose_name_plural = "قیمت‌گذاری محصولات"
+
+    def save(self, *args, **kwargs):
+        # محاسبه خودکار قیمت معیار
+        if self.highest_purchase_price is not None:
+            increased_price = self.highest_purchase_price * (1 + self.adjustment_percentage / 100)
+            # گرد کردن به بالا به مضرب 1000
+            self.standard_price = Decimal(math.ceil(increased_price / 1000) * 1000)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.product_name} - {self.standard_price}"

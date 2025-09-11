@@ -698,3 +698,90 @@ def get_invoice_details(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
+# ------------------------قیمت نهایی-------------------------------------------------
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.http import JsonResponse
+import json
+import math
+from decimal import Decimal
+from .models import ProductPricing
+from dashbord_app.models import Invoice, InvoiceItem
+import logging
+
+logger = logging.getLogger(__name__)
+
+from decimal import Decimal
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UpdateProductPricing(View):
+    def post(self, request):
+        print(1)
+        try:
+            print(2)
+            data = json.loads(request.body)
+            invoice_id = data.get('invoice_id')
+
+            if not invoice_id:
+                return JsonResponse({'success': False, 'error': 'شناسه فاکتور الزامی است'})
+            print(3)
+
+            # دریافت اطلاعات فاکتور
+            invoice = Invoice.objects.get(id=invoice_id)
+            invoice_items = InvoiceItem.objects.filter(invoice=invoice)
+            print(4)
+
+            for item in invoice_items:
+                product_name = item.product_name
+                unit_price = item.unit_price
+                print(f"پردازش محصول: {product_name} با قیمت: {unit_price}")
+
+                # بررسی وجود محصول در دیتابیس قیمت‌گذاری
+                try:
+                    print(5)
+                    product_pricing = ProductPricing.objects.get(product_name=product_name)
+
+                    # اگر قیمت جدید بیشتر از قیمت ثبت شده است
+                    if unit_price > product_pricing.highest_purchase_price:
+                        product_pricing.highest_purchase_price = unit_price
+                        product_pricing.invoice_date = invoice.jalali_date
+                        product_pricing.invoice_number = invoice.serial_number
+                        product_pricing.save()
+                        print(f"قیمت {product_name} به روز شد: {unit_price}")
+                        logger.info(f"قیمت {product_name} به روز شد: {unit_price}")
+
+                except ProductPricing.DoesNotExist:
+                    print(6)
+                    # اگر محصول وجود ندارد، ایجاد رکورد جدید
+                    try:
+                        product_pricing = ProductPricing(
+                            product_name=product_name,
+                            highest_purchase_price=unit_price,
+                            invoice_date=invoice.jalali_date,
+                            invoice_number=invoice.serial_number,
+                            adjustment_percentage=Decimal('0'),
+                        )
+                        # ذخیره کردن و محاسبه automatic استاندارد پرایس
+                        product_pricing.save()
+                        print(7)
+                        print(f"محصول جدید {product_name} با قیمت {unit_price} ایجاد شد")
+                        logger.info(f"محصول جدید {product_name} با قیمت {unit_price} ایجاد شد")
+                    except Exception as e:
+                        print(f"خطا در ایجاد محصول جدید: {str(e)}")
+                        logger.error(f"خطا در ایجاد محصول جدید {product_name}: {str(e)}")
+                        continue
+
+            return JsonResponse({'success': True, 'message': 'قیمت‌گذاری محصولات با موفقیت به روز شد'})
+
+        except Invoice.DoesNotExist:
+            error_msg = f'فاکتور با شناسه {invoice_id} یافت نشد'
+            print(error_msg)
+            logger.error(error_msg)
+            return JsonResponse({'success': False, 'error': error_msg})
+        except Exception as e:
+            error_msg = f"خطا در به‌روزرسانی قیمت‌گذاری محصولات: {str(e)}"
+            print(error_msg)
+            logger.error(error_msg)
+            return JsonResponse({'success': False, 'error': error_msg})

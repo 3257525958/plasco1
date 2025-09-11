@@ -33,4 +33,7 @@ urlpatterns = [
 path('invoice-status/<int:invoice_id>/', views.invoice_status, name='invoice_status'),
 
 
+path('store-invoice-items/', views.StoreInvoiceItems.as_view(), name='store_invoice_items'),
+path('update-product-pricing/', views.UpdateProductPricing.as_view(), name='update_product_pricing'),
+
 ]

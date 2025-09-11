@@ -1379,3 +1379,14 @@ def print_label(request, label_type):
         pass
 
     return HttpResponse("لیبل‌ها با موفقیت چاپ شدند")
+
+
+
+import re
+
+def is_persian(text):
+    """
+    بررسی میکند که رشته فقط حاوی حروف فارسی و فاصله باشد.
+    """
+    pattern = re.compile(r'^[\u0600-\u06FF\s]+$')
+    return bool(pattern.match(text))

@@ -591,845 +591,443 @@
 {#    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>#}
     <script src="{% static 'js/jQueryv3.7.1.js' %}"></script>
     <script>
-{#-----------------------------------------------------------انبارگردانی-------------------------------    #}
-        $(document).ready(function() {
-            // مدیریت تب‌ها
-            $('.inventory-tab').click(function() {
-                $('.inventory-tab').removeClass('active');
-                $('.tab-content').removeClass('active');
+        // متغیرهای global برای مدیریت فاکتور
+        let selectedInvoice = null;
+        let invoiceItems = [];
+        let storageEntries = [];
+        let invoiceSearchTimeout = null;
+        let branches = [];
+        let isSubmitting = false;
 
-                $(this).addClass('active');
-                const tabId = $(this).data('tab');
-                $(`#${tabId}-tab`).addClass('active');
-                
-                // اگر تب انبارگردانی انتخاب شد، مقادیر را ریست کنیم
-                if (tabId === 'count') {
-                    resetCountForm();
+        // بارگذاری اولیه لیست شعب
+        function loadBranches() {
+            $.ajax({
+                url: "{% url 'get_branches' %}",
+                method: 'GET',
+                success: function(data) {
+                    if (data.success) {
+                        branches = data.branches;
+                        console.log("Branches loaded:", branches.length);
+                    }
+                },
+                error: function(xhr) {
+                    showMessage('خطا در دریافت اطلاعات شعب', 'error');
                 }
             });
+        }
 
-            // متغیرهای global برای انبارگردانی
-            let countItems = [];
-            let currentProductType = 'new';
-            let branches = [];
-            let searchTimeout = null;
+        // فراخوانی اولیه برای بارگذاری شعب
+        loadBranches();
+
+        // مدیریت تب‌ها
+        $('.inventory-tab').click(function() {
+            $('.inventory-tab').removeClass('active');
+            $('.tab-content').removeClass('active');
+
+            $(this).addClass('active');
+            const tabId = $(this).data('tab');
+            $(`#${tabId}-tab`).addClass('active');
             
-            // بارگذاری اولیه لیست شعب
-            function loadBranches() {
-                $.ajax({
-                    url: "{% url 'get_branches' %}",
-                    method: 'GET',
-                    success: function(data) {
-                        if (data.success) {
-                            branches = data.branches;
-                        }
-                    },
-                    error: function(xhr) {
-                        showMessage('خطا در دریافت اطلاعات شعب', 'error');
-                    }
-                });
+            // اگر تب انبارگردانی انتخاب شد، مقادیر را ریست کنیم
+            if (tabId === 'count') {
+                resetCountForm();
+            }
+        });
+
+        // جستجوی فاکتور
+        $('#invoice-search').on('input', function() {
+            const query = $(this).val().trim();
+            
+            if (query.length < 2) {
+                $('#invoice-search-results').hide().empty();
+                return;
             }
             
-            // فراخوانی اولیه برای بارگذاری شعب
-            loadBranches();
-
-            // جستجوی شعبه
-            $('#count-branch-search').on('input', function() {
-                const query = $(this).val().trim();
-                const $results = $('#branch-search-results');
-                
-                if (query.length < 1) {
-                    $results.hide().empty();
-                    return;
-                }
-                
-                // فیلتر کردن شعب بر اساس جستجو
-                const filteredBranches = branches.filter(branch => 
-                    branch.name.includes(query) || branch.address.includes(query)
-                );
-                
-                if (filteredBranches.length === 0) {
-                    $results.html('<div class="search-result-item">هیچ شعبه‌ای یافت نشد</div>').show();
-                    return;
-                }
-                
-                let html = '';
-                filteredBranches.forEach(branch => {
-                    html += `
-                        <div class="search-result-item" data-branch-id="${branch.id}" data-branch-name="${branch.name}">
-                            <strong>${branch.name}</strong>
-                            <div>${branch.address}</div>
-                        </div>
-                    `;
-                });
-                
-                $results.html(html).show();
-            });
-            
-            // انتخاب شعبه از نتایج جستجو
-            $(document).on('click', '#branch-search-results .search-result-item', function() {
-                const branchId = $(this).data('branch-id');
-                const branchName = $(this).data('branch-name');
-                
-                $('#count-branch').val(branchId);
-                $('#count-branch-search').val(branchName);
-                $('#selected-branch').text(`شعبه انتخاب شده: ${branchName}`).show();
-                $('#branch-search-results').hide();
-            });
-            
-            // جستجوی محصول - با تأخیر 300ms پس از تایپ
-            $('#count-product').on('input', function() {
-                const query = $(this).val().trim();
-                const branchId = $('#count-branch').val();
-                
-                if (query.length < 2) {
-                    $('#product-search-results').hide().empty();
-                    $('#product-type-container').hide();
-                    $('#product-history').hide();
-                    return;
-                }
-                
-                // لغو درخواست قبلی اگر وجود دارد
-                clearTimeout(searchTimeout);
-                
-                // تنظیم تایمر برای جلوگیری از درخواست‌های مکرر
-                searchTimeout = setTimeout(function() {
-                    // درخواست به سرور برای جستجوی محصولات
-                    $.ajax({
-                        url: "{% url 'search_products' %}",
-                        data: { 
-                            q: query,
-                            branch_id: branchId || ''
-                        },
-                        dataType: 'json',
-                        success: function(data) {
-                            if (data.results && data.results.length > 0) {
-                                let html = '';
-                                data.results.forEach(product => {
-                                    html += `
-                                        <div class="search-result-item" data-product-name="${product.text}">
-                                            <strong>${product.text}</strong>
-                                        </div>
-                                    `;
-                                });
-                                $('#product-search-results').html(html).show();
-                            } else {
-                                $('#product-search-results').hide();
-                            }
-                            
-                            // بررسی وجود محصول در شعبه انتخابی
-                            if (branchId) {
-                                checkProductInBranch(query, branchId);
-                            }
-                        },
-                        error: function(xhr) {
-                            showMessage('خطا در جستجوی محصولات', 'error');
-                        }
-                    });
-                }, 300); // تاخیر 300 میلی‌ثانیه
-            });
-            
-            // بررسی وجود محصول در شعبه
-            function checkProductInBranch(productName, branchId) {
+            clearTimeout(invoiceSearchTimeout);
+            invoiceSearchTimeout = setTimeout(function() {
                 $.ajax({
-                    url: "{% url 'check_product' %}",
-                    data: { 
-                        product_name: productName,
-                        branch_id: branchId
-                    },
+                    url: "{% url 'search_invoices' %}",
+                    data: { q: query },
                     dataType: 'json',
                     success: function(data) {
-                        if (data.exists) {
-                            $('#product-type-container').hide();
-                            // نمایش تاریخ آخرین شمارش اگر وجود دارد
-                            if (data.last_counts && data.last_counts.length > 0) {
-                                let historyHtml = '';
-                                data.last_counts.forEach(count => {
-                                    historyHtml += `
-                                        <div class="last-count-item">
-                                            <i class="fas fa-calendar"></i> تاریخ: ${count.date}
-                                            <i class="fas fa-user"></i> شمارنده: ${count.counter}
-                                            <i class="fas fa-box"></i> تعداد: ${count.quantity}
-                                        </div>
-                                    `;
-                                });
-                                $('#last-count-info').html(historyHtml);
-                                $('#product-history').show();
-                            } else {
-                                $('#product-history').hide();
-                            }
+                        console.log("Search results:", data);
+                        if (data.results && data.results.length > 0) {
+                            let html = '';
+                            data.results.forEach(invoice => {
+                                html += `
+                                    <div class="search-result-item" data-invoice-id="${invoice.id}">
+                                        <strong>${invoice.serial_number}</strong>
+                                        <div>فروشنده: ${invoice.seller_name}</div>
+                                        <div>تاریخ: ${invoice.date}</div>
+                                    </div>
+                                `;
+                            });
+                            $('#invoice-search-results').html(html).show();
                         } else {
-                            $('#product-type-container').show();
-                            $('#product-history').hide();
+                            $('#invoice-search-results').html('<div class="search-result-item">هیچ فاکتوری یافت نشد</div>').show();
                         }
                     },
-                    error: function(xhr) {
-                        console.error('Error checking product in branch');
+                    error: function(xhr, status, error) {
+                        console.error('Error in invoice search:', error);
+                        showMessage('خطا در جستجوی فاکتورها', 'error');
                     }
                 });
-            }
-            
-            // انتخاب محصول از نتایج جستجو
-            $(document).on('click', '#product-search-results .search-result-item', function() {
-                const productName = $(this).data('product-name');
-                $('#count-product').val(productName);
-                $('#product-search-results').hide();
-                
-                // بررسی وجود محصول در شعبه انتخابی
-                const branchId = $('#count-branch').val();
-                if (branchId) {
-                    checkProductInBranch(productName, branchId);
-                }
-            });
-            
-            // تغییر نوع کالا
-            $('input[name="product-type"]').change(function() {
-                currentProductType = $(this).val();
-            });
-            
-            // افزودن کالا به لیست شمارش
-            $('#add-count-btn').click(function() {
-                const branchId = $('#count-branch').val();
-                const branchName = $('#count-branch-search').val();
-                const productName = $('#count-product').val().trim();
-                const quantity = $('#count-quantity').val();
-                
-                if (!branchId) {
-                    showMessage('لطفاً شعبه را انتخاب کنید', 'error');
-                    return;
-                }
-                
-                if (!productName) {
-                    showMessage('لطفاً نام کالا را وارد کنید', 'error');
-                    return;
-                }
-                
-                if (!quantity || quantity <= 0) {
-                    showMessage('لطفاً تعداد معتبر وارد کنید', 'error');
-                    return;
-                }
-                
-                // بررسی اینکه آیا این کالا قبلاً در لیست اضافه شده یا نه
-                const existingItemIndex = countItems.findIndex(item => 
-                    item.productName === productName && item.branchId === branchId
-                );
-                
-                if (existingItemIndex >= 0) {
-                    // به روزرسانی آیتم موجود
-                    countItems[existingItemIndex].quantity = quantity;
-                    countItems[existingItemIndex].productType = currentProductType;
-                } else {
-                    // افزودن آیتم جدید
-                    countItems.push({
-                        branchId: branchId,
-                        branchName: branchName,
-                        productName: productName,
-                        productType: currentProductType,
-                        quantity: quantity
-                    });
-                }
-                
-                updateCountList();
-                resetCountForm();
-                $('#count-list-container').show();
-            });
-            
-            // به روزرسانی لیست نمایشی کالاهای شمارش شده
-            function updateCountList() {
-                const $countList = $('#count-list');
-                $countList.empty();
-                
-                countItems.forEach((item, index) => {
-                    const badge = item.productType === 'new' ? 
-                        '<span class="new-product-badge">جدید</span>' : 
-                        '<span class="old-product-badge">قدیمی</span>';
-                    
-                    const row = `
-                        <tr>
-                            <td>${item.productName}</td>
-                            <td>${item.branchName}</td>
-                            <td>${badge}</td>
-                            <td>${item.quantity}</td>
-                            <td>
-                                <button class="btn btn-sm remove-count-item" data-index="${index}">
-                                    <i class="fas fa-trash"></i> حذف
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                    $countList.append(row);
-                });
-            }
-            
-            // حذف آیتم از لیست شمارش
-            $(document).on('click', '.remove-count-item', function() {
-                const index = $(this).data('index');
-                countItems.splice(index, 1);
-                updateCountList();
-                
-                if (countItems.length === 0) {
-                    $('#count-list-container').hide();
-                }
-            });
-            
-            // ثبت نهایی انبارگردانی
-            $('#count-submit-btn').click(function() {
-                if (countItems.length === 0) {
-                    showMessage('هیچ کالایی برای ثبت وجود ندارد', 'error');
-                    return;
-                }
-                
-                if (!confirm('آیا از به روزرسانی موجودی انبار مطمئن هستید؟')) {
-                    return;
-                }
-                
-                showMessage('در حال به روزرسانی انبار...', 'info');
-                
-                // ارسال داده‌ها به سرور
-                $.ajax({
-                    url: "{% url 'update_inventory_count' %}",
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        items: countItems
-                    }),
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    success: function(data) {
-                        if (data.success) {
-                            showMessage(data.message, 'success');
-                            countItems = [];
-                            $('#count-list-container').hide();
-                            resetCountForm();
-                        } else {
-                            showMessage(data.error, 'error');
-                        }
-                    },
-                    error: function(xhr) {
-                        showMessage('خطا در انجام انتقال', 'error');
-                    }
-                });
-            });
-            
-            // بازگشت از صفحه انبارگردانی
-            $('#count-back-btn').click(function() {
-                if (countItems.length > 0) {
-                    if (!confirm('تغییرات ذخیره نشده از بین خواهند رفت. آیا مطمئن هستید؟')) {
-                        return;
-                    }
-                }
-                
-                // بازگشت به صفحه اصلی
-                window.location.href = "{% url 'home' %}";
-            });
-            
-            // ریست کردن فرم انبارگردانی
-            function resetCountForm() {
-                $('#count-product').val('');
-                $('#count-quantity').val('0');
-                $('#product-type-container').hide();
-                $('#product-search-results').hide().empty();
-                $('#product-history').hide();
-                $('#product-type-new').prop('checked', true);
-                currentProductType = 'new';
-            }
-            
-            // تابع برای دریافت cookie
-            function getCookie(name) {
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
-                    }
-                }
-                return cookieValue;
-            }
-            
-            // تابع برای نمایش پیام
-            function showMessage(message, type) {
-                const messageClass = type === 'error' ? 'error-message' :
-                                    type === 'success' ? 'success-message' : 'info-message';
-                const icon = type === 'error' ? 'fa-exclamation-circle' :
-                            type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+            }, 300);
+        });
 
-                $('#messages').html(`
-                    <div class="${messageClass}">
-                        <i class="fas ${icon}"></i> ${message}
-                    </div>
-                `);
-
-                // پنهان کردن خودکار پیام پس از 5 ثانیه (به جز خطاها)
-                if (type !== 'error') {
-                    setTimeout(() => {
-                        $('#messages').empty();
-                    }, 5000);
-                }
-            }
+        // انتخاب فاکتور از نتایج جستجو
+        $(document).on('click', '#invoice-search-results .search-result-item', function() {
+            const invoiceId = $(this).data('invoice-id');
+            const invoiceText = $(this).find('strong').text();
+            $('#invoice-search').val(invoiceText);
+            $('#invoice-search-results').hide();
             
-            // مخفی کردن نتایج جستجو هنگام کلیک خارج
-            $(document).on('click', function(e) {
-                if (!$(e.target).closest('.search-container').length) {
-                    $('.search-results').hide();
+            // دریافت جزئیات فاکتور
+            $.ajax({
+                url: "{% url 'get_invoice_details' %}",
+                data: { invoice_id: invoiceId },
+                dataType: 'json',
+                success: function(data) {
+                    console.log("Invoice details:", data);
+                    if (data.success) {
+                        selectedInvoice = data.invoice;
+                        invoiceItems = data.items;
+                        storageEntries = [];
+                        
+                        // نمایش اطلاعات فاکتور
+                        $('#invoice-info').html(`
+                            <div class="invoice-info-item"><strong>شماره فاکتور:</strong> ${selectedInvoice.serial_number}</div>
+                            <div class="invoice-info-item"><strong>فروشنده:</strong> ${selectedInvoice.seller_name}</div>
+                            <div class="invoice-info-item"><strong>تاریخ:</strong> ${selectedInvoice.date}</div>
+                        `);
+                        
+                        // نمایش آیتم‌های فاکتور
+                        updateInvoiceItemsList();
+                        
+                        $('#invoice-details').show();
+                        $('#storage-actions').show();
+                    } else {
+                        showMessage(data.error, 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error getting invoice details:', error);
+                    showMessage('خطا در دریافت اطلاعات فاکتور', 'error');
                 }
             });
         });
-        
 
-// متغیرهای global برای مدیریت فاکتور
-let selectedInvoice = null;
-let invoiceItems = [];
-let storageEntries = [];
-let invoiceSearchTimeout = null;
-let branches = [];
+        // به روزرسانی لیست آیتم‌های فاکتور
+        function updateInvoiceItemsList() {
+            const $itemsList = $('#invoice-items-list');
+            $itemsList.empty();
 
-// بارگذاری اولیه لیست شعب
-function loadBranches() {
-    $.ajax({
-        url: "{% url 'get_branches' %}",
-        method: 'GET',
-        success: function(data) {
-            if (data.success) {
-                branches = data.branches;
-                console.log("Branches loaded:", branches.length);
-            }
-        },
-        error: function(xhr) {
-            showMessage('خطا در دریافت اطلاعات شعب', 'error');
-        }
-    });
-}
+            invoiceItems.forEach((item, index) => {
+                const itemEntries = storageEntries.filter(entry => entry.item_index === index);
+                const totalStored = itemEntries.reduce((sum, entry) => sum + parseInt(entry.quantity), 0);
 
-// فراخوانی اولیه برای بارگذاری شعب
-loadBranches();
-
-// جستجوی فاکتور
-$('#invoice-search').on('input', function() {
-    const query = $(this).val().trim();
-    
-    if (query.length < 2) {
-        $('#invoice-search-results').hide().empty();
-        return;
-    }
-    
-    clearTimeout(invoiceSearchTimeout);
-    invoiceSearchTimeout = setTimeout(function() {
-        $.ajax({
-            url: "{% url 'search_invoices' %}",
-            data: { q: query },
-            dataType: 'json',
-            success: function(data) {
-                console.log("Search results:", data);
-                if (data.results && data.results.length > 0) {
-                    let html = '';
-                    data.results.forEach(invoice => {
-                        html += `
-                            <div class="search-result-item" data-invoice-id="${invoice.id}">
-                                <strong>${invoice.serial_number}</strong>
-                                <div>فروشنده: ${invoice.seller_name}</div>
-                                <div>تاریخ: ${invoice.date}</div>
+                const row = `
+                    <tr data-item-index="${index}">
+                        <td>${item.product_name}</td>
+                        <td>${item.remaining_quantity}</td>
+                        <td>
+                            <div class="search-container">
+                                <input type="text" class="branch-search search-input" placeholder="جستجوی شعبه..." data-item-index="${index}">
+                                <div class="branch-search-results search-results"></div>
                             </div>
-                        `;
-                    });
-                    $('#invoice-search-results').html(html).show();
-                } else {
-                    $('#invoice-search-results').html('<div class="search-result-item">هیچ فاکتوری یافت نشد</div>').show();
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Error in invoice search:', error);
-                showMessage('خطا در جستجوی فاکتورها', 'error');
-            }
-        });
-    }, 300);
-});
+                            <div class="selected-branches">
+                                ${itemEntries.map(entry => `
+                                    <div class="selected-branch">
+                                        ${entry.branch_name} (${entry.quantity})
+                                        <button type="button" class="btn btn-sm remove-storage-entry" data-entry-index="${entry.entry_index}">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </td>
+                        <td>
+                            <input type="number" class="quantity-input" min="0" max="${item.remaining_quantity}" value="0" data-item-index="${index}">
+                            <div class="storage-info">
+                                <small>ذخیره شده: ${totalStored}</small>
+                                <small>باقیمانده: ${item.remaining_quantity}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm add-storage-entry" data-item-index="${index}">
+                                <i class="fas fa-plus"></i> تایید
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                $itemsList.append(row);
+            });
 
-// انتخاب فاکتور از نتایج جستجو
-$(document).on('click', '#invoice-search-results .search-result-item', function() {
-    const invoiceId = $(this).data('invoice-id');
-    const invoiceText = $(this).find('strong').text();
-    $('#invoice-search').val(invoiceText);
-    $('#invoice-search-results').hide();
-    
-    // دریافت جزئیات فاکتور
-    $.ajax({
-        url: "{% url 'get_invoice_details' %}",
-        data: { invoice_id: invoiceId },
-        dataType: 'json',
-        success: function(data) {
-            console.log("Invoice details:", data);
-            if (data.success) {
-                selectedInvoice = data.invoice;
-                invoiceItems = data.items;
-                storageEntries = [];
-                
-                // نمایش اطلاعات فاکتور
-                $('#invoice-info').html(`
-                    <div class="invoice-info-item"><strong>شماره فاکتور:</strong> ${selectedInvoice.serial_number}</div>
-                    <div class="invoice-info-item"><strong>فروشنده:</strong> ${selectedInvoice.seller_name}</div>
-                    <div class="invoice-info-item"><strong>تاریخ:</strong> ${selectedInvoice.date}</div>
-                `);
-                
-                // نمایش آیتم‌های فاکتور
-                updateInvoiceItemsList();
-                
-                $('#invoice-details').show();
+            if (storageEntries.length > 0) {
                 $('#storage-actions').show();
             } else {
-                showMessage(data.error, 'error');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error getting invoice details:', error);
-            showMessage('خطا در دریافت اطلاعات فاکتور', 'error');
-        }
-    });
-});
-
-
-
-
-
-// به روزرسانی لیست آیتم‌های فاکتور
-// ... کدهای قبلی ...
-
-function updateInvoiceItemsList() {
-    const $itemsList = $('#invoice-items-list');
-    $itemsList.empty();
-
-    invoiceItems.forEach((item, index) => {
-        const itemEntries = storageEntries.filter(entry => entry.item_index === index);
-        const totalStored = itemEntries.reduce((sum, entry) => sum + parseInt(entry.quantity), 0);
-
-        // تغییر اول: نمایش remaining_quantity به جای quantity
-        const row = `
-            <tr data-item-index="${index}">
-                <td>${item.product_name}</td>
-                <td>${item.remaining_quantity}</td> <!-- تغییر این خط -->
-                <td>
-                    <div class="search-container">
-                        <input type="text" class="branch-search search-input" placeholder="جستجوی شعبه..." data-item-index="${index}">
-                        <div class="branch-search-results search-results"></div>
-                    </div>
-                    <div class="selected-branches">
-                        ${itemEntries.map(entry => `
-                            <div class="selected-branch">
-                                ${entry.branch_name} (${entry.quantity})
-                                <button type="button" class="btn btn-sm remove-storage-entry" data-entry-index="${entry.entry_index}">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        `).join('')}
-                    </div>
-                </td>
-                <td>
-                    <!-- تغییر دوم: تنظیم max روی remaining_quantity -->
-                    <input type="number" class="quantity-input" min="0" max="${item.remaining_quantity}" value="0" data-item-index="${index}">
-                    <div class="storage-info">
-                        <small>ذخیره شده: ${totalStored}</small>
-                        <small>باقیمانده: ${item.remaining_quantity}</small>
-                    </div>
-                </td>
-                <td>
-                    <button class="btn btn-sm add-storage-entry" data-item-index="${index}">
-                        <i class="fas fa-plus"></i> تایید
-                    </button>
-                </td>
-            </tr>
-        `;
-        $itemsList.append(row);
-    });
-
-    if (storageEntries.length > 0) {
-        $('#storage-actions').show();
-    } else {
-        $('#storage-actions').hide();
-    }
-}
-
-// ... کدهای بعدی ...
-
-
-
-
-
-
-
-
-
-
-
-
-// جستجوی شعبه برای آیتم‌های فاکتور
-$(document).on('input', '.branch-search', function() {
-    const query = $(this).val().trim();
-    const $results = $(this).siblings('.branch-search-results');
-    
-    if (query.length < 1) {
-        $results.hide().empty();
-        return;
-    }
-    
-    const filteredBranches = branches.filter(branch => 
-        branch.name.includes(query) || branch.address.includes(query)
-    );
-    
-    if (filteredBranches.length === 0) {
-        $results.html('<div class="search-result-item">هیچ شعبه‌ای یافت نشد</div>').show();
-        return;
-    }
-    
-    let html = '';
-    filteredBranches.forEach(branch => {
-        html += `
-            <div class="search-result-item" data-branch-id="${branch.id}" data-branch-name="${branch.name}">
-                <strong>${branch.name}</strong>
-                <div>${branch.address}</div>
-            </div>
-        `;
-    });
-    
-    $results.html(html).show();
-});
-
-// انتخاب شعبه از نتایج جستجو
-$(document).on('click', '.branch-search-results .search-result-item', function() {
-    const branchId = $(this).data('branch-id');
-    const branchName = $(this).data('branch-name');
-    
-    const $searchInput = $(this).closest('.search-container').find('.branch-search');
-    $searchInput.val(branchName);
-    $searchInput.data('branch-id', branchId);
-    $(this).closest('.branch-search-results').hide();
-});
-
-// افزودن ورودی انبار برای یک آیتم
-$(document).on('click', '.add-storage-entry', function() {
-    const itemIndex = $(this).data('item-index');
-    const $row = $(`tr[data-item-index="${itemIndex}"]`);
-    const branchName = $row.find('.branch-search').val().trim();
-    const branchId = $row.find('.branch-search').data('branch-id');
-    const quantity = parseInt($row.find('.quantity-input').val());
-    
-    if (!branchName || !branchId) {
-        showMessage('لطفاً شعبه را انتخاب کنید', 'error');
-        return;
-    }
-    
-    if (quantity <= 0) {
-        showMessage('لطفاً تعداد معتبر وارد کنید', 'error');
-        return;
-    }
-    
-    const branch = branches.find(b => b.id == branchId);
-    if (!branch) {
-        showMessage('شعبه انتخاب شده معتبر نیست', 'error');
-        return;
-    }
-    
-    const item = invoiceItems[itemIndex];
-    const currentTotal = storageEntries
-        .filter(entry => entry.item_index === itemIndex)
-        .reduce((sum, entry) => sum + parseInt(entry.quantity), 0);
-    
-    if (currentTotal + quantity > item.quantity) {
-        showMessage('تعداد وارد شده از مقدار فاکتور بیشتر است', 'error');
-        return;
-    }
-    
-    const entryIndex = storageEntries.length;
-    storageEntries.push({
-        entry_index: entryIndex,
-        item_index: itemIndex,
-        product_name: item.product_name,
-        branch_id: branchId,
-        branch_name: branchName,
-        quantity: quantity
-    });
-    
-    updateInvoiceItemsList();
-    $row.find('.branch-search').val('');
-    $row.find('.branch-search').removeData('branch-id');
-    $row.find('.quantity-input').val(0);
-});
-
-// حذف ورودی انبار
-$(document).on('click', '.remove-storage-entry', function() {
-    const entryIndex = $(this).data('entry-index');
-    storageEntries = storageEntries.filter(entry => entry.entry_index !== entryIndex);
-    updateInvoiceItemsList();
-});
-
-// ثبت نهایی اطلاعات انبار
-$('#invoice-submit-btn').click(function() {
-    if (storageEntries.length === 0) {
-        showMessage('هیچ اطلاعاتی برای ثبت وجود ندارد', 'error');
-        return;
-    }
-    
-    if (!confirm('آیا از ثبت اطلاعات انبار مطمئن هستید؟')) {
-        return;
-    }
-    
-    showMessage('در حال ثبت اطلاعات...', 'info');
-    
-    $.ajax({
-        url: "{% url 'store_invoice_items' %}",
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            items: storageEntries
-        }),
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        success: function(data) {
-            if (data.success) {
-                showMessage(data.message, 'success');
-                console.log('success'); // چاپ 'success' در کنسول
-                
-                setTimeout(() => {
-                    window.location.href = "{% url 'home' %}";
-                }, 2000);
-            } else {
-                showMessage(data.error, 'error');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error storing invoice items:', error);
-            showMessage('خطا در ثبت اطلاعات', 'error');
-        }
-    });
-});
-
-// بازگشت از صفحه فاکتور
-$('#invoice-back-btn').click(function() {
-    if (storageEntries.length > 0) {
-        if (!confirm('تغییرات ذخیره نشده از بین خواهند رفت. آیا مطمئن هستید؟')) {
-            return;
-        }
-    }
-    
-    window.location.href = "{% url 'home' %}";
-});
-
-// تابع برای دریافت cookie
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+                $('#storage-actions').hide();
             }
         }
-    }
-    return cookieValue;
-}
 
-// تابع برای نمایش پیام
-function showMessage(message, type) {
-    const messageClass = type === 'error' ? 'error-message' :
-                        type === 'success' ? 'success-message' : 'info-message';
-    const icon = type === 'error' ? 'fa-exclamation-circle' :
-                type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+        // جستجوی شعبه برای آیتم‌های فاکتور
+        $(document).on('input', '.branch-search', function() {
+            const query = $(this).val().trim();
+            const $results = $(this).siblings('.branch-search-results');
+            
+            if (query.length < 1) {
+                $results.hide().empty();
+                return;
+            }
+            
+            const filteredBranches = branches.filter(branch => 
+                branch.name.includes(query) || branch.address.includes(query)
+            );
+            
+            if (filteredBranches.length === 0) {
+                $results.html('<div class="search-result-item">هیچ شعبه‌ای یافت نشد</div>').show();
+                return;
+            }
+            
+            let html = '';
+            filteredBranches.forEach(branch => {
+                html += `
+                    <div class="search-result-item" data-branch-id="${branch.id}" data-branch-name="${branch.name}">
+                        <strong>${branch.name}</strong>
+                        <div>${branch.address}</div>
+                    </div>
+                `;
+            });
+            
+            $results.html(html).show();
+        });
 
-    $('#messages').html(`
-        <div class="${messageClass}">
-            <i class="fas ${icon}"></i> ${message}
-        </div>
-    `);
+        // انتخاب شعبه از نتایج جستجو
+        $(document).on('click', '.branch-search-results .search-result-item', function() {
+            const branchId = $(this).data('branch-id');
+            const branchName = $(this).data('branch-name');
+            
+            const $searchInput = $(this).closest('.search-container').find('.branch-search');
+            $searchInput.val(branchName);
+            $searchInput.data('branch-id', branchId);
+            $(this).closest('.branch-search-results').hide();
+        });
 
-    if (type !== 'error') {
-        setTimeout(() => {
-            $('#messages').empty();
-        }, 5000);
-    }
-}
+        // افزودن ورودی انبار برای یک آیتم
+        $(document).on('click', '.add-storage-entry', function() {
+            const itemIndex = $(this).data('item-index');
+            const $row = $(`tr[data-item-index="${itemIndex}"]`);
+            const branchName = $row.find('.branch-search').val().trim();
+            const branchId = $row.find('.branch-search').data('branch-id');
+            const quantity = parseInt($row.find('.quantity-input').val());
+            
+            if (!branchName || !branchId) {
+                showMessage('لطفاً شعبه را انتخاب کنید', 'error');
+                return;
+            }
+            
+            if (quantity <= 0) {
+                showMessage('لطفاً تعداد معتبر وارد کنید', 'error');
+                return;
+            }
+            
+            const branch = branches.find(b => b.id == branchId);
+            if (!branch) {
+                showMessage('شعبه انتخاب شده معتبر نیست', 'error');
+                return;
+            }
+            
+            const item = invoiceItems[itemIndex];
+            const currentTotal = storageEntries
+                .filter(entry => entry.item_index === itemIndex)
+                .reduce((sum, entry) => sum + parseInt(entry.quantity), 0);
+            
+            if (currentTotal + quantity > item.quantity) {
+                showMessage('تعداد وارد شده از مقدار فاکتور بیشتر است', 'error');
+                return;
+            }
+            
+            const entryIndex = storageEntries.length;
+            storageEntries.push({
+                entry_index: entryIndex,
+                item_index: itemIndex,
+                product_name: item.product_name,
+                branch_id: branchId,
+                branch_name: branchName,
+                quantity: quantity
+            });
+            
+            updateInvoiceItemsList();
+            $row.find('.branch-search').val('');
+            $row.find('.branch-search').removeData('branch-id');
+            $row.find('.quantity-input').val(0);
+        });
 
-// مخفی کردن نتایج جستجو هنگام کلیک خارج
-$(document).on('click', function(e) {
-    if (!$(e.target).closest('.search-container').length) {
-        $('.search-results').hide();
-    }
-});
-{#-----------------------------------------------------------------#}
-// اضافه کردن متغیر global برای جلوگیری از ارسال تکراری
-let isSubmitting = false;
+        // حذف ورودی انبار
+        $(document).on('click', '.remove-storage-entry', function() {
+            const entryIndex = $(this).data('entry-index');
+            storageEntries = storageEntries.filter(entry => entry.entry_index !== entryIndex);
+            updateInvoiceItemsList();
+        });
 
-// تغییرات در تابع کلیک روی دکمه ثبت
-$('#invoice-submit-btn').click(function() {
-    if (isSubmitting) {
-        showMessage('در حال پردازش درخواست قبلی... لطفاً صبر کنید', 'info');
-        return false;
-    }
-    
-    if (storageEntries.length === 0) {
-        showMessage('هیچ اطلاعاتی برای ثبت وجود ندارد', 'error');
-        return;
-    }
-    
-    if (!confirm('آیا از ثبت اطلاعات انبار مطمئن هستید؟')) {
-        return;
-    }
-    
-    // غیرفعال کردن دکمه و تغییر متن آن
-    isSubmitting = true;
-    $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال ثبت...');
-    
-    // ایجاد شناسه یکتا برای این درخواست
-    const requestId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-    
-    showMessage('در حال ثبت اطلاعات...', 'info');
-    
-    // ارسال داده‌ها به سرور
-    $.ajax({
-        url: "{% url 'store_invoice_items' %}",
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            items: storageEntries,
-            invoice_id: selectedInvoice.id,
-            request_id: requestId
-        }),
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        success: function(data) {
-            if (data.success) {
-                showMessage(data.message, 'success');
-                
-                // هدایت به صفحه چاپ
-                if (data.print_url) {
-                    window.open(data.print_url, '_blank');
+        // ثبت نهایی اطلاعات انبار
+        $('#invoice-submit-btn').click(function() {
+            if (isSubmitting) {
+                showMessage('در حال پردازش درخواست قبلی... لطفاً صبر کنید', 'info');
+                return false;
+            }
+            
+            if (storageEntries.length === 0) {
+                showMessage('هیچ اطلاعاتی برای ثبت وجود ندارد', 'error');
+                return;
+            }
+            
+            if (!confirm('آیا از ثبت اطلاعات انبار مطمئن هستید؟')) {
+                return;
+            }
+            
+            // غیرفعال کردن دکمه و تغییر متن آن
+            isSubmitting = true;
+            $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال ثبت...');
+            
+            // ایجاد شناسه یکتا برای این درخواست
+            const requestId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+            
+            showMessage('در حال ثبت اطلاعات...', 'info');
+            
+            // ارسال داده‌ها به سرور برای ثبت انبار
+            $.ajax({
+                url: "{% url 'store_invoice_items' %}",
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    items: storageEntries,
+                    invoice_id: selectedInvoice.id,
+                    request_id: requestId
+                }),
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(data) {
+                    if (data.success) {
+                        showMessage(data.message, 'success');
+                        
+                        // پس از موفقیت آمیز بودن ثبت انبار، قیمت‌گذاری محصولات را به روز کنید
+                        $.ajax({
+                            url: "{% url 'update_product_pricing' %}",
+                            method: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                invoice_id: selectedInvoice.id
+                            }),
+                            headers: {
+                                'X-CSRFToken': getCookie('csrftoken')
+                            },
+                            success: function(pricingData) {
+                                if (pricingData.success) {
+                                    console.log('قیمت‌گذاری محصولات به روز شد');
+                                } else {
+                                    console.error('خطا در به‌روزرسانی قیمت‌گذاری:', pricingData.error);
+                                }
+                            },
+                            error: function(xhr) {
+                                console.error('خطا در به‌روزرسانی قیمت‌گذاری محصولات');
+                            }
+                        });
+                        
+                        // هدایت به صفحه چاپ
+                        if (data.print_url) {
+                            window.open(data.print_url, '_blank');
+                        }
+                        
+                        // پاکسازی فرم و بازگشت به صفحه اصلی بعد از 2 ثانیه
+                        setTimeout(() => {
+                            window.location.href = "{% url 'home' %}";
+                        }, 2000);
+                    } else {
+                        showMessage(data.error, 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error storing invoice items:', error);
+                    showMessage('خطا در ثبت اطلاعات', 'error');
+                },
+                complete: function() {
+                    // فعال کردن دکمه و بازگرداندن متن اصلی
+                    isSubmitting = false;
+                    $('#invoice-submit-btn').prop('disabled', false).html('<i class="fas fa-save"></i> ثبت اطلاعات انبار');
                 }
-                
-                // پاکسازی فرم و بازگشت به صفحه اصلی بعد از 2 ثانیه
-                setTimeout(() => {
-                    window.location.href = "{% url 'home' %}";
-                }, 2000);
-            } else {
-                showMessage(data.error, 'error');
+            });
+        });
+
+        // بازگشت از صفحه فاکتور
+        $('#invoice-back-btn').click(function() {
+            if (storageEntries.length > 0) {
+                if (!confirm('تغییرات ذخیره نشده از بین خواهند رفت. آیا مطمئن هستید؟')) {
+                    return;
+                }
             }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error storing invoice items:', error);
-            showMessage('خطا در ثبت اطلاعات', 'error');
-        },
-        complete: function() {
-            // فعال کردن دکمه و بازگرداندن متن اصلی
-            isSubmitting = false;
-            $('#invoice-submit-btn').prop('disabled', false).html('<i class="fas fa-save"></i> ثبت اطلاعات انبار');
+            
+            window.location.href = "{% url 'home' %}";
+        });
+
+        // تابع برای دریافت cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
         }
-    });
-});
+
+        // تابع برای نمایش پیام
+        function showMessage(message, type) {
+            const messageClass = type === 'error' ? 'error-message' :
+                                type === 'success' ? 'success-message' : 'info-message';
+            const icon = type === 'error' ? 'fa-exclamation-circle' :
+                        type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+
+            $('#messages').html(`
+                <div class="${messageClass}">
+                    <i class="fas ${icon}"></i> ${message}
+                </div>
+            `);
+
+            if (type !== 'error') {
+                setTimeout(() => {
+                    $('#messages').empty();
+                }, 5000);
+            }
+        }
+
+        // مخفی کردن نتایج جستجو هنگام کلیک خارج
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.search-container').length) {
+                $('.search-results').hide();
+            }
+        });
+
+        // توابع مربوط به انبارگردانی (اگر نیاز دارید)
+        let countItems = [];
+        let currentProductType = 'new';
+        let searchTimeout = null;
+        
+        function resetCountForm() {
+            $('#count-product').val('');
+            $('#count-quantity').val('0');
+            $('#product-type-container').hide();
+            $('#product-search-results').hide().empty();
+            $('#product-history').hide();
+            $('#product-type-new').prop('checked', true);
+            currentProductType = 'new';
+        }
     </script>
 </body>
 </html>

@@ -15,6 +15,7 @@ class InvoiceItemAdmin(admin.ModelAdmin):
         'quantity',
         'remaining_quantity',  # اضافه کردن این خط
         'unit_price',
+        'unit_price',
     ]
 
     def invoice_number(self, obj):
