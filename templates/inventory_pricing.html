@@ -293,39 +293,41 @@
         </div>
 
         <!-- بخش محصولات و قیمت‌گذاری -->
+<!-- بخش محصولات و قیمت‌گذاری -->
         <div id="pricing-products-section" class="pricing-section hidden">
-            <div class="search-container">
-                <label class="search-label">جستجوی کالا:</label>
-                <input type="search" id="pricing-product-search" class="search-input" placeholder="نام کالا را وارد کنید..." aria-label="جستجوی کالا">
-                <div class="search-hint">برای جستجو، حداقل 2 کاراکتر وارد کنید</div>
-            </div>
+    <div class="search-container">
+        <label class="search-label">جستجوی کالا:</label>
+        <input type="search" id="pricing-product-search" class="search-input" placeholder="نام کالا را وارد کنید..." aria-label="جستجوی کالا">
+        <div class="search-hint">برای جستجو، حداقل 2 کاراکتر وارد کنید</div>
+    </div>
 
-            <div class="table-container">
-                <table class="pricing-table">
-                    <thead>
-                        <tr>
-                            <th>نام کالا</th>
-                            <th>قیمت معیار (تومان)</th>
-                            <th>درصد سود</th>
-                            <th>قیمت فروش (تومان)</th>
-                            <th>عملیات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pricing-products-body">
-                        <!-- محصولات اینجا نمایش داده می‌شوند -->
-                    </tbody>
-                </table>
-            </div>
+    <div class="table-container">
+        <table class="pricing-table">
+            <thead>
+                <tr>
+                    <th>نام کالا</th>
+                    <th>درصد سود</th>
+                    <th>قیمت معیار (تومان)</th>
+                    <th>قیمت فروش (تومان)</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="pricing-products-body">
+                <!-- محصولات اینجا نمایش داده می‌شوند -->
+            </tbody>
+        </table>
+    </div>
 
-            <div class="actions">
-                <button id="save-all-prices" class="btn btn-primary">
-                    <i class="fas fa-save"></i> ذخیره همه قیمت‌ها
-                </button>
-                <button id="reset-pricing" class="btn">
-                    <i class="fas fa-redo"></i> بازنشانی
-                </button>
-            </div>
-        </div>
+    <div class="actions">
+        <button id="save-all-prices" class="btn btn-primary">
+            <i class="fas fa-save"></i> ذخیره همه قیمت‌ها
+        </button>
+        <button id="reset-pricing" class="btn">
+            <i class="fas fa-redo"></i> بازنشانی
+        </button>
+    </div>
+</div>        
+        
 
         <div id="messages"></div>
     </div>
@@ -445,62 +447,63 @@
             });
         }
 
-        // نمایش محصولات در جدول قیمت‌گذاری
-        function displayPricingProducts(products) {
-            const $tbody = $('#pricing-products-body');
-            $tbody.empty();
-            
-            products.forEach(product => {
-                const sellingPrice = product.current_selling_price || product.selling_price;
-                
-                const row = `
-                    <tr data-product-name="${product.product_name}">
-                        <td>${product.product_name}</td>
-                        <td>${product.base_price.toLocaleString()}</td>
-                        <td>
-                            <input type="number" class="profit-percentage-input" 
-                                   value="${product.profit_percentage}" 
-                                   min="0" max="1000" data-base-price="${product.base_price}">
-                            %
-                        </td>
-                        <td class="selling-price-display">${sellingPrice.toLocaleString()}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary save-pricing-btn" 
-                                    data-product-name="${product.product_name}">
-                                <i class="fas fa-save"></i> ذخیره
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                $tbody.append(row);
-            });
-            
-            // فعال کردن محاسبه قیمت هنگام تغییر درصد سود
-            $('.profit-percentage-input').on('input', function() {
-                const basePrice = parseFloat($(this).data('base-price'));
-                const profitPercentage = parseFloat($(this).val()) || 0;
-                
-                // محاسبه قیمت فروش
-                const sellingPrice = calculateSellingPrice(basePrice, profitPercentage);
-                
-                // نمایش قیمت فروش
-                $(this).closest('tr').find('.selling-price-display').text(sellingPrice.toLocaleString());
-            });
-        }
-
+// نمایش محصولات در جدول قیمت‌گذاری
+function displayPricingProducts(products) {
+    const $tbody = $('#pricing-products-body');
+    $tbody.empty();
+    
+    products.forEach(product => {
+        const sellingPrice = product.current_selling_price || product.selling_price;
+        const profitPercentage = product.profit_percentage || 30.00;
+        
+        const row = `
+            <tr data-product-name="${product.product_name}">
+                <td>${product.product_name}</td>
+                <td>
+                    <input type="number" class="profit-percentage-input" 
+                           value="${profitPercentage}" 
+                           min="0" max="1000" step="0.01"
+                           data-base-price="${product.base_price}">
+                    %
+                </td>
+                <td>${product.base_price.toLocaleString()}</td>
+                <td class="selling-price-display">${sellingPrice.toLocaleString()}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary save-pricing-btn" 
+                            data-product-name="${product.product_name}">
+                        <i class="fas fa-save"></i> ذخیره
+                    </button>
+                </td>
+            </tr>
+        `;
+        $tbody.append(row);
+    });
+    
+    // فعال کردن محاسبه قیمت هنگام تغییر درصد سود
+    $('.profit-percentage-input').on('input', function() {
+        const basePrice = parseFloat($(this).data('base-price'));
+        const profitPercentage = parseFloat($(this).val()) || 0;
+        
         // محاسبه قیمت فروش
-        function calculateSellingPrice(basePrice, profitPercentage) {
-            if (!basePrice) return 0;
-            
-            const profit = basePrice * (profitPercentage / 100);
-            let sellingPrice = basePrice + profit;
-            
-            // گرد کردن به نزدیکترین 1000 تومان
-            sellingPrice = Math.round(sellingPrice / 1000) * 1000;
-            
-            return sellingPrice;
-        }
+        const sellingPrice = calculateSellingPrice(basePrice, profitPercentage);
+        
+        // نمایش قیمت فروش
+        $(this).closest('tr').find('.selling-price-display').text(sellingPrice.toLocaleString());
+    });
+}
 
+// محاسبه قیمت فروش با گرد کردن به بالا به مضرب 1000 تومان
+function calculateSellingPrice(basePrice, profitPercentage) {
+    if (!basePrice) return 0;
+    
+    const profit = basePrice * (profitPercentage / 100);
+    let sellingPrice = basePrice + profit;
+    
+    // گرد کردن به بالا به مضرب 1000 تومان
+    sellingPrice = Math.ceil(sellingPrice / 1000) * 1000;
+    
+    return sellingPrice;
+}
         // جستجوی محصولات در لیست قیمت‌گذاری
         $('#pricing-product-search').on('input', function() {
             const query = $(this).val().trim();
@@ -524,90 +527,127 @@
             displayPricingProducts(filteredProducts);
         });
 
-        // ذخیره قیمت فروش برای یک محصول
-        $(document).on('click', '.save-pricing-btn', function() {
-            if (!selectedPricingBranch) {
-                showMessage('لطفاً ابتدا یک شعبه انتخاب کنید', 'error');
-                return;
-            }
-            
-            const productName = $(this).data('product-name');
-            const $row = $(this).closest('tr');
-            const profitPercentage = parseFloat($row.find('.profit-percentage-input').val()) || 0;
-            const sellingPrice = parseFloat($row.find('.selling-price-display').text().replace(/,/g, ''));
-            
-            $.ajax({
-                url: "{% url 'update_product_pricing' %}",
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    product_name: productName,
-                    branch_id: selectedPricingBranch.id,
-                    profit_percentage: profitPercentage,
-                    selling_price: sellingPrice
-                }),
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                success: function(data) {
-                    if (data.success) {
-                        showMessage(`قیمت فروش برای ${productName} با موفقیت ذخیره شد`, 'success');
-                    } else {
-                        showMessage('خطا در ذخیره قیمت فروش: ' + data.error, 'error');
-                    }
-                },
-                error: function() {
-                    showMessage('خطا در ارتباط با سرور', 'error');
-                }
-            });
-        });
-
-        // ذخیره همه قیمت‌ها
-        $('#save-all-prices').click(function() {
-            if (!selectedPricingBranch) {
-                showMessage('لطفاً ابتدا یک شعبه انتخاب کنید', 'error');
-                return;
-            }
-            
-            const pricesToSave = [];
-            $('#pricing-products-body tr').each(function() {
-                const productName = $(this).data('product-name');
-                const profitPercentage = parseFloat($(this).find('.profit-percentage-input').val()) || 0;
-                const sellingPrice = parseFloat($(this).find('.selling-price-display').text().replace(/,/g, ''));
+// ذخیره قیمت فروش برای یک محصول
+$(document).on('click', '.save-pricing-btn', function() {
+    if (!selectedPricingBranch) {
+        showMessage('لطفاً ابتدا یک شعبه انتخاب کنید', 'error');
+        return;
+    }
+    
+    const productName = $(this).data('product-name');
+    const $row = $(this).closest('tr');
+    const profitPercentageInput = $row.find('.profit-percentage-input');
+    const sellingPriceDisplay = $row.find('.selling-price-display');
+    
+    const profitPercentage = parseFloat(profitPercentageInput.val()) || 30.00;
+    const sellingPrice = parseFloat(sellingPriceDisplay.text().replace(/,/g, '')) || 0;
+    
+    // اعتبارسنجی
+    if (isNaN(profitPercentage) || profitPercentage < 0 || profitPercentage > 1000) {
+        showMessage('درصد سود باید بین 0 تا 1000 باشد', 'error');
+        profitPercentageInput.focus();
+        return;
+    }
+    
+    if (isNaN(sellingPrice) || sellingPrice < 0) {
+        showMessage('قیمت فروش نامعتبر است', 'error');
+        return;
+    }
+    
+    // نمایش حالت در حال پردازش
+    const $button = $(this);
+    const originalText = $button.html();
+    $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال ذخیره...');
+    
+    // ارسال درخواست به سرور
+    $.ajax({
+        url: "{% url 'update_product_pricing' %}",
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            product_name: productName,
+            branch_id: selectedPricingBranch.id,
+            profit_percentage: profitPercentage,
+            selling_price: sellingPrice
+        }),
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        success: function(data) {
+            if (data.success) {
+                showMessage(`قیمت فروش و درصد سود برای ${productName} با موفقیت ذخیره شد`, 'success');
                 
-                pricesToSave.push({
-                    product_name: productName,
-                    profit_percentage: profitPercentage,
-                    selling_price: sellingPrice
-                });
-            });
-            
-            // ارسال همه قیمت‌ها به سرور
-            $.ajax({
-                url: "{% url 'update_all_product_pricing' %}",
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    branch_id: selectedPricingBranch.id,
-                    prices: pricesToSave
-                }),
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                success: function(data) {
-                    if (data.success) {
-                        showMessage('همه قیمت‌ها با موفقیت ذخیره شدند', 'success');
-                    } else {
-                        showMessage('خطا در ذخیره قیمت‌ها: ' + data.error, 'error');
-                    }
-                },
-                error: function() {
-                    showMessage('خطا در ارتباط با سرور', 'error');
-                }
-            });
-        });
+                // به روزرسانی مقدار input با مقدار ذخیره شده در دیتابیس
+                profitPercentageInput.val(profitPercentage);
+            } else {
+                showMessage('خطا در ذخیره قیمت فروش: ' + (data.error || 'خطای ناشناخته'), 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            let errorMessage = 'خطا در ارتباط با سرور';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMessage += ': ' + xhr.responseJSON.error;
+            }
+            showMessage(errorMessage, 'error');
+        },
+        complete: function() {
+            // بازگرداندن دکمه به حالت عادی
+            $button.prop('disabled', false).html(originalText);
+        }
+    });
+});
 
-        // بازنشانی فرم
+// ذخیره همه قیمت‌ها
+$('#save-all-prices').click(function() {
+    if (!selectedPricingBranch) {
+        showMessage('لطفاً ابتدا یک شعبه انتخاب کنید', 'error');
+        return;
+    }
+    
+    const pricesToSave = [];
+    $('#pricing-products-body tr').each(function() {
+        const productName = $(this).data('product-name');
+        const profitPercentage = parseFloat($(this).find('.profit-percentage-input').val()) || 30.00;
+        const sellingPrice = parseFloat($(this).find('.selling-price-display').text().replace(/,/g, ''));
+        
+        pricesToSave.push({
+            product_name: productName,
+            profit_percentage: profitPercentage,
+            selling_price: sellingPrice
+        });
+    });
+    
+    // ارسال همه قیمت‌ها به سرور
+    $.ajax({
+        url: "{% url 'update_all_product_pricing' %}",
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            branch_id: selectedPricingBranch.id,
+            prices: pricesToSave
+        }),
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        success: function(data) {
+            if (data.success) {
+                showMessage('همه قیمت‌ها و درصدهای سود با موفقیت ذخیره شدند', 'success');
+                
+                // بارگذاری مجدد محصولات برای اطمینان از همگام بودن با دیتابیس
+                loadBranchProducts(selectedPricingBranch.id);
+            } else {
+                showMessage('خطا در ذخیره قیمت‌ها: ' + data.error, 'error');
+            }
+        },
+        error: function() {
+            showMessage('خطا در ارتباط با سرور', 'error');
+        }
+    });
+});
+
+
+// بازنشانی فرم
         $('#reset-pricing').click(function() {
             if (confirm('آیا از بازنشانی فرم اطمینان دارید؟ تمام تغییرات ذخیره نشده از بین خواهند رفت.')) {
                 $('#pricing-branch-search').val('');

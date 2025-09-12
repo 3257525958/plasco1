@@ -911,11 +911,17 @@ def get_branch_products(request):
             except ProductPricing.DoesNotExist:
                 base_price = 0
 
-            # محاسبه قیمت فروش با سود 30% پیش‌فرض
-            profit_percentage = 30
+            # استفاده از درصد سود ذخیره شده در InventoryCount
+            profit_percentage = float(item.profit_percentage) if item.profit_percentage else 30.00
+
+            # محاسبه قیمت فروش
             selling_price = base_price + (base_price * Decimal(profit_percentage / 100))
-            # گرد کردن به نزدیکترین 1000 تومان
-            selling_price = math.ceil(selling_price / 1000) * 1000
+
+            # گرد کردن به بالا به مضرب 1000 تومان
+            if selling_price:
+                selling_price = math.ceil(selling_price / 1000) * 1000
+            else:
+                selling_price = 0
 
             products_data.append({
                 'id': item.id,
@@ -932,52 +938,104 @@ def get_branch_products(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-
-
 @csrf_exempt
 def update_product_pricing(request):
-    """به روزرسانی قیمت فروش محصولات"""
+    """به روزرسانی قیمت فروش و درصد سود محصولات"""
     if request.method == 'POST':
         try:
+            # بررسی اینکه کاربر لاگین کرده است
+            if not request.user.is_authenticated:
+                return JsonResponse({'success': False, 'error': 'لطفاً ابتدا وارد سیستم شوید'})
+
             data = json.loads(request.body)
             product_name = data.get('product_name')
             branch_id = data.get('branch_id')
             profit_percentage = data.get('profit_percentage')
             selling_price = data.get('selling_price')
 
-            # به روزرسانی قیمت فروش در InventoryCount
-            inventory_item = InventoryCount.objects.get(
-                product_name=product_name,
-                branch_id=branch_id
-            )
+            # اعتبارسنجی داده‌های ورودی
+            if not all([product_name, branch_id, profit_percentage is not None]):
+                return JsonResponse({'success': False, 'error': 'داده‌های ورودی ناقص است'})
 
-            inventory_item.selling_price = selling_price
-            inventory_item.save()
+            # تبدیل درصد سود به Decimal
+            try:
+                profit_percentage = Decimal(str(profit_percentage))
+            except (ValueError, TypeError):
+                return JsonResponse({'success': False, 'error': 'درصد سود نامعتبر است'})
 
-            return JsonResponse({'success': True})
+            # گرد کردن قیمت به بالا به مضرب 1000 تومان
+            if selling_price:
+                try:
+                    selling_price = math.ceil(float(selling_price) / 1000) * 1000
+                except (ValueError, TypeError):
+                    return JsonResponse({'success': False, 'error': 'قیمت فروش نامعتبر است'})
 
-        except InventoryCount.DoesNotExist:
-            return JsonResponse({'error': 'محصول یافت نشد'}, status=404)
+            # به روزرسانی قیمت فروش و درصد سود در InventoryCount
+            try:
+                inventory_item = InventoryCount.objects.get(
+                    product_name=product_name,
+                    branch_id=branch_id
+                )
+
+                inventory_item.selling_price = selling_price
+                inventory_item.profit_percentage = profit_percentage
+                inventory_item.save()
+
+                return JsonResponse({'success': True, 'message': 'اطلاعات با موفقیت ذخیره شد'})
+
+            except InventoryCount.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'محصول در این شعبه یافت نشد'})
+            except Exception as e:
+                return JsonResponse({'success': False, 'error': f'خطا در ذخیره اطلاعات: {str(e)}'})
+
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'داده‌های ارسالی نامعتبر است'})
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            return JsonResponse({'success': False, 'error': f'خطای سرور: {str(e)}'})
 
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
-
+    return JsonResponse({'success': False, 'error': 'متد مجاز نیست'}, status=405)
 
 @csrf_exempt
 def update_all_product_pricing(request):
-    """به روزرسانی کلیه قیمت‌های فروش محصولات"""
+    """به روزرسانی کلیه قیمت‌های فروش و درصد سود محصولات"""
     if request.method == 'POST':
         try:
+            # بررسی اینکه کاربر لاگین کرده است
+            if not request.user.is_authenticated:
+                return JsonResponse({'success': False, 'error': 'لطفاً ابتدا وارد سیستم شوید'})
+
             data = json.loads(request.body)
             branch_id = data.get('branch_id')
             prices = data.get('prices', [])
 
+            # اعتبارسنجی داده‌های ورودی
+            if not branch_id:
+                return JsonResponse({'success': False, 'error': 'شناسه شعبه الزامی است'})
+
+            # پردازش هر قیمت
             for price_data in prices:
                 product_name = price_data.get('product_name')
                 selling_price = price_data.get('selling_price')
+                profit_percentage = price_data.get('profit_percentage')
 
-                # به روزرسانی قیمت فروش در InventoryCount
+                # رد کردن آیتم‌های ناقص
+                if not all([product_name, profit_percentage is not None]):
+                    continue
+
+                # تبدیل درصد سود به Decimal
+                try:
+                    profit_percentage = Decimal(str(profit_percentage))
+                except (ValueError, TypeError):
+                    continue
+
+                # گرد کردن قیمت به بالا به مضرب 1000 تومان
+                if selling_price:
+                    try:
+                        selling_price = math.ceil(float(selling_price) / 1000) * 1000
+                    except (ValueError, TypeError):
+                        continue
+
+                # به روزرسانی قیمت فروش و درصد سود در InventoryCount
                 try:
                     inventory_item = InventoryCount.objects.get(
                         product_name=product_name,
@@ -985,16 +1043,23 @@ def update_all_product_pricing(request):
                     )
 
                     inventory_item.selling_price = selling_price
+                    inventory_item.profit_percentage = profit_percentage
                     inventory_item.save()
                 except InventoryCount.DoesNotExist:
                     continue
+                except Exception as e:
+                    # لاگ کردن خطا اما ادامه پردازش سایر آیتم‌ها
+                    print(f"خطا در به روزرسانی محصول {product_name}: {str(e)}")
+                    continue
 
-            return JsonResponse({'success': True})
+            return JsonResponse({'success': True, 'message': 'همه اطلاعات با موفقیت ذخیره شدند'})
 
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'داده‌های ارسالی نامعتبر است'})
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            return JsonResponse({'success': False, 'error': f'خطای سرور: {str(e)}'})
 
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    return JsonResponse({'success': False, 'error': 'متد مجاز نیست'}, status=405)
 
 
 def pricing_management(request):

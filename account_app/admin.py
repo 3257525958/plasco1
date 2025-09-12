@@ -3,7 +3,7 @@ from .models import InventoryCount
 
 @admin.register(InventoryCount)
 class InventoryCountAdmin(admin.ModelAdmin):
-    list_display = ['product_name', 'branch', 'quantity', 'count_date', 'counter', 'created_at','is_new','barcode_data','selling_price']
+    list_display = ['product_name', 'branch', 'quantity','counter', 'created_at','is_new','barcode_data','selling_price','profit_percentage']
     list_filter = ['branch', 'is_new', 'count_date']
     search_fields = ['product_name', 'counter__username']
 
