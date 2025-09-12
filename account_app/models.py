@@ -12,7 +12,53 @@ from django.db import models
 from django.utils.text import slugify
 
 
-class InventoryCount(models.Model):
+# class InventoryCount(models.Model):
+#     product_name = models.CharField(max_length=100, verbose_name="نام کالا")
+#     is_new = models.BooleanField(default=True, verbose_name="کالای جدید")
+#     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="شعبه")
+#     quantity = models.PositiveIntegerField(verbose_name="تعداد")
+#     count_date = models.CharField(max_length=10, verbose_name="تاریخ شمارش", default="")
+#     counter = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="شمارنده")
+#     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+#     barcode_data = models.CharField(max_length=100, blank=True, null=True, verbose_name="داده بارکد")
+#     selling_price = models.PositiveIntegerField(verbose_name="قیمت فروش", blank=True, null=True)
+#     profit_percentage = models.DecimalField(
+#         max_digits=5,
+#         decimal_places=2,
+#         verbose_name="درصد سود",
+#         default=30.00
+#     )
+#
+#     class Meta:
+#         verbose_name = "شمارش انبار"
+#         verbose_name_plural = "شمارش های انبار"
+#         ordering = ['-created_at']
+#
+#     def save(self, *args, **kwargs):
+#         # تنظیم تاریخ امروز به صورت خودکار
+#         if not self.count_date:
+#             jalali_date = jdatetime.datetime.now().strftime('%Y/%m/%d')
+#             self.count_date = jalali_date
+#
+#         # تولید خودکار بارکد اگر وجود نداشته باشد
+#         if not self.barcode_data:
+#             import hashlib
+#             hash_object = hashlib.md5(self.product_name.encode())
+#             hex_dig = hash_object.hexdigest()
+#             self.barcode_data = hex_dig[:12]
+#
+#         super().save(*args, **kwargs)
+#
+#     def __str__(self):
+#         return f"{self.product_name} - {self.branch.name} - {self.quantity}"
+
+from decimal import Decimal, InvalidOperation
+from django.core.validators import MinValueValidator, MaxValueValidator
+import hashlib
+import jdatetime
+import math
+
+class InventoryCount(models.Model):  # حذف class تکراری
     product_name = models.CharField(max_length=100, verbose_name="نام کالا")
     is_new = models.BooleanField(default=True, verbose_name="کالای جدید")
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="شعبه")
@@ -26,7 +72,11 @@ class InventoryCount(models.Model):
         max_digits=5,
         decimal_places=2,
         verbose_name="درصد سود",
-        default=30.00
+        default=Decimal('30.00'),
+        validators=[
+            MinValueValidator(Decimal('0.00')),
+            MaxValueValidator(Decimal('100.00'))
+        ]
     )
 
     class Meta:
@@ -34,7 +84,21 @@ class InventoryCount(models.Model):
         verbose_name_plural = "شمارش های انبار"
         ordering = ['-created_at']
 
+    def clean(self):
+        """
+        اعتبارسنجی خودکار قبل از ذخیره‌سازی
+        """
+        try:
+            profit_value = Decimal(str(self.profit_percentage))
+            if profit_value < Decimal('0.00') or profit_value > Decimal('100.00'):
+                self.profit_percentage = Decimal('30.00')
+        except (TypeError, ValueError, InvalidOperation):
+            self.profit_percentage = Decimal('30.00')
+
     def save(self, *args, **kwargs):
+        # اعتبارسنجی قبل از ذخیره
+        self.clean()
+
         # تنظیم تاریخ امروز به صورت خودکار
         if not self.count_date:
             jalali_date = jdatetime.datetime.now().strftime('%Y/%m/%d')
@@ -42,10 +106,25 @@ class InventoryCount(models.Model):
 
         # تولید خودکار بارکد اگر وجود نداشته باشد
         if not self.barcode_data:
-            import hashlib
             hash_object = hashlib.md5(self.product_name.encode())
             hex_dig = hash_object.hexdigest()
             self.barcode_data = hex_dig[:12]
+
+        # اگر قیمت فروش تنظیم نشده، آن را محاسبه کن
+        if not self.selling_price:
+            try:
+                # پیدا کردن قیمت معیار برای این محصول
+                pricing = ProductPricing.objects.get(product_name=self.product_name)
+                if pricing.standard_price is not None:
+                    try:
+                        profit_percentage = Decimal(str(self.profit_percentage))
+                    except (TypeError, ValueError, InvalidOperation):
+                        profit_percentage = Decimal('30.00')
+
+                    new_price = pricing.standard_price * (1 + profit_percentage / 100)
+                    self.selling_price = Decimal(math.ceil(new_price / 1000) * 1000)
+            except ProductPricing.DoesNotExist:
+                pass
 
         super().save(*args, **kwargs)
 

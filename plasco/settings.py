@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'account_app',
+    'account_app.apps.AccountAppConfig',  # تغییر به حروف بزرگ
     'dashbord_app.apps.DashbordAppConfig',
     'cantact_app.apps.CantactAppConfig',
 ]
