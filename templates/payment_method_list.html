@@ -1,0 +1,335 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لیست روش‌های پرداخت</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #388E3C;
+            --accent-color: #2E7D32;
+            --text-color: #2c3e50;
+            --light-bg: #f9f9f9;
+            --border-color: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --input-bg: #f1f8e9;
+            --blue-light: #e3f2fd;
+            --blue-dark: #2196f3;
+            --orange: #FF9800;
+            --red: #f44336;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, var(--accent-color), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-success {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-warning {
+            background: var(--orange);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #f57c00;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-danger {
+            background: var(--red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--secondary-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .badge-success {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .badge-danger {
+            background-color: var(--red);
+            color: white;
+        }
+
+        .badge-info {
+            background-color: var(--blue-dark);
+            color: white;
+        }
+
+        .badge-warning {
+            background-color: var(--orange);
+            color: white;
+        }
+
+        .actions {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>مدیریت روش‌های پرداخت</h1>
+            <p>در این بخش می‌توانید روش‌های پرداخت مختلف را مدیریت کنید</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="{% if message.tags == 'success' %}success-message{% elif message.tags == 'error' %}error-message{% else %}info-message{% endif %}" style="margin-bottom: 20px;">
+                    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="page-header">
+            <a href="{% url 'payment_method_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> ایجاد روش پرداخت جدید
+            </a>
+        </div>
+
+        <div class="table-container">
+            {% if payment_methods %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>نام</th>
+                        <th>نوع</th>
+                        <th>پیش فرض</th>
+                        <th>وضعیت</th>
+                        <th>تاریخ ایجاد</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for method in payment_methods %}
+                    <tr>
+                        <td>{{ method.name }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ method.get_payment_type_display }}</span>
+                            {% if method.payment_type == 'card' and method.terminal_name %}
+                                <br><small>{{ method.terminal_name }}</small>
+                            {% elif method.payment_type == 'bank' and method.bank_name %}
+                                <br><small>{{ method.bank_name }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if method.is_default %}
+                                <span class="badge badge-success">پیش فرض</span>
+                            {% else %}
+                                <a href="{% url 'set_default_payment_method' method.pk %}" class="btn btn-sm btn-secondary">
+                                    تنظیم به پیش فرض
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if method.is_active %}
+                                <span class="badge badge-success">فعال</span>
+                            {% else %}
+                                <span class="badge badge-danger">غیرفعال</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ method.created_at|date:"Y/m/d" }}</td>
+                        <td>
+                            <div class="actions">
+                                <a href="{% url 'payment_method_update' method.pk %}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'payment_method_toggle_active' method.pk %}" class="btn btn-sm {% if method.is_active %}btn-warning{% else %}btn-success{% endif %}">
+                                    <i class="fas {% if method.is_active %}fa-times{% else %}fa-check{% endif %}"></i>
+                                </a>
+                                <a href="{% url 'payment_method_delete' method.pk %}" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-credit-card"></i>
+                <h3>هیچ روش پرداختی تعریف نشده است</h3>
+                <p>برای شروع، اولین روش پرداخت را ایجاد کنید</p>
+                <a href="{% url 'payment_method_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> ایجاد روش پرداخت
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

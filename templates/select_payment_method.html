@@ -1,0 +1,222 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>انتخاب روش پرداخت</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #388E3C;
+            --accent-color: #2E7D32;
+            --text-color: #2c3e50;
+            --light-bg: #f9f9f9;
+            --border-color: #ddd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        .invoice-info {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .invoice-info h3 {
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+
+        .payment-methods {
+            margin-bottom: 20px;
+        }
+
+        .payment-method-option {
+            padding: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .payment-method-option:hover {
+            border-color: var(--primary-color);
+            background-color: var(--light-bg);
+        }
+
+        .payment-method-option.selected {
+            border-color: var(--accent-color);
+            background-color: #e8f5e9;
+        }
+
+        .payment-method-details {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, var(--accent-color), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #9e9e9e;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .payment-method-radio {
+            display: none;
+        }
+
+        .payment-method-radio:checked + .payment-method-option {
+            border-color: var(--accent-color);
+            background-color: #e8f5e9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>انتخاب روش پرداخت</h1>
+        </div>
+
+        <div class="invoice-info">
+            <h3>فاکتور شماره: {{ invoice.id }}</h3>
+            <p>مبلغ قابل پرداخت: {{ invoice.total_amount }} تومان</p>
+            <p>تاریخ: {{ invoice.get_jalali_date }} - ساعت: {{ invoice.get_jalali_time }}</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="payment-methods">
+                {% for choice in form.payment_method %}
+                <label>
+                    <input type="radio" name="payment_method" value="{{ choice.data.value }}" 
+                           class="payment-method-radio" {% if choice.data.selected %}checked{% endif %}
+                           onchange="togglePaymentDetails('{{ choice.data.value }}')">
+                    <div class="payment-method-option">
+                        <strong>{{ choice.data.label }}</strong>
+                        <div id="details-{{ choice.data.value }}" class="payment-method-details">
+                            {% with method=form.fields.payment_method.queryset.get(pk=choice.data.value %}
+                                {% if method.payment_type == 'card' and method.terminal_name %}
+                                    <div>ترمینال: {{ method.terminal_name }}</div>
+                                    <div>شماره حساب: {{ method.account_number }}</div>
+                                {% elif method.payment_type == 'bank' %}
+                                    <div>شماره حساب: {{ method.account_number }}</div>
+                                    <div>شماره شبا: {{ method.sheba_number }}</div>
+                                    <div>صاحب حساب: {{ method.account_owner }}</div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-check"></i> تایید پرداخت
+            </button>
+        </form>
+
+        <a href="{% url 'invoice_app:create_invoice' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-right"></i> بازگشت به فاکتور
+        </a>
+    </div>
+
+    <script>
+        function togglePaymentDetails(paymentId) {
+            // ابتدا همه جزئیات را مخفی کن
+            document.querySelectorAll('.payment-method-details').forEach(detail => {
+                detail.style.display = 'none';
+            });
+            
+            // جزئیات روش پرداخت انتخاب شده را نمایش بده
+            const detailsElement = document.getElementById('details-' + paymentId);
+            if (detailsElement) {
+                detailsElement.style.display = 'block';
+            }
+        }
+        
+        // هنگام بارگذاری صفحه، جزئیات روش پرداخت پیش فرض را نمایش بده
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectedRadio = document.querySelector('input[name="payment_method"]:checked');
+            if (selectedRadio) {
+                togglePaymentDetails(selectedRadio.value);
+            }
+        });
+    </script>
+</body>
+</html>

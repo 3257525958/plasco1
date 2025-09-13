@@ -1150,3 +1150,118 @@ def save_prices(request):
 
 def product_pricing_view(request):
     return render(request, 'product_pricing.html')
+
+
+
+
+
+# -------------------view----------------------------------
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.db import models
+from django.core.exceptions import ValidationError
+import json
+
+from .models import PaymentMethod
+from .forms import PaymentMethodForm
+
+
+def payment_method_list(request):
+    payment_methods = PaymentMethod.objects.all()
+    return render(request, 'payment_method_list.html', {
+        'payment_methods': payment_methods
+    })
+
+
+def payment_method_create(request):
+    if request.method == 'POST':
+        form = PaymentMethodForm(request.POST)
+        if form.is_valid():
+            payment_method = form.save()
+            messages.success(request, f'روش پرداخت "{payment_method.name}" با موفقیت ایجاد شد')
+            return redirect('account_app:payment_method_list')
+    else:
+        form = PaymentMethodForm()
+
+    return render(request, 'payment_method_form.html', {
+        'form': form,
+        'title': 'ایجاد روش پرداخت جدید'
+    })
+
+
+def payment_method_update(request, pk):
+    payment_method = get_object_or_404(PaymentMethod, pk=pk)
+
+    if request.method == 'POST':
+        form = PaymentMethodForm(request.POST, instance=payment_method)
+        if form.is_valid():
+            payment_method = form.save()
+            messages.success(request, f'روش پرداخت "{payment_method.name}" با موفقیت بروزرسانی شد')
+            return redirect('account_app:payment_method_list')
+    else:
+        form = PaymentMethodForm(instance=payment_method)
+
+    return render(request, 'payment_method_form.html', {
+        'form': form,
+        'title': 'ویرایش روش پرداخت',
+        'payment_method': payment_method
+    })
+
+
+def payment_method_delete(request, pk):
+    payment_method = get_object_or_404(PaymentMethod, pk=pk)
+
+    if request.method == 'POST':
+        method_name = payment_method.name
+        payment_method.delete()
+        messages.success(request, f'روش پرداخت "{method_name}" با موفقیت حذف شد')
+        return redirect('account_app:payment_method_list')
+
+    return render(request, 'payment_method_confirm_delete.html', {
+        'payment_method': payment_method
+    })
+
+
+def payment_method_toggle_active(request, pk):
+    payment_method = get_object_or_404(PaymentMethod, pk=pk)
+    payment_method.is_active = not payment_method.is_active
+    payment_method.save()
+
+    action = "فعال" if payment_method.is_active else "غیرفعال"
+    messages.success(request, f'روش پرداخت "{payment_method.name}" {action} شد')
+
+    return redirect('account_app:payment_method_list')
+
+
+def set_default_payment_method(request, pk):
+    payment_method = get_object_or_404(PaymentMethod, pk=pk)
+
+    # تمام روش‌ها را از حالت پیش فرض خارج کن
+    PaymentMethod.objects.filter(is_default=True).update(is_default=False)
+
+    # این روش را به پیش فرض تبدیل کن
+    payment_method.is_default = True
+    payment_method.save()
+
+    messages.success(request, f'روش پرداخت "{payment_method.name}" به عنوان پیش فرض تنظیم شد')
+
+    return redirect('account_app:payment_method_list')
+
+
+def check_auth_status(request):
+    return JsonResponse({
+        'is_authenticated': False,  # همیشه false چون احراز هویت غیرفعال است
+        'username': None,
+        'session_key': request.session.session_key,
+    })
+
+
+def session_test(request):
+    request.session['test_key'] = 'test_value'
+    test_value = request.session.get('test_key', 'not_set')
+    return HttpResponse(f"Session test: {test_value}")
+
+

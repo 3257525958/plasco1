@@ -1,0 +1,423 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدیریت روش‌های پرداخت</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #388E3C;
+            --accent-color: #2E7D32;
+            --text-color: #2c3e50;
+            --light-bg: #f9f9f9;
+            --border-color: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --input-bg: #f1f8e9;
+            --blue-light: #e3f2fd;
+            --blue-dark: #2196f3;
+            --orange: #FF9800;
+            --red: #f44336;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            background-color: var(--input-bg);
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 8px rgba(46, 125, 50, 0.3);
+            outline: none;
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .form-check-input {
+            margin-left: 10px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .form-check-label {
+            margin-bottom: 0;
+        }
+
+        .payment-type-fields {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border-right: 3px solid var(--accent-color);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, var(--accent-color), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-danger {
+            background: var(--red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            justify-content: flex-start;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+            border-left: 4px solid #d32f2f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .success-message {
+            color: #2E7D32;
+            background-color: #e8f5e9;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+            border-left: 4px solid #2E7D32;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-message {
+            color: #1976d2;
+            background-color: #e3f2fd;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+            border-left: 4px solid #1976d2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+
+        .col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            .col-md-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{% if payment_method %}ویرایش{% else %}ایجاد{% endif %} روش پرداخت</h1>
+            <p>در این بخش می‌توانید روش‌های پرداخت مختلف را مدیریت کنید</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="{% if message.tags == 'success' %}success-message{% elif message.tags == 'error' %}error-message{% else %}info-message{% endif %}">
+                    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" id="payment-method-form">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="error-message">{{ form.name.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.payment_type.id_for_label }}">{{ form.payment_type.label }}</label>
+                        {{ form.payment_type }}
+                        {% if form.payment_type.errors %}
+                            <div class="error-message">{{ form.payment_type.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check">
+                        {{ form.is_default }}
+                        <label class="form-check-label" for="{{ form.is_default.id_for_label }}">
+                            {{ form.is_default.label }}
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            {{ form.is_active.label }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- فیلدهای مربوط به کارتخوان -->
+            <div id="card-fields" class="payment-type-fields" style="display: none;">
+                <h3>اطلاعات کارتخوان</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.terminal_name.id_for_label }}">{{ form.terminal_name.label }}</label>
+                            {{ form.terminal_name }}
+                            {% if form.terminal_name.errors %}
+                                <div class="error-message">{{ form.terminal_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.account_number.id_for_label }}">{{ form.account_number.label }}</label>
+                            {{ form.account_number }}
+                            {% if form.account_number.errors %}
+                                <div class="error-message">{{ form.account_number.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- فیلدهای مربوط به واریز به حساب -->
+            <div id="bank-fields" class="payment-type-fields" style="display: none;">
+                <h3>اطلاعات حساب بانکی</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.bank_name.id_for_label }}">{{ form.bank_name.label }}</label>
+                            {{ form.bank_name }}
+                            {% if form.bank_name.errors %}
+                                <div class="error-message">{{ form.bank_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.account_number.id_for_label }}">{{ form.account_number.label }}</label>
+                            {{ form.account_number }}
+                            {% if form.account_number.errors %}
+                                <div class="error-message">{{ form.account_number.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.card_number.id_for_label }}">{{ form.card_number.label }}</label>
+                            {{ form.card_number }}
+                            {% if form.card_number.errors %}
+                                <div class="error-message">{{ form.card_number.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.sheba_number.id_for_label }}">{{ form.sheba_number.label }}</label>
+                            {{ form.sheba_number }}
+                            {% if form.sheba_number.errors %}
+                                <div class="error-message">{{ form.sheba_number.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="{{ form.account_owner.id_for_label }}">{{ form.account_owner.label }}</label>
+                            {{ form.account_owner }}
+                            {% if form.account_owner.errors %}
+                                <div class="error-message">{{ form.account_owner.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> ذخیره
+                </button>
+                <a href="{% url 'account_app:payment_method_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> انصراف
+                </a>
+                {% if payment_method %}
+                <a href="{% url 'account_app:payment_method_delete' payment_method.pk %}" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> حذف
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function togglePaymentFields() {
+            const paymentType = document.getElementById('id_payment_type').value;
+            
+            // مخفی کردن تمام فیلدها
+            document.querySelectorAll('.payment-type-fields').forEach(field => {
+                field.style.display = 'none';
+            });
+            
+            // نمایش فیلدهای مربوط به نوع پرداخت انتخاب شده
+            if (paymentType === 'card') {
+                document.getElementById('card-fields').style.display = 'block';
+            } else if (paymentType === 'bank') {
+                document.getElementById('bank-fields').style.display = 'block';
+            }
+            
+            // برای نقدی و چک فیلد خاصی نمایش داده نمی‌شود
+        }
+
+        // اجرای تابع هنگام بارگذاری صفحه
+        document.addEventListener('DOMContentLoaded', function() {
+            togglePaymentFields();
+            document.getElementById('id_payment_type').addEventListener('change', togglePaymentFields);
+        });
+    </script>
+</body>
+</html>

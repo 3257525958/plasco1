@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'account_app.apps.AccountAppConfig',  # تغییر به حروف بزرگ
     'dashbord_app.apps.DashbordAppConfig',
     'cantact_app.apps.CantactAppConfig',
+    'invoice_app.apps.InvoiceAppConfig',
 ]
 JALALI_DATE_DEFAULTS = {
    'Strftime': {

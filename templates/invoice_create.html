@@ -1,0 +1,633 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صدور فاکتور فروش</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #388E3C;
+            --accent-color: #2E7D32;
+            --text-color: #2c3e50;
+            --light-bg: #f9f9f9;
+            --border-color: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --input-bg: #f1f8e9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+            min-height: 100vh;
+            padding: 10px;
+            color: var(--text-color);
+            direction: rtl;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            padding: 15px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        .search-section {
+            margin-bottom: 20px;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 45px 12px 12px;
+            font-size: 1rem;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            transition: all 0.3s;
+            background: var(--input-bg);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 8px rgba(46, 125, 50, 0.3);
+            outline: none;
+        }
+
+        .search-btn {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .search-hint {
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .search-results {
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 8px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 1000;
+            position: absolute;
+            width: 100%;
+        }
+
+        .search-result-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background-color: var(--light-bg);
+        }
+
+        .invoice-items {
+            margin: 20px 0;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            box-shadow: 0 0 5px rgba(0,0,0,0.05);
+        }
+
+        .invoice-table th {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .invoice-table td {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, var(--accent-color), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #9e9e9e;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #757575;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+            border-left: 4px solid #d32f2f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .success-message {
+            color: #2E7D32;
+            background-color: #e8f5e9;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+            border-left: 4px solid #2E7D32;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .info-message {
+            color: #1976d2;
+            background-color: #e3f2fd;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+            border-left: 4px solid #1976d2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .branch-info {
+            background-color: #e8f5e9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+                font-size: 13px;
+            }
+
+            .container {
+                padding: 10px;
+                border-radius: 8px;
+            }
+
+            .header h1 {
+                font-size: 1.3rem;
+            }
+
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.85rem;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>سیستم صدور فاکتور فروش</h1>
+        </div>
+
+        {% if not branch_selected %}
+        <!-- فرم انتخاب شعبه -->
+        <div class="branch-selection">
+            <h2>انتخاب شعبه</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_branch">شعبه:</label>
+                    {{ form.branch }}
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> تایید شعبه
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <!-- صفحه اصلی فاکتور -->
+        <div class="branch-info">
+            <i class="fas fa-store"></i> شعبه: {{ branch.name }}
+        </div>
+
+        <div class="search-section">
+            <div class="search-container">
+                <label class="search-label">جستجوی کالا (نام یا بارکد):</label>
+                <input type="text" id="product-search" class="search-input" placeholder="نام یا بارکد کالا را وارد کنید">
+                <button type="button" class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+                <div id="search-results" class="search-results"></div>
+            </div>
+            <div class="search-hint">برای جستجو، حداقل 2 کاراکتر وارد کنید</div>
+        </div>
+
+        <div class="invoice-items">
+            <h3>لیست کالاهای فاکتور</h3>
+            <div class="table-container">
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>نام کالا</th>
+                            <th>تعداد</th>
+                            <th>قیمت واحد</th>
+                            <th>قیمت کل</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoice-items-list">
+                        {% for item in items %}
+                        <tr id="item-{{ item.product_id }}">
+                            <td>{{ item.product_name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.price }} تومان</td>
+                            <td>{{ item.total }} تومان</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="removeItem({{ item.product_id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="actions">
+            <form method="post" id="finalize-form">
+                {% csrf_token %}
+                <button type="button" class="btn btn-primary" onclick="confirmAction('print_and_save')">
+                    <i class="fas fa-print"></i> ثبت و چاپ فاکتور
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="confirmAction('save_only')">
+                    <i class="fas fa-save"></i> ثبت فاکتور
+                </button>
+                <button type="button" class="btn btn-danger" onclick="confirmAction('cancel')">
+                    <i class="fas fa-times"></i> انصراف
+                </button>
+                <input type="hidden" name="action" id="action-input" value="">
+                <input type="hidden" name="finalize" value="true">
+            </form>
+        </div>
+
+        <div id="messages"></div>
+        {% endif %}
+    </div>
+
+    <script src="{% static 'js/jQueryv3.7.1.js' %}"></script>
+    <script>
+        // متغیرهای global برای مدیریت فاکتور
+        let isSubmitting = false;
+        let latestSearchResults = [];
+        let searchTimeout = null;
+
+        // جستجوی خودکار با تایپ
+        $('#product-search').on('input', function() {
+            const query = $(this).val().trim();
+            
+            // پاک کردن timeout قبلی
+            clearTimeout(searchTimeout);
+            
+            // اگر کمتر از 2 کاراکتر باشد، نتایج را پاک کن
+            if (query.length < 2) {
+                $('#search-results').hide().empty();
+                return;
+            }
+            
+            // تنظیم timeout جدید برای جلوگیری از درخواست‌های بیش از حد
+            searchTimeout = setTimeout(function() {
+                searchProduct(query);
+            }, 300);
+        });
+
+        // جستجوی کالا
+        function searchProduct(query) {
+            $.ajax({
+                url: "{% url 'invoice_app:invoice_search_product' %}",
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({query: query}),
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(data) {
+                    if (data.results && data.results.length > 0) {
+                        latestSearchResults = data.results;
+                        let html = '';
+                        data.results.forEach(product => {
+                            html += `
+                                <div class="search-result-item" data-product-id="${product.id}">
+                                    <strong>${product.name}</strong>
+                                    <div>موجودی: ${product.quantity}</div>
+                                </div>
+                            `;
+                        });
+                        $('#search-results').html(html).show();
+                        
+                        // اگر فقط یک نتیجه وجود دارد، آن را به صورت خودکار اضافه کن
+                        if (data.results.length === 1) {
+                            addToInvoice(data.results[0].id);
+                        }
+                    } else {
+                        $('#search-results').html('<div class="search-result-item">هیچ کالایی یافت نشد</div>').show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error in product search:', error);
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        showMessage(xhr.responseJSON.error, 'error');
+                    } else {
+                        showMessage('خطا در جستجوی کالا', 'error');
+                    }
+                }
+            });
+        }
+
+        // انتخاب کالا از نتایج جستجو
+        $(document).on('click', '#search-results .search-result-item', function() {
+            const productId = $(this).data('product-id');
+            $('#search-results').hide();
+            $('#product-search').val('');
+            
+            // افزودن خودکار کالا به فاکتور
+            addToInvoice(productId);
+        });
+
+        // افزودن کالا به فاکتور
+        function addToInvoice(productId) {
+            $.ajax({
+                url: "{% url 'invoice_app:invoice_add_item' %}",
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({product_id: productId, quantity: 1}),
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(data) {
+                    if (data.status === 'success') {
+                        updateInvoiceTable(data.items);
+                        showMessage(data.message, 'success');
+                        $('#product-search').val(''); // پاک کردن فیلد جستجو
+                        $('#search-results').hide().empty(); // مخفی کردن نتایج
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error adding item:', error);
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        showMessage(xhr.responseJSON.message, 'error');
+                    } else {
+                        showMessage('خطا در افزودن کالا به فاکتور', 'error');
+                    }
+                }
+            });
+        }
+
+        // حذف کالا از فاکتور
+        function removeItem(productId) {
+            if (!confirm('آیا از حذف این کالا اطمینان دارید؟')) return;
+            
+            $.ajax({
+                url: "{% url 'invoice_app:invoice_remove_item' %}",
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({product_id: productId}),
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(data) {
+                    if (data.status === 'success') {
+                        updateInvoiceTable(data.items);
+                        showMessage('کالا با موفقیت حذف شد', 'success');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error removing item:', error);
+                    showMessage('خطا در حذف کالا', 'error');
+                }
+            });
+        }
+
+        // به روزرسانی جدول فاکتور
+        function updateInvoiceTable(items) {
+            const tbody = $('#invoice-items-list');
+            tbody.empty();
+            
+            items.forEach(item => {
+                const row = `
+                    <tr id="item-${item.product_id}">
+                        <td>${item.product_name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.price} تومان</td>
+                        <td>${item.total} تومان</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="removeItem(${item.product_id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        // تایید عمل نهایی
+        function confirmAction(action) {
+            let message = '';
+            if (action === 'print_and_save') {
+                message = 'آیا از ثبت و چاپ فاکتور اطمینان دارید؟';
+            } else if (action === 'save_only') {
+                message = 'آیا از ثبت فاکتور اطمینان دارید؟';
+            } else if (action === 'cancel') {
+                message = 'آیا از انصراف اطمینان دارید؟ تمامی تغییرات از بین خواهد رفت.';
+            }
+            
+            if (confirm(message)) {
+                if (action === 'cancel') {
+                    window.location.href = "{% url 'invoice_app:invoice_cancel' %}";
+                } else {
+                    $('#action-input').val(action);
+                    $('#finalize-form').submit();
+                }
+            }
+        }
+
+        // تابع برای دریافت cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // تابع برای نمایش پیام
+        function showMessage(message, type) {
+            const messageClass = type === 'error' ? 'error-message' :
+                                type === 'success' ? 'success-message' : 'info-message';
+            const icon = type === 'error' ? 'fa-exclamation-circle' :
+                        type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+
+            $('#messages').html(`
+                <div class="${messageClass}">
+                    <i class="fas ${icon}"></i> ${message}
+                </div>
+            `);
+
+            if (type !== 'error') {
+                setTimeout(() => {
+                    $('#messages').empty();
+                }, 5000);
+            }
+        }
+
+        // مخفی کردن نتایج جستجو هنگام کلیک خارج
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.search-container').length) {
+                $('#search-results').hide();
+            }
+        });
+
+        // جستجو با فشار دکمه Enter
+        $('#product-search').on('keypress', function(e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                const query = $(this).val().trim();
+                if (query.length >= 2) {
+                    searchProduct(query);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

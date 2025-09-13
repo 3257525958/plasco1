@@ -268,3 +268,86 @@ class ProductPricing(models.Model):
 
     def __str__(self):
         return f"{self.product_name} - {self.standard_price}"
+
+
+
+
+# ------------------------------------------------------------------------------
+from django.db import models
+from django.core.validators import RegexValidator  # این خط را اضافه کنید
+
+class PaymentMethod(models.Model):
+    PAYMENT_TYPES = [
+        ('cash', 'نقدی'),
+        ('card', 'کارتخوان'),
+        ('bank', 'واریز به حساب'),
+        ('cheque', 'چک'),
+    ]
+
+    name = models.CharField(max_length=100, verbose_name="نام روش پرداخت")
+    payment_type = models.CharField(max_length=10, choices=PAYMENT_TYPES, verbose_name="نوع پرداخت")
+    is_default = models.BooleanField(default=False, verbose_name="پیش فرض")
+    is_active = models.BooleanField(default=True, verbose_name="فعال")
+
+    # فیلدهای مربوط به کارتخوان
+    terminal_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="نام ترمینال")
+    account_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="شماره حساب")
+
+    # فیلدهای مربوط به واریز به حساب
+    bank_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="نام بانک")
+    card_number = models.CharField(
+        max_length=16,
+        blank=True,
+        null=True,
+        verbose_name="شماره کارت",
+        validators=[
+            RegexValidator(
+                regex='^[0-9]{16}$',
+                message='شماره کارت باید 16 رقم باشد',
+                code='invalid_card_number'
+            )
+        ]
+    )
+    sheba_number = models.CharField(
+        max_length=26,
+        blank=True,
+        null=True,
+        verbose_name="شماره شبا",
+        validators=[
+            RegexValidator(
+                regex='^IR[0-9]{24}$',
+                message='شماره شبا باید با IR شروع شده و 24 رقم داشته باشد',
+                code='invalid_sheba_number'
+            )
+        ]
+    )
+    account_owner = models.CharField(max_length=100, blank=True, null=True, verbose_name="صاحب حساب")
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
+
+    class Meta:
+        verbose_name = "روش پرداخت"
+        verbose_name_plural = "روش‌های پرداخت"
+        ordering = ['-is_default', 'name']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_payment_type_display()})"
+
+    def save(self, *args, **kwargs):
+        # اگر این روش به عنوان پیش فرض علامت خورده، سایر روش‌ها را از حالت پیش فرض خارج کن
+        if self.is_default:
+            PaymentMethod.objects.filter(is_default=True).exclude(id=self.id).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        # غیرفعال کردن اعتبارسنجی اجباری برای کارتخوان
+        if self.payment_type == 'bank':
+            if not self.bank_name:
+                raise ValidationError({'bank_name': 'برای روش پرداخت واریز به حساب، نام بانک الزامی است'})
+            if not self.account_number:
+                raise ValidationError({'account_number': 'برای روش پرداخت واریز به حساب، شماره حساب الزامی است'})
+            if not self.sheba_number:
+                raise ValidationError({'sheba_number': 'برای روش پرداخت واریز به حساب، شماره شبا الزامی است'})
+            if not self.account_owner:
+                raise ValidationError({'account_owner': 'برای روش پرداخت واریز به حساب، نام صاحب حساب الزامی است'})

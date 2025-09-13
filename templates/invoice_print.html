@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چاپ فاکتور - {{ invoice.id }}</title>
+    <style>
+        @font-face {
+            font-family: 'Iranian Sans';
+            src: url('/path/to/iranian-sans.ttf') format('truetype');
+        }
+        
+        body {
+            font-family: 'Iranian Sans', Tahoma, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fff;
+            margin: 0;
+            padding: 20px;
+            font-size: 14px;
+        }
+        
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4CAF50;
+        }
+        
+        .company-info {
+            margin-bottom: 5px;
+        }
+        
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 15px 0;
+        }
+        
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .invoice-info, .client-info {
+            flex: 1;
+            min-width: 250px;
+            margin: 10px;
+        }
+        
+        .info-box {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #eee;
+            margin-bottom: 15px;
+        }
+        
+        .info-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #4CAF50;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .total-row {
+            font-weight: bold;
+            background-color: #e8f5e9;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 2px solid #4CAF50;
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .signature-area {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+        }
+        
+        .signature-box {
+            width: 45%;
+            text-align: center;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+        
+        .print-btn {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            padding: 10px;
+            text-align: center;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        @media print {
+            .print-btn {
+                display: none;
+            }
+            
+            body {
+                padding: 0;
+            }
+            
+            .invoice-container {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+            }
+        }
+        
+        @media screen and (max-width: 600px) {
+            .invoice-details {
+                flex-direction: column;
+            }
+            
+            .invoice-info, .client-info {
+                width: 100%;
+                margin: 10px 0;
+            }
+            
+            th, td {
+                padding: 8px 5px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="header">
+            <div class="company-info">
+                <h2>فروشگاه هایپر استار</h2>
+                <p>آدرس: تهران، خیابان ولیعصر، پلاک ۱۲۳۴</p>
+                <p>تلفن: ۰۲۱-۱۲۳۴۵۶۷۸ | شماره اقتصادی: ۱۲۳۴۵۶۷۸۹۰</p>
+            </div>
+            <div class="invoice-title">فاکتور فروش</div>
+        </div>
+        
+        <div class="invoice-details">
+            <div class="invoice-info info-box">
+                <div class="info-title">اطلاعات فاکتور</div>
+                <p><strong>شماره فاکتور:</strong> {{ invoice.id }}</p>
+                <p><strong>تاریخ فاکتور:</strong> {{ invoice.get_jalali_date }}</p>
+                <p><strong>ساعت:</strong> {{ invoice.get_jalali_time }}</p>
+                <p><strong>شعبه:</strong> {{ invoice.branch.name }}</p>
+            </div>
+            
+            <div class="client-info info-box">
+                <div class="info-title">اطلاعات پرداخت</div>
+                <p><strong>وضعیت پرداخت:</strong> 
+                    {% if invoice.is_paid %}
+                        <span style="color: green;">پرداخت شده</span>
+                    {% else %}
+                        <span style="color: red;">پرداخت نشده</span>
+                    {% endif %}
+                </p>
+                <p><strong>روش پرداخت:</strong> 
+                    {% if invoice.payment_method %}
+                        {{ invoice.payment_method.name }}
+                    {% else %}
+                        تعیین نشده
+                    {% endif %}
+                </p>
+                <p><strong>تاریخ پرداخت:</strong> 
+                    {% if invoice.payment_date %}
+                        {{ invoice.payment_date|date:"Y/m/d H:i" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ردیف</th>
+                    <th>نام کالا</th>
+                    <th>تعداد</th>
+                    <th>قیمت واحد (ریال)</th>
+                    <th>جمع (ریال)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.items.all %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item.product.product_name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.price|floatformat:0 }}</td>
+                    <td>{{ item.total_price|floatformat:0 }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="total-row">
+                    <td colspan="4" style="text-align: left;">مبلغ کل فاکتور:</td>
+                    <td>{{ invoice.total_amount|floatformat:0 }} ریال</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="signature-area">
+            <div class="signature-box">
+                امضاء فروشنده
+            </div>
+            <div class="signature-box">
+                امضاء خریدار
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>با تشکر از خرید شما | شماره تماس پشتیبانی: ۰۹۱۲۳۴۵۶۷۸۹</p>
+            <p>لطفاً در صورت وجود هرگونه مشکل در فاکتور، ظرف ۷ روز با ما تماس بگیرید</p>
+        </div>
+    </div>
+    
+    <button class="print-btn" onclick="window.print()">چاپ فاکتور</button>
+</body>
+</html>

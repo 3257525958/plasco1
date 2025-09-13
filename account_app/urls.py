@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+# app_name = 'account_app'
+
 
 urlpatterns = [
     path('inventory/', views.inventory_management, name='inventory_management'),
@@ -44,4 +46,14 @@ path('update-product-pricing/', views.UpdateProductPricing.as_view(), name='upda
     path('pricing-management/', views.pricing_management, name='pricing_management'),
 
 
+# --------------------url-----------------------
+    path('payment-methods/', views.payment_method_list, name='payment_method_list'),
+    path('payment-methods/create/', views.payment_method_create, name='payment_method_create'),
+    path('payment-methods/<int:pk>/update/', views.payment_method_update, name='payment_method_update'),
+    path('payment-methods/<int:pk>/delete/', views.payment_method_delete, name='payment_method_delete'),
+    path('payment-methods/<int:pk>/toggle-active/', views.payment_method_toggle_active,
+         name='payment_method_toggle_active'),
+    path('payment-methods/<int:pk>/set-default/', views.set_default_payment_method, name='set_default_payment_method'),
+    path('check-auth/', views.check_auth_status, name='check_auth_status'),
+    path('session-test/', views.session_test, name='session_test'),
 ]
