@@ -105,8 +105,7 @@ from dashbord_app.forms import FroshandeForm, InvoiceEditForm
 import jdatetime
 import datetime
 from decimal import Decimal
-
-logger = logging.getLogger(__name__)
+from .forms import InvoiceIssueDateForm  # اضافه کردن این import
 
 
 from dashbord_app.forms import *
@@ -793,7 +792,31 @@ def convert_to_persian_digits(text):
 # -----------------------------------------------------------------------------------------------
 
 
+from .forms import InvoiceIssueDateForm
 
+
+def shamsi_to_gregorian(shamsi_date):
+    """
+    تبدیل تاریخ شمسی به میلادی
+    فرمت ورودی: YYYY/MM/DD
+    """
+    try:
+        # جدا کردن سال، ماه و روز
+        parts = shamsi_date.split('/')
+        if len(parts) != 3:
+            return timezone.now().date()
+
+        year, month, day = int(parts[0]), int(parts[1]), int(parts[2])
+
+        # ایجاد تاریخ شمسی و تبدیل به میلادی
+        jalali_date = jdatetime.date(year, month, day)
+        gregorian_date = jalali_date.togregorian()
+
+        return gregorian_date
+
+    except (ValueError, IndexError, jdatetime.JalaliDateError):
+        # در صورت خطا، تاریخ امروز را برگردان
+        return timezone.now().date()
 def create_invoice(request):
     sellers = Froshande.objects.all()
     now = timezone.localtime(timezone.now())
@@ -803,8 +826,17 @@ def create_invoice(request):
     today_jalali = jalali_date.strftime('%Y/%m/%d')
     today_jalali = convert_to_persian_digits(today_jalali)
 
+    # ایجاد فرم تاریخ صدور
+    issue_date_form = InvoiceIssueDateForm(initial={'issue_date': today_jalali})
+
     if request.method == 'POST':
-        if 'confirmed' not in request.POST:
+        issue_date_form = InvoiceIssueDateForm(request.POST)
+
+        if 'confirmed' not in request.POST and issue_date_form.is_valid():
+            # تبدیل تاریخ شمسی به میلادی برای ذخیره در دیتابیس
+            issue_date_shamsi = issue_date_form.cleaned_data['issue_date']
+            issue_date_gregorian = shamsi_to_gregorian(issue_date_shamsi)
+
             request.session['invoice_data'] = {
                 'seller': request.POST.get('seller'),
                 'product_ids': request.POST.getlist('product_id[]'),
@@ -813,104 +845,112 @@ def create_invoice(request):
                 'unit_prices': request.POST.getlist('unit_price[]'),
                 'discounts': request.POST.getlist('discount[]'),
                 'serial_number': serial_number,
+                'issue_date': issue_date_gregorian.strftime('%Y-%m-%d')  # اضافه کردن تاریخ صدور
             }
             return redirect('confirm_invoice')
 
-        try:
-            with transaction.atomic():
-                invoice_data = request.session.get('invoice_data', {})
-                if not invoice_data:
-                    messages.error(request, 'داده‌های فاکتور یافت نشد. لطفاً دوباره تلاش کنید.')
-                    return redirect('create_invoice')
+        elif 'confirmed' in request.POST:
+            try:
+                with transaction.atomic():
+                    invoice_data = request.session.get('invoice_data', {})
+                    if not invoice_data:
+                        messages.error(request, 'داده‌های فاکتور یافت نشد. لطفاً دوباره تلاش کنید.')
+                        return redirect('create_invoice')
 
-                seller_id = invoice_data.get('seller')
-                date = now.date()
+                    seller_id = invoice_data.get('seller')
+                    # استفاده از تاریخ صدور از session یا تاریخ فعلی به عنوان fallback
+                    issue_date_str = invoice_data.get('issue_date', now.date().strftime('%Y-%m-%d'))
+                    issue_date = datetime.datetime.strptime(issue_date_str, '%Y-%m-%d').date()
 
-                # ایجاد فاکتور
-                invoice = Invoice.objects.create(
-                    seller_id=seller_id,
-                    date=date,
-                    serial_number=serial_number
-                )
+                    # ایجاد فاکتور با تاریخ صدور
+                    invoice = Invoice.objects.create(
+                        seller_id=seller_id,
+                        date=now.date(),  # تاریخ ایجاد
+                        issue_date=issue_date,  # تاریخ صدور
+                        serial_number=serial_number
+                    )
 
-                # محاسبه جمع‌های فاکتور
-                total_amount = Decimal(0)
-                total_discount = Decimal(0)
+                    # محاسبه جمع‌های فاکتور
+                    total_amount = Decimal(0)
+                    total_discount = Decimal(0)
 
-                # اضافه کردن آیتم‌ها
-                product_ids = invoice_data.get('product_ids', [])
-                product_names = invoice_data.get('product_names', [])
-                quantities = invoice_data.get('quantities', [])
-                unit_prices = invoice_data.get('unit_prices', [])
-                discounts = invoice_data.get('discounts', [])
+                    # اضافه کردن آیتم‌ها
+                    product_ids = invoice_data.get('product_ids', [])
+                    product_names = invoice_data.get('product_names', [])
+                    quantities = invoice_data.get('quantities', [])
+                    unit_prices = invoice_data.get('unit_prices', [])
+                    discounts = invoice_data.get('discounts', [])
 
-                for i in range(len(product_names)):
-                    if product_names[i]:
-                        product = None
-                        if i < len(product_ids) and product_ids[i]:
+                    for i in range(len(product_names)):
+                        if product_names[i]:
+                            product = None
+                            if i < len(product_ids) and product_ids[i]:
+                                try:
+                                    product = Product.objects.get(id=product_ids[i])
+                                except Product.DoesNotExist:
+                                    logger.warning(f"محصول با شناسه {product_ids[i]} یافت نشد")
+                                    pass
+
                             try:
-                                product = Product.objects.get(id=product_ids[i])
-                            except Product.DoesNotExist:
-                                logger.warning(f"محصول با شناسه {product_ids[i]} یافت نشد")
-                                pass
+                                quantity_val = int(quantities[i]) if i < len(quantities) else 1
+                            except (ValueError, TypeError):
+                                quantity_val = 1
 
-                        try:
-                            quantity_val = int(quantities[i]) if i < len(quantities) else 1
-                        except (ValueError, TypeError):
-                            quantity_val = 1
+                            try:
+                                unit_price_val = Decimal(unit_prices[i]) if i < len(unit_prices) else Decimal(0)
+                            except (ValueError, TypeError):
+                                unit_price_val = Decimal(0)
 
-                        try:
-                            unit_price_val = Decimal(unit_prices[i]) if i < len(unit_prices) else Decimal(0)
-                        except (ValueError, TypeError):
-                            unit_price_val = Decimal(0)
+                            try:
+                                discount_val = Decimal(discounts[i]) if i < len(discounts) else Decimal(0)
+                            except (ValueError, TypeError):
+                                discount_val = Decimal(0)
 
-                        try:
-                            discount_val = Decimal(discounts[i]) if i < len(discounts) else Decimal(0)
-                        except (ValueError, TypeError):
-                            discount_val = Decimal(0)
+                            # ایجاد آیتم فاکتور
+                            item = InvoiceItem.objects.create(
+                                invoice=invoice,
+                                product=product,
+                                product_name=product_names[i],
+                                quantity=quantity_val,
+                                unit_price=unit_price_val,
+                                discount=discount_val,
+                                item_number=i + 1
+                            )
 
-                        # ایجاد آیتم فاکتور
-                        item = InvoiceItem.objects.create(
-                            invoice=invoice,
-                            product=product,
-                            product_name=product_names[i],
-                            quantity=quantity_val,
-                            unit_price=unit_price_val,
-                            discount=discount_val,
-                            item_number=i + 1
-                        )
+                            # محاسبه جمع‌ها
+                            total_amount += quantity_val * unit_price_val
+                            total_discount += discount_val
 
-                        # محاسبه جمع‌ها
-                        total_amount += quantity_val * unit_price_val
-                        total_discount += discount_val
+                    # به روزرسانی فاکتور با مقادیر محاسبه شده
+                    invoice.total_amount = total_amount
+                    invoice.total_discount = total_discount
+                    invoice.total_payable = total_amount - total_discount
+                    invoice.save()
 
-                # به روزرسانی فاکتور با مقادیر محاسبه شده
-                invoice.total_amount = total_amount
-                invoice.total_discount = total_discount
-                invoice.total_payable = total_amount - total_discount
-                invoice.save()
+                    # حذف داده‌های موقت از session
+                    if 'invoice_data' in request.session:
+                        del request.session['invoice_data']
 
-                # حذف داده‌های موقت از session
-                if 'invoice_data' in request.session:
-                    del request.session['invoice_data']
+                    messages.success(request, 'فاکتور با موفقیت ثبت شد')
+                    return redirect('invoice_detail', invoice_id=invoice.id)
 
-                messages.success(request, 'فاکتور با موفقیت ثبت شد')
-                return redirect('invoice_detail', invoice_id=invoice.id)
-
-        except Exception as e:
-            logger.exception("Error in create_invoice")
-            return render(request, 'invoice_form.html', {
-                'sellers': sellers,
-                'today_jalali': today_jalali,
-                'serial_number': serial_number_persian,
-                'error_message': f'خطا در ایجاد فاکتور: لطفاً داده‌ها را بررسی کنید'
-            })
+            except Exception as e:
+                logger.exception("Error in create_invoice")
+                return render(request, 'invoice_form.html', {
+                    'sellers': sellers,
+                    'today_jalali': today_jalali,
+                    'serial_number': serial_number_persian,
+                    'issue_date_form': issue_date_form,
+                    'error_message': f'خطا در ایجاد فاکتور: لطفاً داده‌ها را بررسی کنید'
+                })
 
     return render(request, 'invoice_form.html', {
         'sellers': sellers,
         'today_jalali': today_jalali,
-        'serial_number': serial_number_persian
+        'serial_number': serial_number_persian,
+        'issue_date_form': issue_date_form  # اضافه کردن فرم تاریخ صدور
     })
+
 from django.db.models import Q
 from django.http import JsonResponse
 from .models import Froshande, ContactNumber, BankAccount

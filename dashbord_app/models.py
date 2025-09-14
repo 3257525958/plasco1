@@ -170,6 +170,7 @@ class Product(models.Model):
 class Invoice(models.Model):
     seller = models.ForeignKey(Froshande, on_delete=models.CASCADE, verbose_name="فروشنده")
     date = models.DateField(verbose_name="تاریخ", default=timezone.now)
+    issue_date = models.DateField(verbose_name="تاریخ صدور", default=timezone.now)  # اضافه کردن
     serial_number = models.CharField(max_length=12, verbose_name="شماره سریال", unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

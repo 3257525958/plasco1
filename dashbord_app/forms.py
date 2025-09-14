@@ -132,4 +132,15 @@ class ProductForm(forms.ModelForm):
         }
 
 #
+
+class InvoiceIssueDateForm(forms.Form):
+    issue_date = forms.CharField(
+        label='تاریخ صدور فاکتور (شمسی)',
+        widget=forms.TextInput(attrs={
+            'id': 'issue-date-picker',
+            'class': 'shamsi-date-input',
+            'placeholder': 'انتخاب تاریخ',
+            'autocomplete': 'off'
+        })
+    )
 # *---------برای چاپ لیبل رو---------------------------------------------------

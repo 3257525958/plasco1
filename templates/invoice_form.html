@@ -515,6 +515,23 @@
                 padding: 10px !important;
             }
         }
+        
+        .shamsi-date-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    font-size: 16px;
+    background: var(--input-bg);
+    text-align: center;
+    cursor: pointer;
+}
+
+.shamsi-date-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.3);
+    outline: none;
+}
     </style>
 </head>
 <body>
@@ -535,6 +552,10 @@
                     <div class="header-item">
                         <span class="header-label">تاریخ</span>
                         <span class="header-value jalali-date">{{ today_jalali }}</span>
+                    </div>
+                    <div class="header-item">
+                        <span class="header-label">تاریخ صدور فاکتور</span>
+                        {{ issue_date_form.issue_date }}
                     </div>
                 </div>
                 
@@ -630,9 +651,37 @@
             </div>
         </form>
     </div>
-
+<link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+<script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
+<script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+    
+     // فعال کردن datepicker برای فیلد تاریخ شمسی
+    $(document).ready(function() {
+        $("#issue-date-picker").pDatepicker({
+            format: 'YYYY/MM/DD',
+            initialValue: false,
+            autoClose: true,
+            position: {x: 0, y: 0},
+            onSelect: function() {
+                // وقتی تاریخ انتخاب شد، هیچ عملیات اضافی نیاز نیست
+            }
+        });
+    });
+    
+    // تابع تبدیل تاریخ شمسی به میلادی (ساده‌شده)
+    function shamsi_to_gregorian(shamsiDate) {
+        // این تابع نیاز به پیاده‌سازی دقیق دارد
+        // می‌توانید از کتابخانه‌های تبدیل تاریخ استفاده کنید
+        // برای نمونه، یک تبدیل ساده:
+        const parts = shamsiDate.split('/');
+        const jDate = new jalaali.Jalaali(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
+        const gDate = jalaali.toGregorian(jDate.jy, jDate.jm, jDate.jd);
+        return new Date(gDate.gy, gDate.gm - 1, gDate.gd);
+    }
+    
+    
     // تابع تبدیل اعداد فارسی و عربی به انگلیسی
     function convertPersianToEnglishNumbers(input) {
         if (!input) return input;
