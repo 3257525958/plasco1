@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
     
+    <!-- کتابخانه‌های تاریخ شمسی -->
+    <link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+    
     <style>
         :root {
             --primary-color: #4CAF50;
@@ -150,6 +153,42 @@
             padding: 8px;
             background-color: #f8f9fa;
             border-radius: 5px;
+        }
+
+        /* استایل‌های مربوط به فیلد تاریخ */
+        .date-input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .shamsi-date-input {
+            width: 100%;
+            padding: 12px 15px;
+            padding-right: 40px;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            font-size: 16px;
+            background: var(--input-bg);
+            text-align: center;
+            cursor: pointer;
+            font-family: 'Vazirmatn', sans-serif;
+            height: 50px;
+        }
+        
+        .calendar-icon {
+            position: absolute;
+            left: 15px;
+            color: var(--primary-color);
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 10;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .shamsi-date-input:hover {
+            border-color: var(--accent-color);
         }
 
         .invoice-table {
@@ -303,6 +342,16 @@
             font-size: 18px;
         }
 
+        /* استایل برای تضمین نمایش صحیح تقویم */
+        .pdatepicker-gui {
+            z-index: 10000 !important;
+            font-family: 'Vazirmatn', sans-serif !important;
+        }
+
+        .pdatepicker-gui .pdatepicker-day {
+            cursor: pointer !important;
+        }
+
         @media (max-width: 768px) {
             .edit-invoice-container {
                 padding: 15px;
@@ -326,6 +375,11 @@
             .actions {
                 flex-direction: column-reverse;
                 gap: 10px;
+            }
+            
+            .shamsi-date-input {
+                padding: 10px 35px 10px 10px;
+                font-size: 16px;
             }
         }
     </style>
@@ -407,7 +461,11 @@
         <div id="messages"></div>
     </div>
 
+    <!-- کتابخانه‌های JavaScript -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
+    <script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+
     <script>
         // متغیرهای global برای مدیریت ویرایش فاکتور
         let editingInvoice = null;
@@ -436,7 +494,7 @@
             if (number === 0) return "صفر";
             
             const ones = ["", "یک", "دو", "سه", "چهار", "پنج", "شش", "هفت", "هشت", "نه"];
-            const tens = ["", "ده", "بیست", "سی", "چهل", "پنجاه", "شصت", "هفتاد", "هشتاد", "نود"];
+            const tens = ["", "ده", "بیست", "سی", "چهل", "پنجاه", "شصت", "هفتاد", "هشتاد", 'نود'];
             const hundreds = ["", "صد", "دویست", "سیصد", "چهارصد", "پانصد", "ششصد", "هفتصد", "هشتصد", "نهصد"];
             const teens = ["ده", "یازده", "دوازده", "سیزده", "چهارده", "پانزده", "شانزده", "هفده", "هجده", "نوزده"];
             
@@ -592,9 +650,39 @@
                         $('#invoice-info').html(`
                             <div class="info-item"><strong>شماره فاکتور:</strong> ${editingInvoice.serial_number}</div>
                             <div class="info-item"><strong>فروشنده:</strong> ${editingInvoice.seller_name}</div>
-                            <div class="info-item"><strong>تاریخ:</strong> ${editingInvoice.date}</div>
+                            <div class="info-item">
+                                <strong>تاریخ صدور فاکتور:</strong>
+                                <div class="date-input-container">
+                                    <input type="text" id="edit-issue-date" class="shamsi-date-input" 
+                                           placeholder="برای انتخاب تاریخ کلیک کنید" 
+                                           value="${editingInvoice.date}" name="issue_date" autocomplete="off">
+                                    <i class="fas fa-calendar-alt calendar-icon" id="edit-calendar-trigger"></i>
+                                </div>
+                                <small style="display: block; margin-top: 5px; color: #666; font-size: 12px;">
+                                    <i class="fas fa-mouse-pointer"></i> برای انتخاب تاریخ کلیک کنید
+                                </small>
+                            </div>
                             <input type="hidden" id="invoice-id" value="${editingInvoice.id}">
                         `);
+
+                        // مقداردهی اولیه تقویم شمسی برای فیلد تاریخ
+                        $("#edit-issue-date").persianDatepicker({
+                            observer: true,
+                            format: 'YYYY/MM/DD',
+                            autoClose: true,
+                            initialValue: true,
+                            initialValueType: 'persian',
+                            onSelect: function (unix) {
+                                let date = new persianDate(unix);
+                                let formattedDate = date.format("YYYY/MM/DD");
+                                document.getElementById('edit-issue-date').value = formattedDate;
+                            }
+                        });
+
+                        // نمایش تقویم هنگام کلیک روی آیکون تقویم
+                        document.getElementById('edit-calendar-trigger').addEventListener('click', function () {
+                            $("#edit-issue-date").persianDatepicker('show');
+                        });
 
                         // نمایش آیتم‌های فاکتور
                         updateInvoiceItemsList();
@@ -733,6 +821,7 @@
             // جمع‌آوری داده‌های فرم
             const formData = {
                 invoice_id: $('#invoice-id').val(),
+                issue_date: $('#edit-issue-date').val(), // اضافه کردن تاریخ به داده‌ها
                 items: []
             };
             

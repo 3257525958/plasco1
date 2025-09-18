@@ -1518,6 +1518,7 @@ def update_invoice(request):
     try:
         data = json.loads(request.body)
         invoice_id = data.get('invoice_id')
+        issue_date = data.get('issue_date')  # دریافت تاریخ جدید
         items_data = data.get('items', [])
 
         if not invoice_id:
@@ -1525,6 +1526,11 @@ def update_invoice(request):
 
         with transaction.atomic():
             invoice = Invoice.objects.get(id=invoice_id)
+
+            # به روزرسانی تاریخ اگر ارائه شده باشد
+            if issue_date:
+                invoice.jalali_date = issue_date
+                invoice.save()
 
             # حذف آیتم‌های قبلی
             invoice.items.all().delete()
@@ -1545,7 +1551,6 @@ def update_invoice(request):
         return JsonResponse({'success': False, 'error': 'فاکتور یافت نشد'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-
 
 def edit_invoice_page(request):
     """صفحه ویرایش فاکتور"""
