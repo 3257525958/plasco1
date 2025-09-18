@@ -46,4 +46,11 @@ urlpatterns = [
     path('go-to-print-settings/', views.go_to_print_settings, name='go_to_print_settings'),
     path('print-settings/', views.print_settings, name='print_settings'),
 
+    # مسیرهای جدید برای ویرایش فاکتور
+    path('edit-invoice/', views.edit_invoice_page, name='edit_invoice_page'),
+    path('search-invoices-for-edit/', views.search_invoices_for_edit, name='search_invoices_for_edit'),
+    path('get-invoice-for-edit/', views.get_invoice_for_edit, name='get_invoice_for_edit'),
+    path('update-invoice/', views.update_invoice, name='update_invoice'),
+
+
 ]

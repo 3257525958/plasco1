@@ -1430,3 +1430,123 @@ def is_persian(text):
     """
     pattern = re.compile(r'^[\u0600-\u06FF\s]+$')
     return bool(pattern.match(text))
+
+
+
+# --------------------------ادیت فاکتور-------------------------------------------------------
+# views.py (بخش جدید)
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST
+from django.db import transaction
+import json
+from dashbord_app.models import Invoice, InvoiceItem
+
+
+@require_GET
+def search_invoices_for_edit(request):
+    """جستجوی فاکتورها برای ویرایش"""
+    query = request.GET.get('q', '')
+
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
+    # جستجو در شماره سریال و نام فروشنده
+    invoices = Invoice.objects.filter(
+        Q(serial_number__icontains=query) |
+        Q(seller__name__icontains=query) |
+        Q(seller__family__icontains=query)
+    )[:10]
+
+    results = []
+    for invoice in invoices:
+        results.append({
+            'id': invoice.id,
+            'serial_number': invoice.serial_number,
+            'seller_name': f"{invoice.seller.name} {invoice.seller.family}",
+            'date': invoice.jalali_date
+        })
+
+    return JsonResponse({'results': results})
+
+
+@require_GET
+def get_invoice_for_edit(request):
+    """دریافت اطلاعات فاکتور برای ویرایش"""
+    try:
+        invoice_id = request.GET.get('invoice_id')
+
+        if not invoice_id:
+            return JsonResponse({'success': False, 'error': 'شناسه فاکتور الزامی است'})
+
+        invoice = Invoice.objects.get(id=invoice_id)
+        items = invoice.items.all()
+
+        invoice_data = {
+            'id': invoice.id,
+            'serial_number': invoice.serial_number,
+            'seller_name': f"{invoice.seller.name} {invoice.seller.family}",
+            'date': invoice.jalali_date
+        }
+
+        items_data = []
+        for item in items:
+            items_data.append({
+                'id': item.id,
+                'product_name': item.product_name,
+                'quantity': item.quantity,
+                'unit_price': str(item.unit_price),
+                'discount': str(item.discount)
+            })
+
+        return JsonResponse({
+            'success': True,
+            'invoice': invoice_data,
+            'items': items_data
+        })
+
+    except Invoice.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'فاکتور یافت نشد'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@csrf_exempt
+@require_POST
+def update_invoice(request):
+    """به روزرسانی فاکتور"""
+    try:
+        data = json.loads(request.body)
+        invoice_id = data.get('invoice_id')
+        items_data = data.get('items', [])
+
+        if not invoice_id:
+            return JsonResponse({'success': False, 'error': 'شناسه فاکتور الزامی است'})
+
+        with transaction.atomic():
+            invoice = Invoice.objects.get(id=invoice_id)
+
+            # حذف آیتم‌های قبلی
+            invoice.items.all().delete()
+
+            # افزودن آیتم‌های جدید
+            for item_data in items_data:
+                InvoiceItem.objects.create(
+                    invoice=invoice,
+                    product_name=item_data.get('product_name', ''),
+                    quantity=item_data.get('quantity', 0),
+                    unit_price=item_data.get('unit_price', 0),
+                    discount=item_data.get('discount', 0)
+                )
+
+        return JsonResponse({'success': True, 'message': 'فاکتور با موفقیت به روزرسانی شد'})
+
+    except Invoice.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'فاکتور یافت نشد'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def edit_invoice_page(request):
+    """صفحه ویرایش فاکتور"""
+    return render(request, 'edit_invoice.html')
