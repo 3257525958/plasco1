@@ -132,6 +132,11 @@ class InventoryCount(models.Model):  # حذف class تکراری
 
     def __str__(self):
         return f"{self.product_name} - {self.branch.name} - {self.quantity}"
+
+
+
+
+
 from django.db import models
 from django.core.validators import MinValueValidator
 from decimal import Decimal
