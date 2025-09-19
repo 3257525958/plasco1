@@ -658,209 +658,7 @@ def get_invoice_details(request):
 
 
 # ------------------------قیمت نهایی-------------------------------------------------
-from django.http import JsonResponse
-from django.db.models import Q
-from decimal import Decimal
-import math
 
-
-def search_branches_pricing(request):
-    """جستجوی شعب برای بخش قیمت‌گذاری"""
-    query = request.GET.get('q', '')
-
-    if len(query) < 2:
-        return JsonResponse({'results': []})
-
-    branches = Branch.objects.filter(
-        Q(name__icontains=query) | Q(address__icontains=query)
-    )[:10]
-
-    results = []
-    for branch in branches:
-        results.append({
-            'id': branch.id,
-            'name': branch.name,
-            'address': branch.address
-        })
-
-    return JsonResponse({'results': results})
-
-
-def get_branch_products(request):
-    """دریافت محصولات یک شعبه برای قیمت‌گذاری"""
-    branch_id = request.GET.get('branch_id')
-
-    if not branch_id:
-        return JsonResponse({'error': 'Branch ID is required'}, status=400)
-
-    try:
-        # دریافت محصولات موجود در انبار شعبه
-        inventory_items = InventoryCount.objects.filter(branch_id=branch_id)
-
-        products_data = []
-        for item in inventory_items:
-            # دریافت قیمت معیار از مدل ProductPricing
-            try:
-                pricing = ProductPricing.objects.get(product_name=item.product_name)
-                base_price = pricing.highest_purchase_price
-            except ProductPricing.DoesNotExist:
-                base_price = 0
-
-            # محاسبه قیمت فروش با سود 30% پیش‌فرض
-            profit_percentage = 30
-            selling_price = base_price + (base_price * Decimal(profit_percentage / 100))
-            # گرد کردن به نزدیکترین 1000 تومان
-            selling_price = math.ceil(selling_price / 1000) * 1000
-
-            products_data.append({
-                'id': item.id,
-                'product_name': item.product_name,
-                'base_price': base_price,
-                'profit_percentage': profit_percentage,
-                'selling_price': selling_price,
-                'current_selling_price': item.selling_price
-            })
-
-        return JsonResponse({'products': products_data})
-
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-
-def search_products_pricing(request):
-    """جستجوی محصولات برای بخش قیمت‌گذاری"""
-    query = request.GET.get('q', '')
-    branch_id = request.GET.get('branch_id')
-
-    if len(query) < 2 or not branch_id:
-        return JsonResponse({'results': []})
-
-    # جستجوی محصولات در انبار شعبه selected
-    products = InventoryCount.objects.filter(
-        branch_id=branch_id,
-        product_name__icontains=query
-    ).values_list('product_name', flat=True).distinct()[:10]
-
-    results = [{'id': name, 'name': name} for name in products]
-    return JsonResponse({'results': results})
-
-
-@csrf_exempt
-def update_product_pricing(request):
-    """به روزرسانی قیمت فروش محصولات"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            product_name = data.get('product_name')
-            branch_id = data.get('branch_id')
-            profit_percentage = data.get('profit_percentage')
-            selling_price = data.get('selling_price')
-
-            # به روزرسانی قیمت فروش در InventoryCount
-            inventory_item = InventoryCount.objects.get(
-                product_name=product_name,
-                branch_id=branch_id
-            )
-
-            inventory_item.selling_price = selling_price
-            inventory_item.save()
-
-            return JsonResponse({'success': True})
-
-        except InventoryCount.DoesNotExist:
-            return JsonResponse({'error': 'محصول یافت نشد'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views import View
-from django.http import JsonResponse
-import json
-import math
-from decimal import Decimal
-from .models import ProductPricing
-from dashbord_app.models import Invoice, InvoiceItem
-import logging
-
-logger = logging.getLogger(__name__)
-
-from decimal import Decimal
-
-
-@method_decorator(csrf_exempt, name='dispatch')
-class UpdateProductPricing(View):
-    def post(self, request):
-        print(1)
-        try:
-            print(2)
-            data = json.loads(request.body)
-            invoice_id = data.get('invoice_id')
-
-            if not invoice_id:
-                return JsonResponse({'success': False, 'error': 'شناسه فاکتور الزامی است'})
-            print(3)
-
-            # دریافت اطلاعات فاکتور
-            invoice = Invoice.objects.get(id=invoice_id)
-            invoice_items = InvoiceItem.objects.filter(invoice=invoice)
-            print(4)
-
-            for item in invoice_items:
-                product_name = item.product_name
-                unit_price = item.unit_price
-                print(f"پردازش محصول: {product_name} با قیمت: {unit_price}")
-
-                # بررسی وجود محصول در دیتابیس قیمت‌گذاری
-                try:
-                    print(5)
-                    product_pricing = ProductPricing.objects.get(product_name=product_name)
-
-                    # اگر قیمت جدید بیشتر از قیمت ثبت شده است
-                    if unit_price > product_pricing.highest_purchase_price:
-                        product_pricing.highest_purchase_price = unit_price
-                        product_pricing.invoice_date = invoice.jalali_date
-                        product_pricing.invoice_number = invoice.serial_number
-                        product_pricing.save()
-                        print(f"قیمت {product_name} به روز شد: {unit_price}")
-                        logger.info(f"قیمت {product_name} به روز شد: {unit_price}")
-
-                except ProductPricing.DoesNotExist:
-                    print(6)
-                    # اگر محصول وجود ندارد، ایجاد رکورد جدید
-                    try:
-                        product_pricing = ProductPricing(
-                            product_name=product_name,
-                            highest_purchase_price=unit_price,
-                            invoice_date=invoice.jalali_date,
-                            invoice_number=invoice.serial_number,
-                            adjustment_percentage=Decimal('0'),
-                        )
-                        # ذخیره کردن و محاسبه automatic استاندارد پرایس
-                        product_pricing.save()
-                        print(7)
-                        print(f"محصول جدید {product_name} با قیمت {unit_price} ایجاد شد")
-                        logger.info(f"محصول جدید {product_name} با قیمت {unit_price} ایجاد شد")
-                    except Exception as e:
-                        print(f"خطا در ایجاد محصول جدید: {str(e)}")
-                        logger.error(f"خطا در ایجاد محصول جدید {product_name}: {str(e)}")
-                        continue
-
-            return JsonResponse({'success': True, 'message': 'قیمت‌گذاری محصولات با موفقیت به روز شد'})
-
-        except Invoice.DoesNotExist:
-            error_msg = f'فاکتور با شناسه {invoice_id} یافت نشد'
-            print(error_msg)
-            logger.error(error_msg)
-            return JsonResponse({'success': False, 'error': error_msg})
-        except Exception as e:
-            error_msg = f"خطا در به‌روزرسانی قیمت‌گذاری محصولات: {str(e)}"
-            print(error_msg)
-            logger.error(error_msg)
-            return JsonResponse({'success': False, 'error': error_msg})
-
-# -----------------------------------قیمت گذاری ------------------------------------------------
 from django.http import JsonResponse
 from django.db.models import Q
 from decimal import Decimal
@@ -911,25 +709,20 @@ def get_branch_products(request):
             except ProductPricing.DoesNotExist:
                 base_price = 0
 
-            # استفاده از درصد سود ذخیره شده در InventoryCount
-            profit_percentage = float(item.profit_percentage) if item.profit_percentage else 30.00
+            # استفاده از قیمت فروش ذخیره شده در InventoryCount
+            selling_price = item.selling_price if item.selling_price is not None else 0
 
-            # محاسبه قیمت فروش
-            selling_price = base_price + (base_price * Decimal(profit_percentage / 100))
-
-            # گرد کردن به بالا به مضرب 1000 تومان
-            if selling_price:
-                selling_price = math.ceil(selling_price / 1000) * 1000
-            else:
-                selling_price = 0
+            # محاسبه درصد سود بر اساس قیمت خرید و فروش
+            profit_percentage = 0
+            if base_price and base_price > 0 and selling_price and selling_price > 0:
+                profit_percentage = float(((selling_price - base_price) / base_price) * 100)
 
             products_data.append({
                 'id': item.id,
                 'product_name': item.product_name,
-                'base_price': base_price,
+                'base_price': float(base_price) if base_price else 0,
                 'profit_percentage': profit_percentage,
-                'selling_price': selling_price,
-                'current_selling_price': item.selling_price
+                'selling_price': float(selling_price) if selling_price else 0
             })
 
         return JsonResponse({'products': products_data})
@@ -940,7 +733,7 @@ def get_branch_products(request):
 
 @csrf_exempt
 def update_product_pricing(request):
-    """به روزرسانی قیمت فروش و درصد سود محصولات"""
+    """به روزرسانی قیمت فروش و محاسبه خودکار درصد سود"""
     if request.method == 'POST':
         try:
             # بررسی اینکه کاربر لاگین کرده است
@@ -950,25 +743,29 @@ def update_product_pricing(request):
             data = json.loads(request.body)
             product_name = data.get('product_name')
             branch_id = data.get('branch_id')
-            profit_percentage = data.get('profit_percentage')
-            selling_price = data.get('selling_price')
+            selling_price = data.get('selling_price')  # دریافت قیمت فروش
 
             # اعتبارسنجی داده‌های ورودی
-            if not all([product_name, branch_id, profit_percentage is not None]):
+            if not all([product_name, branch_id, selling_price is not None]):
                 return JsonResponse({'success': False, 'error': 'داده‌های ورودی ناقص است'})
 
-            # تبدیل درصد سود به Decimal
+            # تبدیل قیمت فروش به Decimal
             try:
-                profit_percentage = Decimal(str(profit_percentage))
+                selling_price = Decimal(str(selling_price))
             except (ValueError, TypeError):
-                return JsonResponse({'success': False, 'error': 'درصد سود نامعتبر است'})
+                return JsonResponse({'success': False, 'error': 'قیمت فروش نامعتبر است'})
 
-            # گرد کردن قیمت به بالا به مضرب 1000 تومان
-            if selling_price:
-                try:
-                    selling_price = math.ceil(float(selling_price) / 1000) * 1000
-                except (ValueError, TypeError):
-                    return JsonResponse({'success': False, 'error': 'قیمت فروش نامعتبر است'})
+            # دریافت قیمت خرید از ProductPricing
+            try:
+                pricing = ProductPricing.objects.get(product_name=product_name)
+                base_price = pricing.highest_purchase_price
+            except ProductPricing.DoesNotExist:
+                base_price = Decimal('0')
+
+            # محاسبه درصد سود بر اساس قیمت خرید و فروش
+            profit_percentage = Decimal('0')
+            if base_price and base_price > 0:
+                profit_percentage = ((selling_price - base_price) / base_price) * 100
 
             # به روزرسانی قیمت فروش و درصد سود در InventoryCount
             try:
@@ -981,7 +778,11 @@ def update_product_pricing(request):
                 inventory_item.profit_percentage = profit_percentage
                 inventory_item.save()
 
-                return JsonResponse({'success': True, 'message': 'اطلاعات با موفقیت ذخیره شد'})
+                return JsonResponse({
+                    'success': True,
+                    'message': 'اطلاعات با موفقیت ذخیره شد',
+                    'profit_percentage': float(profit_percentage)
+                })
 
             except InventoryCount.DoesNotExist:
                 return JsonResponse({'success': False, 'error': 'محصول در این شعبه یافت نشد'})
@@ -995,9 +796,10 @@ def update_product_pricing(request):
 
     return JsonResponse({'success': False, 'error': 'متد مجاز نیست'}, status=405)
 
+
 @csrf_exempt
 def update_all_product_pricing(request):
-    """به روزرسانی کلیه قیمت‌های فروش و درصد سود محصولات"""
+    """به روزرسانی کلیه قیمت‌های فروش و محاسبه خودکار درصد سود"""
     if request.method == 'POST':
         try:
             # بررسی اینکه کاربر لاگین کرده است
@@ -1016,24 +818,28 @@ def update_all_product_pricing(request):
             for price_data in prices:
                 product_name = price_data.get('product_name')
                 selling_price = price_data.get('selling_price')
-                profit_percentage = price_data.get('profit_percentage')
 
                 # رد کردن آیتم‌های ناقص
-                if not all([product_name, profit_percentage is not None]):
+                if not all([product_name, selling_price is not None]):
                     continue
 
-                # تبدیل درصد سود به Decimal
+                # تبدیل قیمت فروش به Decimal
                 try:
-                    profit_percentage = Decimal(str(profit_percentage))
+                    selling_price = Decimal(str(selling_price))
                 except (ValueError, TypeError):
                     continue
 
-                # گرد کردن قیمت به بالا به مضرب 1000 تومان
-                if selling_price:
-                    try:
-                        selling_price = math.ceil(float(selling_price) / 1000) * 1000
-                    except (ValueError, TypeError):
-                        continue
+                # دریافت قیمت خرید از ProductPricing
+                try:
+                    pricing = ProductPricing.objects.get(product_name=product_name)
+                    base_price = pricing.highest_purchase_price
+                except ProductPricing.DoesNotExist:
+                    base_price = Decimal('0')
+
+                # محاسبه درصد سود بر اساس قیمت خرید و فروش
+                profit_percentage = Decimal('0')
+                if base_price and base_price > 0:
+                    profit_percentage = ((selling_price - base_price) / base_price) * 100
 
                 # به روزرسانی قیمت فروش و درصد سود در InventoryCount
                 try:
@@ -1065,93 +871,6 @@ def update_all_product_pricing(request):
 def pricing_management(request):
     """صفحه مدیریت قیمت‌گذاری"""
     return render(request, 'inventory_pricing.html')
-# views.py
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-import json
-
-from .models import Branch, InventoryCount, ProductPricing
-
-
-def branch_search(request):
-    query = request.GET.get('q', '')
-    branches = Branch.objects.filter(name__icontains=query)[:10]
-    results = [{'id': branch.id, 'name': branch.name} for branch in branches]
-    return JsonResponse(results, safe=False)
-
-
-def inventory_by_branch(request):
-    branch_id = request.GET.get('branch_id')
-    product_query = request.GET.get('product_query', '')
-
-    # دریافت موجودی انبار برای شعبه انتخاب شده
-    inventory_items = InventoryCount.objects.filter(branch_id=branch_id)
-
-    # اگر کوئری محصول وجود دارد، فیلتر کنید
-    if product_query:
-        inventory_items = inventory_items.filter(product_name__icontains=product_query)
-
-    # گروه‌بندی بر اساس نام محصول و جمع‌آوری اطلاعات
-    products_map = {}
-    for item in inventory_items:
-        if item.product_name not in products_map:
-            products_map[item.product_name] = {
-                'id': item.id,
-                'product_name': item.product_name,
-                'quantity': item.quantity
-            }
-        else:
-            products_map[item.product_name]['quantity'] += item.quantity
-
-    products = list(products_map.values())
-    return JsonResponse({'products': products})
-
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def get_base_prices(request):
-    data = json.loads(request.body)
-    product_names = data.get('products', [])
-
-    # دریافت قیمت‌های معیار از مدل ProductPricing
-    base_prices = {}
-    for product_name in product_names:
-        try:
-            pricing = ProductPricing.objects.get(product_name=product_name)
-            base_prices[product_name] = pricing.base_price
-        except ProductPricing.DoesNotExist:
-            base_prices[product_name] = 0  # یا مقدار پیش‌فرض مناسب
-
-    return JsonResponse(base_prices)
-
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def save_prices(request):
-    data = json.loads(request.body)
-    prices = data.get('prices', [])
-
-    try:
-        for price_data in prices:
-            # به‌روزرسانی یا ایجاد رکورد قیمت فروش
-            inventory_item = InventoryCount.objects.filter(
-                product_name=price_data['product_name'],
-                branch_id=price_data['branch_id']
-            ).first()
-
-            if inventory_item:
-                inventory_item.selling_price = price_data['selling_price']
-                inventory_item.save()
-
-        return JsonResponse({'success': True})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-def product_pricing_view(request):
-    return render(request, 'product_pricing.html')
-
-
 
 
 

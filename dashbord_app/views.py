@@ -1514,28 +1514,31 @@ def get_invoice_for_edit(request):
 @csrf_exempt
 @require_POST
 def update_invoice(request):
-    """به روزرسانی فاکتور"""
     try:
         data = json.loads(request.body)
         invoice_id = data.get('invoice_id')
-        issue_date = data.get('issue_date')  # دریافت تاریخ جدید
+        issue_date_shamsi = data.get('issue_date')
         items_data = data.get('items', [])
 
         if not invoice_id:
             return JsonResponse({'success': False, 'error': 'شناسه فاکتور الزامی است'})
 
+        # تبدیل تاریخ شمسی به میلادی
+        try:
+            issue_date_gregorian = shamsi_to_gregorian(issue_date_shamsi)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': 'تاریخ وارد شده معتبر نیست'})
+
         with transaction.atomic():
+            print(issue_date_gregorian)
             invoice = Invoice.objects.get(id=invoice_id)
 
-            # به روزرسانی تاریخ اگر ارائه شده باشد
-            if issue_date:
-                invoice.jalali_date = issue_date
-                invoice.save()
+            # به روزرسانی تاریخ صدور
+            invoice.issue_date = issue_date_gregorian
+            invoice.save()
 
-            # حذف آیتم‌های قبلی
+            # به روزرسانی آیتم‌ها
             invoice.items.all().delete()
-
-            # افزودن آیتم‌های جدید
             for item_data in items_data:
                 InvoiceItem.objects.create(
                     invoice=invoice,
@@ -1550,7 +1553,10 @@ def update_invoice(request):
     except Invoice.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'فاکتور یافت نشد'})
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        logger.error(f"Error updating invoice: {str(e)}")
+        return JsonResponse({'success': False, 'error': 'خطای سرور'})
+
+
 
 def edit_invoice_page(request):
     """صفحه ویرایش فاکتور"""

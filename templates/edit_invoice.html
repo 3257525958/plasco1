@@ -5,14 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ویرایش فاکتور - فروشگاه پلاستیک و لوازم آشپرخانه موسوی</title>
-    
+
     <!-- فونت‌ها و آیکون‌ها -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
-    
+
     <!-- کتابخانه‌های تاریخ شمسی -->
     <link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
-    
+
     <style>
         :root {
             --primary-color: #4CAF50;
@@ -161,7 +161,7 @@
             display: flex;
             align-items: center;
         }
-        
+
         .shamsi-date-input {
             width: 100%;
             padding: 12px 15px;
@@ -175,7 +175,7 @@
             font-family: 'Vazirmatn', sans-serif;
             height: 50px;
         }
-        
+
         .calendar-icon {
             position: absolute;
             left: 15px;
@@ -186,7 +186,7 @@
             top: 50%;
             transform: translateY(-50%);
         }
-        
+
         .shamsi-date-input:hover {
             border-color: var(--accent-color);
         }
@@ -357,13 +357,13 @@
                 padding: 15px;
                 border-radius: 15px;
             }
-            
+
             .invoice-table {
                 display: block;
                 width: 100%;
                 overflow-x: auto;
             }
-            
+
             .btn {
                 padding: 12px 20px;
                 font-size: 16px;
@@ -371,12 +371,12 @@
                 justify-content: center;
                 margin-bottom: 10px;
             }
-            
+
             .actions {
                 flex-direction: column-reverse;
                 gap: 10px;
             }
-            
+
             .shamsi-date-input {
                 padding: 10px 35px 10px 10px;
                 font-size: 16px;
@@ -475,49 +475,49 @@
         // تابع تبدیل اعداد فارسی و عربی به انگلیسی
         function convertPersianToEnglishNumbers(input) {
             if (!input) return input;
-            
+
             const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
             const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-            
+
             let output = input;
             for (let i = 0; i < 10; i++) {
                 let persianRegex = new RegExp(persianNumbers[i], 'g');
                 let arabicRegex = new RegExp(arabicNumbers[i], 'g');
                 output = output.replace(persianRegex, i).replace(arabicRegex, i);
             }
-            
+
             return output;
         }
 
         // تابع تبدیل عدد به حروف فارسی
         function numberToWords(number) {
             if (number === 0) return "صفر";
-            
+
             const ones = ["", "یک", "دو", "سه", "چهار", "پنج", "شش", "هفت", "هشت", "نه"];
             const tens = ["", "ده", "بیست", "سی", "چهل", "پنجاه", "شصت", "هفتاد", "هشتاد", 'نود'];
             const hundreds = ["", "صد", "دویست", "سیصد", "چهارصد", "پانصد", "ششصد", "هفتصد", "هشتصد", "نهصد"];
             const teens = ["ده", "یازده", "دوازده", "سیزده", "چهارده", "پانزده", "شانزده", "هفده", "هجده", "نوزده"];
-            
+
             let result = "";
-            
+
             // میلیون‌ها
             if (number >= 1000000) {
                 result += numberToWords(Math.floor(number / 1000000)) + " میلیون ";
                 number %= 1000000;
             }
-            
+
             // هزارها
             if (number >= 1000) {
                 result += numberToWords(Math.floor(number / 1000)) + " هزار ";
                 number %= 1000;
             }
-            
+
             // صدها
             if (number >= 100) {
                 result += hundreds[Math.floor(number / 100)] + " و ";
                 number %= 100;
             }
-            
+
             // دهگان و یکان
             if (number >= 10 && number < 20) {
                 result += teens[number - 10];
@@ -527,12 +527,12 @@
                     number %= 10;
                     if (number > 0) result += " و ";
                 }
-                
+
                 if (number > 0) {
                     result += ones[number];
                 }
             }
-            
+
             return result.trim().replace(/ و $/, "");
         }
 
@@ -548,22 +548,22 @@
             let totalItems = 0;
             let totalAmount = 0;
             let totalDiscount = 0;
-            
+
             $('.item-row').each(function() {
                 const quantity = parseInt($(this).find('input[name="quantity[]"]').val()) || 0;
                 const unitPrice = parseFloat($(this).find('input[name="unit_price[]"]').val()) || 0;
                 const discount = parseFloat($(this).find('input[name="discount[]"]').val()) || 0;
                 const lineTotal = quantity * unitPrice;
-                
+
                 // به‌روزرسانی جمع کل خط
                 $(this).find('.line-total-input').val(lineTotal);
                 updatePriceWords($(this).find('.line-total-input'));
-                
+
                 totalItems += quantity;
                 totalAmount += lineTotal;
                 totalDiscount += discount;
             });
-            
+
             $('#total-items').text(totalItems);
             $('#total-amount').text(totalAmount.toLocaleString('fa-IR') + ' تومان');
             $('#total-discount').text(totalDiscount.toLocaleString('fa-IR') + ' تومان');
@@ -592,12 +592,12 @@
         $('#edit-invoice-search').on('input', function() {
             const query = $(this).val().trim();
             const convertedQuery = convertPersianToEnglishNumbers(query);
-            
+
             if (convertedQuery.length < 2) {
                 $('#edit-invoice-search-results').hide().empty();
                 return;
             }
-            
+
             clearTimeout(invoiceSearchTimeout);
             invoiceSearchTimeout = setTimeout(function() {
                 $.ajax({
@@ -653,8 +653,8 @@
                             <div class="info-item">
                                 <strong>تاریخ صدور فاکتور:</strong>
                                 <div class="date-input-container">
-                                    <input type="text" id="edit-issue-date" class="shamsi-date-input" 
-                                           placeholder="برای انتخاب تاریخ کلیک کنید" 
+                                    <input type="text" id="edit-issue-date" class="shamsi-date-input"
+                                           placeholder="برای انتخاب تاریخ کلیک کنید"
                                            value="${editingInvoice.date}" name="issue_date" autocomplete="off">
                                     <i class="fas fa-calendar-alt calendar-icon" id="edit-calendar-trigger"></i>
                                 </div>
@@ -732,12 +732,12 @@
                     </tr>
                 `;
                 $itemsList.append(row);
-                
+
                 // محاسبه اولیه برای این سطر
                 const quantity = parseInt(item.quantity) || 0;
                 const unitPrice = parseFloat(item.unit_price) || 0;
                 const lineTotal = quantity * unitPrice;
-                
+
                 $itemsList.find('tr:last-child .line-total-input').val(lineTotal);
                 updatePriceWords($itemsList.find('tr:last-child .line-total-input'));
                 updatePriceWords($itemsList.find('tr:last-child .unit-price'));
@@ -774,7 +774,7 @@
                     </td>
                 </tr>
             `;
-            
+
             $('#invoice-items-list').append(newRow);
             editingInvoiceItems.push({
                 product_name: '',
@@ -782,7 +782,7 @@
                 unit_price: 0,
                 discount: 0
             });
-            
+
             // افزودن رویداد برای محاسبه
             $('#invoice-items-list tr:last-child input').on('input', calculateTotals);
         });
@@ -793,13 +793,13 @@
             if (editingInvoiceItems.length > 1) {
                 $(this).closest('tr').remove();
                 editingInvoiceItems.splice(index, 1);
-                
+
                 // به روزرسانی index برای همه سطرها
                 $('.item-row').each(function(i) {
                     $(this).attr('data-item-index', i);
                     $(this).find('.remove-item').attr('data-index', i);
                 });
-                
+
                 calculateTotals();
             } else {
                 showMessage('حداقل یک کالا باید وجود داشته باشد', 'error');
@@ -817,28 +817,28 @@
                 showMessage('لطفاً ابتدا یک فاکتور انتخاب کنید', 'error');
                 return;
             }
-            
+
             // جمع‌آوری داده‌های فرم
-            const formData = {
-                invoice_id: $('#invoice-id').val(),
-                issue_date: $('#edit-issue-date').val(), // اضافه کردن تاریخ به داده‌ها
-                items: []
-            };
-            
+             const formData = {
+        invoice_id: $('#invoice-id').val(),
+        issue_date: $('#edit-issue-date').val(),  // اینجا باید issue_date باشد
+        items: []
+    };
+
             let isValid = true;
-            
+
             $('.item-row').each(function() {
                 const productName = $(this).find('input[name="product_name[]"]').val();
                 const quantity = $(this).find('input[name="quantity[]"]').val();
                 const unitPrice = $(this).find('input[name="unit_price[]"]').val();
                 const discount = $(this).find('input[name="discount[]"]').val();
-                
+
                 if (!productName || !quantity || !unitPrice) {
                     isValid = false;
                     showMessage('لطفاً تمام فیلدهای ضروری را پر کنید', 'error');
                     return false;
                 }
-                
+
                 formData.items.push({
                     product_name: productName,
                     quantity: quantity,
@@ -846,9 +846,9 @@
                     discount: discount || 0
                 });
             });
-            
+
             if (!isValid) return;
-            
+
             // ارسال درخواست به سرور
             $.ajax({
                 url: "{% url 'update_invoice' %}",

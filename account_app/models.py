@@ -1,3 +1,5 @@
+
+
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -351,3 +353,5 @@ class PaymentMethod(models.Model):
                 raise ValidationError({'sheba_number': 'برای روش پرداخت واریز به حساب، شماره شبا الزامی است'})
             if not self.account_owner:
                 raise ValidationError({'account_owner': 'برای روش پرداخت واریز به حساب، نام صاحب حساب الزامی است'})
+
+
