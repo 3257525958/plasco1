@@ -10,6 +10,7 @@ urlpatterns = [
     path('remove-item/', views.remove_item_from_invoice, name='invoice_remove_item'),
     path('update-quantity/', views.update_item_quantity, name='update_item_quantity'),
     path('select-payment/', views.select_payment_method, name='select_payment_method'),
+    path('save-customer-info/', views.save_customer_info, name='save_customer_info'),
     path('success/', views.invoice_success, name='invoice_success'),
     path('print/<int:invoice_id>/', views.invoice_print, name='invoice_print'),
     path('cancel/', views.cancel_invoice, name='invoice_cancel'),

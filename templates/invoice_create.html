@@ -1,3 +1,5 @@
+
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -278,6 +280,25 @@
             font-size: 0.9rem;
         }
 
+        .customer-fields {
+            margin-bottom: 20px;
+        }
+
+        .customer-fields label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .customer-fields input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 5px;
@@ -329,6 +350,20 @@
         <!-- صفحه اصلی فاکتور -->
         <div class="branch-info">
             <i class="fas fa-store"></i> شعبه: {{ branch.name }}
+        </div>
+
+        <!-- فیلدهای اطلاعات خریدار -->
+        <div class="customer-fields">
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label for="customer-name">نام خریدار:</label>
+                    <input type="text" id="customer-name" value="{{ customer_name }}" placeholder="نام خریدار">
+                </div>
+                <div style="flex: 1;">
+                    <label for="customer-phone">تلفن خریدار:</label>
+                    <input type="text" id="customer-phone" value="{{ customer_phone }}" placeholder="تلفن خریدار">
+                </div>
+            </div>
         </div>
 
         <div class="search-section">
@@ -627,6 +662,38 @@
                     searchProduct(query);
                 }
             }
+        });
+
+        // ذخیره خودکار اطلاعات خریدار در session
+        function saveCustomerInfo() {
+            const customerName = $('#customer-name').val();
+            const customerPhone = $('#customer-phone').val();
+
+            $.ajax({
+                url: "{% url 'invoice_app:save_customer_info' %}",
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    customer_name: customerName,
+                    customer_phone: customerPhone
+                }),
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(data) {
+                    if (data.status !== 'success') {
+                        console.error('Failed to save customer info');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error saving customer info:', error);
+                }
+            });
+        }
+
+        // ذخیره اطلاعات با تغییر هر فیلد
+        $('#customer-name, #customer-phone').on('input', function() {
+            saveCustomerInfo();
         });
     </script>
 </body>
