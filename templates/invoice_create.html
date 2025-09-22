@@ -1,5 +1,3 @@
-
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -132,6 +130,15 @@
 
         .search-result-item:hover {
             background-color: var(--light-bg);
+        }
+
+        .low-stock {
+            background-color: #ffebee !important;
+            color: #d32f2f !important;
+        }
+
+        .low-stock:hover {
+            background-color: #ffcdd2 !important;
         }
 
         .invoice-items {
@@ -299,6 +306,28 @@
             font-size: 0.9rem;
         }
 
+        .payment-method-section {
+            background-color: #e8f5e9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .payment-method-section label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .payment-method-section select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 5px;
@@ -366,6 +395,19 @@
             </div>
         </div>
 
+        <!-- بخش روش پرداخت -->
+        <div class="payment-method-section">
+            <label for="payment-method">روش پرداخت:</label>
+            <select id="payment-method" class="form-control">
+                {% for method in payment_methods %}
+                    <option value="{{ method.id }}" 
+                        {% if default_payment_method and method.id == default_payment_method.id %}selected{% endif %}>
+                        {{ method.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
         <div class="search-section">
             <div class="search-container">
                 <label class="search-label">جستجوی کالا (نام یا بارکد):</label>
@@ -423,7 +465,7 @@
                     <i class="fas fa-times"></i> انصراف
                 </button>
                 <input type="hidden" name="action" id="action-input" value="">
-                <input type="hidden" name="finalize" value="true">
+                <input type="hidden" name='finalize' value='true'>
             </form>
         </div>
 
@@ -472,8 +514,10 @@
                         latestSearchResults = data.results;
                         let html = '';
                         data.results.forEach(product => {
+                            // اضافه کردن کلاس برای محصولاتی با موجودی کم یا منفی
+                            const lowStockClass = product.low_stock ? 'class="low-stock"' : '';
                             html += `
-                                <div class="search-result-item" data-product-id="${product.id}">
+                                <div class="search-result-item" data-product-id="${product.id}" ${lowStockClass}>
                                     <strong>${product.name}</strong>
                                     <div>موجودی: ${product.quantity}</div>
                                 </div>
@@ -691,9 +735,42 @@
             });
         }
 
+        // ذخیره خودکار روش پرداخت در session
+        function savePaymentMethod(paymentMethodId) {
+            $.ajax({
+                url: "{% url 'invoice_app:save_payment_method' %}",
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({payment_method_id: paymentMethodId}),
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(data) {
+                    if (data.status !== 'success') {
+                        console.error('Failed to save payment method');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error saving payment method:', error);
+                }
+            });
+        }
+
+        // تغییر روش پرداخت
+        $('#payment-method').change(function() {
+            const paymentMethodId = $(this).val();
+            savePaymentMethod(paymentMethodId);
+        });
+
         // ذخیره اطلاعات با تغییر هر فیلد
         $('#customer-name, #customer-phone').on('input', function() {
             saveCustomerInfo();
+        });
+
+        // ذخیره روش پرداخت هنگام بارگذاری صفحه با مقدار پیش فرض
+        $(document).ready(function() {
+            const initialPaymentMethod = $('#payment-method').val();
+            savePaymentMethod(initialPaymentMethod);
         });
     </script>
 </body>

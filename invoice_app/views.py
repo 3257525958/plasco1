@@ -41,6 +41,16 @@ def create_invoice(request):
     branch_name = request.session.get('branch_name')
     branch = get_object_or_404(Branch, id=branch_id)
 
+    # دریافت روش پرداخت پیش فرض
+    last_payment_id = request.session.get('last_payment_method')
+    if last_payment_id:
+        try:
+            default_payment = PaymentMethod.objects.get(id=last_payment_id)
+        except PaymentMethod.DoesNotExist:
+            default_payment = PaymentMethod.objects.filter(is_default=True, is_active=True).first()
+    else:
+        default_payment = PaymentMethod.objects.filter(is_default=True, is_active=True).first()
+
     if request.method == 'POST' and 'finalize' in request.POST:
         # ثبت نهایی فاکتور
         action = request.POST.get('action')
@@ -50,13 +60,28 @@ def create_invoice(request):
             customer_name = request.session.get('customer_name', '')
             customer_phone = request.session.get('customer_phone', '')
 
+            # دریافت روش پرداخت از session
+            payment_method_id = request.session.get('last_payment_method')
+            payment_method = None
+            if payment_method_id:
+                try:
+                    payment_method = PaymentMethod.objects.get(id=payment_method_id)
+                except PaymentMethod.DoesNotExist:
+                    pass
+
+            # اگر روش پرداخت پیدا نشد، از پیش فرض استفاده کنید
+            if not payment_method:
+                payment_method = PaymentMethod.objects.filter(is_default=True, is_active=True).first()
+
             # ایجاد فاکتور در دیتابیس
             invoice = Invoicefrosh.objects.create(
                 branch_id=branch_id,
                 created_by=request.user,
                 total_amount=0,
                 customer_name=customer_name,
-                customer_phone=customer_phone
+                customer_phone=customer_phone,
+                payment_method=payment_method,
+                is_paid=True if payment_method else False
             )
 
             # افزودن آیتم‌ها به فاکتور
@@ -83,7 +108,7 @@ def create_invoice(request):
                     standard_price=standard_price
                 )
 
-                # به روز رسانی موجودی انبار
+                # به روز رسانی موجودی انبار (حتی اگر منفی شود)
                 product.quantity -= item['quantity']
                 product.save()
 
@@ -106,58 +131,17 @@ def create_invoice(request):
                 # انتقال به صفحه چاپ
                 return redirect('invoice_app:invoice_print', invoice_id=invoice.id)
             else:
-                # انتقال به صفحه انتخاب روش پرداخت
-                request.session['invoice_id'] = invoice.id
-                return redirect('invoice_app:select_payment_method')
+                # انتقال به صفحه موفقیت
+                return redirect('invoice_app:invoice_success')
 
     return render(request, 'invoice_create.html', {
         'branch_selected': True,
         'branch': branch,
         'items': request.session.get('invoice_items', []),
         'customer_name': request.session.get('customer_name', ''),
-        'customer_phone': request.session.get('customer_phone', '')
-    })
-
-
-@login_required
-def select_payment_method(request):
-    invoice_id = request.session.get('invoice_id')
-    if not invoice_id:
-        return redirect('invoice_app:create_invoice')
-
-    invoice = get_object_or_404(Invoicefrosh, id=invoice_id)
-
-    if request.method == 'POST':
-        form = PaymentMethodForm(request.POST)
-        if form.is_valid():
-            payment_method = form.cleaned_data['payment_method']
-            invoice.payment_method = payment_method
-            invoice.is_paid = True
-            invoice.save()
-
-            # ذخیره آخرین روش پرداخت در session
-            request.session['last_payment_method'] = payment_method.id
-
-            # پاک کردن invoice_id از session
-            del request.session['invoice_id']
-
-            return redirect('invoice_app:invoice_success')
-    else:
-        # استفاده از آخرین روش پرداخت ذخیره شده یا پیش فرض
-        last_payment_id = request.session.get('last_payment_method')
-        if last_payment_id:
-            try:
-                default_payment = PaymentMethod.objects.get(id=last_payment_id)
-            except PaymentMethod.DoesNotExist:
-                default_payment = PaymentMethod.objects.filter(is_default=True, is_active=True).first()
-        else:
-            default_payment = PaymentMethod.objects.filter(is_default=True, is_active=True).first()
-
-        form = PaymentMethodForm(initial={'payment_method': default_payment})
-
-    return render(request, 'select_payment_method.html', {
-        'form': form,
-        'invoice': invoice
+        'customer_phone': request.session.get('customer_phone', ''),
+        'payment_methods': PaymentMethod.objects.filter(is_active=True),
+        'default_payment_method': default_payment
     })
 
 
@@ -185,7 +169,8 @@ def search_product(request):
             results.append({
                 'id': product.id,
                 'name': product.product_name,
-                'quantity': product.quantity
+                'quantity': product.quantity,
+                'low_stock': product.quantity <= 0  # نشانگر برای موجودی کم یا منفی
             })
 
         return JsonResponse({'results': results})
@@ -204,13 +189,6 @@ def add_item_to_invoice(request):
         # دریافت اطلاعات محصول
         product = get_object_or_404(InventoryCount, id=product_id)
 
-        # بررسی موجودی کافی
-        if product.quantity < quantity:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'موجودی کافی نیست. موجودی فعلی: {product.quantity}'
-            })
-
         # بررسی وجود محصول در سشن
         items = request.session.get('invoice_items', [])
         item_exists = False
@@ -218,11 +196,6 @@ def add_item_to_invoice(request):
         for item in items:
             if item['product_id'] == product_id:
                 new_quantity = item['quantity'] + quantity
-                if product.quantity < new_quantity:
-                    return JsonResponse({
-                        'status': 'error',
-                        'message': f'موجودی کافی نیست. موجودی فعلی: {product.quantity}'
-                    })
                 item['quantity'] = new_quantity
                 item['total'] = product.selling_price * new_quantity
                 item_exists = True
@@ -277,6 +250,21 @@ def save_customer_info(request):
 
 
 @login_required
+@csrf_exempt
+def save_payment_method(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        payment_method_id = data.get('payment_method_id')
+        try:
+            payment_method = PaymentMethod.objects.get(id=payment_method_id)
+            request.session['last_payment_method'] = payment_method.id
+            return JsonResponse({'status': 'success'})
+        except PaymentMethod.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'روش پرداخت نامعتبر'})
+    return JsonResponse({'status': 'error'})
+
+
+@login_required
 def invoice_success(request):
     return render(request, 'invoice_success.html')
 
@@ -312,13 +300,6 @@ def update_item_quantity(request):
 
         # دریافت اطلاعات محصول
         product = get_object_or_404(InventoryCount, id=product_id)
-
-        # بررسی موجودی کافی
-        if product.quantity < new_quantity:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'موجودی کافی نیست. موجودی فعلی: {product.quantity}'
-            })
 
         items = request.session.get('invoice_items', [])
         item_found = False
