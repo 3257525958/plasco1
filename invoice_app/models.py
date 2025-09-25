@@ -4,20 +4,95 @@ from django.contrib.auth.models import User
 from jdatetime import datetime as jdatetime
 from django.utils import timezone
 from decimal import Decimal
-from account_app.models import Branch, PaymentMethod, InventoryCount
+from account_app.models import Branch, PaymentMethod, InventoryCount, ProductPricing
+
+
+class POSDevice(models.Model):
+    name = models.CharField(max_length=100, verbose_name="نام دستگاه")
+    account_holder = models.CharField(max_length=100, verbose_name="نام صاحب حساب")
+    card_number = models.CharField(max_length=16, verbose_name="شماره کارت")
+    account_number = models.CharField(max_length=20, verbose_name="شماره حساب")
+    bank_name = models.CharField(max_length=100, verbose_name="نام بانک")
+    is_default = models.BooleanField(default=False, verbose_name="پیش فرض")
+    is_active = models.BooleanField(default=True, verbose_name="فعال")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "دستگاه پوز"
+        verbose_name_plural = "دستگاه‌های پوز"
+
+    def __str__(self):
+        return f"{self.name} - {self.bank_name}"
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            POSDevice.objects.filter(is_default=True).exclude(id=self.id).update(is_default=False)
+        elif not POSDevice.objects.filter(is_default=True).exists():
+            self.is_default = True
+        super().save(*args, **kwargs)
+
+
+class CheckPayment(models.Model):
+    invoice = models.OneToOneField('Invoicefrosh', on_delete=models.CASCADE, related_name='check_payment')
+    owner_name = models.CharField(max_length=100, verbose_name="نام صاحب چک")
+    owner_family = models.CharField(max_length=100, verbose_name="نام خانوادگی صاحب چک")
+    national_id = models.CharField(max_length=10, verbose_name="کد ملی")
+    address = models.TextField(verbose_name="آدرس")
+    phone = models.CharField(max_length=15, verbose_name="تلفن")
+    check_number = models.CharField(max_length=50, verbose_name="شماره چک")
+    amount = models.PositiveIntegerField(verbose_name="مبلغ چک")
+    check_date = models.DateField(verbose_name="تاریخ چک")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "پرداخت چک"
+        verbose_name_plural = "پرداخت‌های چک"
+
+    def __str__(self):
+        return f"چک {self.check_number} - {self.owner_name} {self.owner_family}"
+
+
+class CreditPayment(models.Model):
+    invoice = models.OneToOneField('Invoicefrosh', on_delete=models.CASCADE, related_name='credit_payment')
+    customer_name = models.CharField(max_length=100, verbose_name="نام")
+    customer_family = models.CharField(max_length=100, verbose_name="نام خانوادگی")
+    phone = models.CharField(max_length=15, verbose_name="تلفن")
+    address = models.TextField(verbose_name="آدرس")
+    national_id = models.CharField(max_length=10, verbose_name="کد ملی")
+    due_date = models.DateField(verbose_name="تاریخ سررسید")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "پرداخت نسیه"
+        verbose_name_plural = "پرداخت‌های نسیه"
+
+    def __str__(self):
+        return f"نسیه - {self.customer_name} {self.customer_family}"
+
 
 class Invoicefrosh(models.Model):
+    PAYMENT_METHODS = [
+        ('cash', 'نقدی'),
+        ('pos', 'دستگاه پوز'),
+        ('check', 'چک'),
+        ('credit', 'نسیه'),
+    ]
+
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="شعبه")
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="ایجاد کننده")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     payment_date = models.DateTimeField(null=True, blank=True, verbose_name="تاریخ پرداخت")
-    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.SET_NULL, null=True, blank=True,
-                                       verbose_name="روش پرداخت")
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='pos', verbose_name="روش پرداخت")
+    pos_device = models.ForeignKey(POSDevice, on_delete=models.SET_NULL, null=True, blank=True,
+                                   verbose_name="دستگاه پوز")
     total_amount = models.PositiveIntegerField(default=0, verbose_name="مبلغ کل")
+    total_without_discount = models.PositiveIntegerField(default=0, verbose_name="مبلغ بدون تخفیف")
+    discount = models.PositiveIntegerField(default=0, verbose_name="تخفیف")
     is_finalized = models.BooleanField(default=False, verbose_name="نهایی شده")
     is_paid = models.BooleanField(default=False, verbose_name="پرداخت شده")
     customer_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="نام خریدار")
     customer_phone = models.CharField(max_length=15, blank=True, null=True, verbose_name="تلفن خریدار")
+    serial_number = models.CharField(max_length=20, unique=True, blank=True, null=True, verbose_name="شماره سریال")
 
     class Meta:
         verbose_name = "فاکتور"
@@ -27,19 +102,30 @@ class Invoicefrosh(models.Model):
     def __str__(self):
         return f"فاکتور {self.id} - {self.branch.name}"
 
+    def save(self, *args, **kwargs):
+        if not self.serial_number:
+            now = timezone.now()
+            self.serial_number = now.strftime('%Y%m%d%H%M%S')
+
+        if self.is_paid and not self.payment_date:
+            self.payment_date = timezone.now()
+
+        if self.total_amount and self.discount:
+            self.total_without_discount = self.total_amount + self.discount
+        else:
+            self.total_without_discount = self.total_amount
+
+        super().save(*args, **kwargs)
+
     def get_jalali_date(self):
-        """تاریخ شمسی فاکتور"""
         return jdatetime.fromgregorian(datetime=self.created_at).strftime('%Y/%m/%d')
 
     def get_jalali_time(self):
-        """ساعت شمسی فاکتور"""
         return jdatetime.fromgregorian(datetime=self.created_at).strftime('%H:%M')
 
-    def save(self, *args, **kwargs):
-        # اگر فاکتور پرداخت شده است، تاریخ پرداخت را ثبت کن
-        if self.is_paid and not self.payment_date:
-            self.payment_date = timezone.now()
-        super().save(*args, **kwargs)
+    def get_payment_method_display(self):
+        return dict(self.PAYMENT_METHODS).get(self.payment_method, 'نامشخص')
+
 
 class InvoiceItemfrosh(models.Model):
     invoice = models.ForeignKey(Invoicefrosh, on_delete=models.CASCADE, related_name='items')
@@ -48,6 +134,7 @@ class InvoiceItemfrosh(models.Model):
     price = models.PositiveIntegerField(verbose_name="قیمت واحد")
     total_price = models.PositiveIntegerField(verbose_name="قیمت کل")
     standard_price = models.PositiveIntegerField(verbose_name="قیمت معیار", default=0)
+    discount = models.PositiveIntegerField(default=0, verbose_name="تخفیف")
 
     class Meta:
         verbose_name = "آیتم فاکتور"
@@ -55,3 +142,4 @@ class InvoiceItemfrosh(models.Model):
 
     def __str__(self):
         return f"{self.product.product_name} - {self.quantity}"
+
