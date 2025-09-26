@@ -1254,6 +1254,18 @@ function setDefaultPosDevice(deviceId) {
 // تنظیم event listeners
 // تابع تنظیم event listeners - به‌روزرسانی شده
 function setupEventListeners() {
+        // در تابع setupEventListeners، این قسمت را اصلاح کنید:
+    $(document).on('click', '.search-result-item', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const productId = $(this).data('product-id');
+        console.log('کالای انتخاب شده - ID:', productId);
+        
+        addToInvoice(productId);
+        $('#product-search').val('');
+        $('#search-results').hide();
+    });
     // جستجوی محصول
     $('#product-search').on('input', function() {
         clearTimeout(searchTimeout);
@@ -1315,18 +1327,6 @@ function setupEventListeners() {
         if (discount >= 0) {
             updateItemRowTotal(productId);
         }
-    });
-
-    // تغییر تخفیف کل
-    $('#total-discount').on('change', function() {
-        const discount = parseInt($(this).val()) || 0;
-        if (discount < 0) {
-            $(this).val(0);
-            showToast('تخفیف نمی‌تواند منفی باشد', 'warning');
-            return;
-        }
-        saveDiscount(discount);
-        calculateInvoiceTotal();
     });
 
     // تغییرات real-time در تخفیف کل
@@ -1488,6 +1488,7 @@ function processBarcodeScan(barcode) {
 
 // تابع برای افزودن به فاکتور
 function addToInvoice(productId, quantity = 1, isAutoAdd = false) {
+    console.log('📦 در حال افزودن کالا به فاکتور - ProductID:', productId, 'تعداد:', quantity);
     $.ajax({
         url: "{% url 'invoice_app:invoice_add_item' %}",
         method: 'POST',
@@ -1598,11 +1599,6 @@ function displaySearchResults(results) {
                 ${product.barcode ? `<div class="small text-muted">بارکد: ${product.barcode}</div>` : ''}
             </div>
         `);
-        
-        item.click(function() {
-            addToInvoice(product.id, 1);
-            container.hide();
-        });
         
         container.append(item);
     });
@@ -2513,8 +2509,7 @@ $(document).ready(function() {
     calculateInvoiceTotal();
 });
 
-// بقیه توابع (calculateInvoiceTotal, updateItemRowTotal, etc.) بدون تغییر می‌مانند
-// [کدهای قبلی شما که تغییر نکرده‌اند اینجا قرار می‌گیرند]
+
     </script>
 </body>
 </html>
