@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ثبت موفق</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Vazirmatn', sans-serif; 
+            text-align: center; 
+            padding: 50px; 
+            background: #f5f5f5; 
+        }
+        .success-box { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+        }
+    </style>
+</head>
+<body>
+    <div class="success-box">
+        <h2 style="color: green;">✅ فاکتور با موفقیت ثبت شد</h2>
+        <p>شماره فاکتور: <strong>{{ invoice_id }}</strong></p>
+        <p>{{ message }}</p>
+        <a href="{% url 'invoice_app:create_invoice' %}" 
+           style="background: green; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            ایجاد فاکتور جدید
+        </a>
+    </div>
+</body>
+</html>
