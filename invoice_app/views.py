@@ -1,5 +1,3 @@
-
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -13,6 +11,7 @@ from datetime import datetime
 from account_app.models import InventoryCount, Branch, ProductPricing
 from .models import Invoicefrosh, InvoiceItemfrosh, POSDevice, CheckPayment, CreditPayment
 from .forms import BranchSelectionForm, POSDeviceForm, CheckPaymentForm, CreditPaymentForm
+
 @login_required
 @csrf_exempt
 def add_item_to_invoice(request):
@@ -104,6 +103,7 @@ def add_item_to_invoice(request):
         'status': 'error',
         'message': 'درخواست نامعتبر'
     })
+
 @login_required
 def create_invoice(request):
     if 'branch_id' not in request.session:
@@ -132,7 +132,6 @@ def create_invoice(request):
         'customer_name': request.session.get('customer_name', ''),
         'customer_phone': request.session.get('customer_phone', ''),
     })
-
 
 @login_required
 @csrf_exempt
@@ -174,9 +173,6 @@ def search_product(request):
 
     return JsonResponse({'error': 'درخواست نامعتبر'}, status=400)
 
-
-
-
 @login_required
 @csrf_exempt
 def remove_item_from_invoice(request):
@@ -203,7 +199,6 @@ def remove_item_from_invoice(request):
             return JsonResponse({'status': 'error', 'message': f'خطا: {str(e)}'})
 
     return JsonResponse({'status': 'error'})
-
 
 @login_required
 @csrf_exempt
@@ -261,7 +256,6 @@ def update_item_quantity(request):
 
     return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
 
-
 @login_required
 @csrf_exempt
 def update_item_discount(request):
@@ -314,7 +308,6 @@ def update_item_discount(request):
 
     return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
 
-
 @login_required
 @csrf_exempt
 def save_customer_info(request):
@@ -328,7 +321,6 @@ def save_customer_info(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': f'خطا: {str(e)}'})
     return JsonResponse({'status': 'error'})
-
 
 @login_required
 @csrf_exempt
@@ -361,7 +353,6 @@ def save_payment_method(request):
             return JsonResponse({'status': 'error', 'message': f'خطا: {str(e)}'})
     return JsonResponse({'status': 'error'})
 
-
 @login_required
 @csrf_exempt
 def save_pos_device(request):
@@ -381,7 +372,6 @@ def save_pos_device(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': f'خطا: {str(e)}'})
     return JsonResponse({'status': 'error'})
-
 
 @login_required
 @csrf_exempt
@@ -414,7 +404,6 @@ def save_check_payment(request):
             return JsonResponse({'status': 'error', 'message': f'خطا: {str(e)}'})
     return JsonResponse({'status': 'error'})
 
-
 @login_required
 @csrf_exempt
 def save_credit_payment(request):
@@ -443,7 +432,6 @@ def save_credit_payment(request):
             return JsonResponse({'status': 'error', 'message': f'خطا: {str(e)}'})
     return JsonResponse({'status': 'error'})
 
-
 @login_required
 @csrf_exempt
 def save_discount(request):
@@ -469,7 +457,6 @@ def save_discount(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': f'خطا: {str(e)}'})
     return JsonResponse({'status': 'error'})
-
 
 @login_required
 @csrf_exempt
@@ -545,7 +532,6 @@ def manage_pos_devices(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
 
     return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
-
 
 @login_required
 @csrf_exempt
@@ -797,7 +783,6 @@ def finalize_invoice(request):
         'message': 'درخواست نامعتبر. لطفا از فرم صحیح استفاده کنید.'
     })
 
-
 @login_required
 def invoice_success(request, invoice_id):
     """
@@ -822,6 +807,7 @@ def invoice_success(request, invoice_id):
             'invoice_id': invoice_id,
             'message': 'فاکتور با موفقیت ثبت شد'
         })
+
 @login_required
 def invoice_print(request, invoice_id):
     invoice = get_object_or_404(Invoicefrosh, id=invoice_id)
@@ -851,20 +837,6 @@ def invoice_print(request, invoice_id):
         'jalali_time': jalali_time,
         'print_date': jdatetime.now().strftime('%Y/%m/%d %H:%M')
     })
-
-
-@login_required
-def cancel_invoice(request):
-    session_keys = ['branch_id', 'branch_name', 'invoice_items', 'customer_name',
-                    'customer_phone', 'payment_method', 'discount', 'pos_device_id',
-                    'check_payment_data', 'credit_payment_data']
-
-    for key in session_keys:
-        if key in request.session:
-            del request.session[key]
-
-    return redirect('invoice_app:create_invoice')
-
 
 @login_required
 def get_invoice_summary(request):
@@ -911,17 +883,19 @@ def get_invoice_summary(request):
         'success': False
     })
 
+# فقط این یک تابع cancel_invoice باید باقی بماند - تابع تکراری را حذف کنید
 @login_required
 def cancel_invoice(request):
     """
     ویوی لغو فاکتور و پاکسازی کامل session
+    سپس ریدایرکت به صفحه ایجاد فاکتور برای نمایش فرم انتخاب شعبه
     """
     print("🔴 درخواست لغو فاکتور دریافت شد")
 
     session_keys_to_remove = [
         'invoice_items', 'customer_name', 'customer_phone',
         'payment_method', 'discount', 'pos_device_id',
-        'check_payment_data', 'credit_payment_data'
+        'check_payment_data', 'credit_payment_data', 'branch_id', 'branch_name'
     ]
 
     removed_keys = []
@@ -934,8 +908,5 @@ def cancel_invoice(request):
 
     print(f"✅ session پاکسازی شد. کلیدهای حذف شده: {removed_keys}")
 
-    return JsonResponse({
-        'status': 'success',
-        'message': 'فاکتور لغو شد و session پاکسازی گردید',
-        'removed_keys': removed_keys
-    })
+    # ریدایرکت به صفحه ایجاد فاکتور که فرم انتخاب شعبه را نشان می‌دهد
+    return redirect('invoice_app:create_invoice')
