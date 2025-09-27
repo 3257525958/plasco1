@@ -752,23 +752,26 @@
 
         <!-- دکمه‌های اقدام -->
 <!-- دکمه‌های اقدام - اصلاح شده -->
+
+
+<!-- اصلاح بخش دکمه‌های اقدام -->
 <div class="section-card">
     <div class="action-buttons">
-        <button type="button" class="btn btn-danger" onclick="cancelInvoice()">
+        <button type="button" class="btn btn-danger" id="cancel-invoice-btn">
             <i class="fas fa-times"></i> انصراف و لغو فاکتور
         </button>
         <div class="d-flex" style="gap: 10px;">
-            <!-- اضافه کردن ID به دکمه ثبت -->
-            <button type="button" id="save-invoice-btn" class="btn btn-secondary">
+            <button type="button" class="btn btn-secondary" id="save-invoice-btn">
                 <i class="fas fa-save"></i> ثبت فاکتور
             </button>
-{#            <!-- اضافه کردن ID به دکمه ثبت و پرینت -->#}
-{#            <button type="button" id="save-print-invoice-btn" class="btn btn-success">#}
+{#            <button type="button" class="btn btn-success" id="print-invoice-btn">#}
 {#                <i class="fas fa-print"></i> ثبت و چاپ فاکتور#}
 {#            </button>#}
         </div>
     </div>
 </div>
+
+
         <!-- سیستم پیام‌ها -->
         <div id="toast-container" class="toast-container"></div>
         {% endif %}
@@ -2000,12 +2003,44 @@ function setupEventListeners() {
 
     $('#addDeviceButton').on('click', addPosDevice);
 }
+// =============================================
+// Event Listeners ساده و مستقیم
+// =============================================
+
+function setupButtonListeners() {
+    console.log("🟢 تنظیم event listeners برای دکمه‌ها");
+    
+    // دکمه ثبت فاکتور
+    $('#save-invoice-btn').off('click').on('click', function(e) {
+        e.preventDefault();
+        console.log("🟢 دکمه 'ثبت فاکتور' کلیک شد");
+        finalizeInvoice('save_only');
+    });
+    
+    // دکمه ثبت و چاپ فاکتور
+    $('#print-invoice-btn').off('click').on('click', function(e) {
+        e.preventDefault();
+        console.log("🟢 دکمه 'ثبت و چاپ فاکتور' کلیک شد");
+        finalizeInvoice('print_and_save');
+    });
+    
+    // دکمه انصراف
+    $('#cancel-invoice-btn').off('click').on('click', function(e) {
+        e.preventDefault();
+        console.log("🟢 دکمه 'انصراف' کلیک شد");
+        cancelInvoice();
+    });
+}
 
 // =============================================
 // مقداردهی اولیه صفحه
 // =============================================
+
 $(document).ready(function() {
     console.log("🚀 صفحه کاملاً بارگذاری شد");
+    
+    // تنظیم event listeners برای دکمه‌ها
+    setupButtonListeners();
     
     // تنظیم روش پرداخت پیش‌فرض
     if (!currentPaymentMethod || currentPaymentMethod === 'None') {
@@ -2015,27 +2050,34 @@ $(document).ready(function() {
         savePaymentMethod('pos');
     }
     
-    // مقداردهی اولیه
+    // بقیه تنظیمات...
     initializeDatePickers();
     setupBarcodeScanner();
     setupEventListeners();
     
-    // فوکوس روی فیلد جستجو
-    setTimeout(() => {
+    setTimeout(function() {
         $('#product-search').focus();
     }, 500);
     
-    // محاسبه اولیه جمع فاکتور
     calculateInvoiceTotal();
     
-    console.log("💰 روش پرداخت فعلی:", currentPaymentMethod);
+    // تست: چک کردن وجود دکمه‌ها
+    console.log("دکمه ثبت فاکتور وجود دارد:", $('#save-invoice-btn').length > 0);
+    console.log("دکمه انصراف وجود دارد:", $('#cancel-invoice-btn').length > 0);
 });
 
 // =============================================
 // قرار دادن توابع در scope جهانی
 // =============================================
-window.cancelInvoice = cancelInvoice;
 window.finalizeInvoice = finalizeInvoice;
+window.cancelInvoice = cancelInvoice;
+// =============================================
+
+// =============================================
+// قرار دادن توابع در scope جهانی
+// =============================================
+{#window.cancelInvoice = cancelInvoice;#}
+{#window.finalizeInvoice = finalizeInvoice;#}
 window.removeItem = removeItem;
 window.openDatePicker = openDatePicker;
 window.openCheckDatePicker = openCheckDatePicker;

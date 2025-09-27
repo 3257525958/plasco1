@@ -536,6 +536,7 @@ def manage_pos_devices(request):
 @login_required
 @csrf_exempt
 def finalize_invoice(request):
+    print(111111111)
     """
     ویوی نهایی کردن و ثبت فاکتور فروش
     این ویو تمام مراحل ثبت فاکتور را انجام می‌دهد
