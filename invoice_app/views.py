@@ -536,7 +536,6 @@ def manage_pos_devices(request):
 @login_required
 @csrf_exempt
 def finalize_invoice(request):
-    print(111111111)
     """
     ویوی نهایی کردن و ثبت فاکتور فروش
     این ویو تمام مراحل ثبت فاکتور را انجام می‌دهد
@@ -575,8 +574,10 @@ def finalize_invoice(request):
 
             # بررسی موجودی هر آیتم قبل از ثبت نهایی
             stock_errors = []
+            print(2222222222222222222222222222)
             for index, item_data in enumerate(items, 1):
                 try:
+                    print(33333333333)
                     product = InventoryCount.objects.get(id=item_data['product_id'], branch=branch)
                     if product.quantity < item_data['quantity']:
                         stock_errors.append(
@@ -587,6 +588,7 @@ def finalize_invoice(request):
 
             # اگر خطای موجودی وجود دارد، به کاربر گزارش دهیم
             if stock_errors:
+                print(444444444)
                 error_message = "موجودی برخی کالاها کافی نیست:\n" + "\n".join(stock_errors)
                 return JsonResponse({
                     'status': 'error',
@@ -595,6 +597,7 @@ def finalize_invoice(request):
                 })
 
             # ایجاد فاکتور اصلی
+            print(55555555)
             invoice = Invoicefrosh.objects.create(
                 branch=branch,
                 created_by=request.user,
@@ -612,6 +615,7 @@ def finalize_invoice(request):
 
             # ثبت دستگاه POS اگر روش پرداخت POS باشد
             if payment_method == 'pos':
+                print(6666666666666)
                 pos_device_id = request.session.get('pos_device_id')
                 if pos_device_id:
                     try:
@@ -636,7 +640,9 @@ def finalize_invoice(request):
 
             # ایجاد آیتم‌های فاکتور و به روزرسانی موجودی
             for item_index, item_data in enumerate(items, 1):
+                print(777)
                 try:
+                    print(88888888888888)
                     product = InventoryCount.objects.get(id=item_data['product_id'], branch=branch)
 
                     # محاسبه قیمت‌های دقیق
@@ -645,16 +651,60 @@ def finalize_invoice(request):
                     item_final_price = item_total - item_discount
 
                     # ایجاد آیتم فاکتور
-                    InvoiceItemfrosh.objects.create(
-                        invoice=invoice,
-                        product=product,
-                        quantity=item_data['quantity'],
-                        price=item_data['price'],
-                        total_price=item_total,
-                        discount=item_discount,
-                        standard_price=product.standard_price or item_data['price']
-                    )
+                    print(999999999999)
+                    try:
+                        # ایمن‌سازی بیشتر برای دریافت standard_price
+                        standard_price_value = item_data['price']  # مقدار پیش‌فرض
 
+                        # جستجوی ProductPricing با مدیریت خطاهای بهتر
+                        try:
+                            product_pricing = ProductPricing.objects.filter(
+                                product_name=product.product_name
+                            ).first()
+
+                            if product_pricing and product_pricing.standard_price is not None:
+                                print(product_pricing.standard_price)
+                                print(3333333333333333333333333333333333333333333333333333)
+                                standard_price_value = float(product_pricing.standard_price)
+                                print(f"✅ قیمت معیار از ProductPricing گرفته شد: {standard_price_value}")
+                            else:
+                                print(f"⚠️ قیمت معیار یافت نشد، از قیمت فروش استفاده می‌شود: {standard_price_value}")
+
+                        except Exception as pricing_error:
+                            print(f"⚠️ خطا در جستجوی ProductPricing: {str(pricing_error)}")
+
+                        # ایجاد آیتم فاکتور
+                        invoice_item = InvoiceItemfrosh(
+                            invoice=invoice,
+                            product=product,
+                            quantity=item_data['quantity'],
+                            price=item_data['price'],
+                            total_price=item_total,
+                            discount=item_discount,
+                            standard_price=standard_price_value
+                        )
+                        invoice_item.save()
+
+                        print(f"✅ آیتم فاکتور با موفقیت ایجاد شد - Standard Price: {standard_price_value}")
+
+                    except Exception as e:
+                        print(f"❌ خطا در ایجاد آیتم فاکتور: {str(e)}")
+                        # در صورت خطا، با مقادیر پایه ایجاد کن
+                        try:
+                            InvoiceItemfrosh.objects.create(
+                                invoice=invoice,
+                                product=product,
+                                quantity=item_data['quantity'],
+                                price=item_data['price'],
+                                total_price=item_total,
+                                discount=item_discount,
+                                standard_price=item_data['price']  # حداقل مقدار
+                            )
+                            print("✅ آیتم فاکتور با مقادیر پایه ایجاد شد")
+                        except Exception as fallback_error:
+                            print(f"❌ خطا حتی در ایجاد fallback: {str(fallback_error)}")
+
+                    print(00000000000)
                     # به روزرسانی موجودی انبار (کسر کردن)
                     old_quantity = product.quantity
                     product.quantity -= item_data['quantity']

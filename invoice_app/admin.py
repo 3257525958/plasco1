@@ -1,3 +1,5 @@
+
+
 from django.contrib import admin
 from .models import POSDevice, CheckPayment, CreditPayment, Invoicefrosh, InvoiceItemfrosh
 
@@ -45,3 +47,4 @@ class InvoicefroshAdmin(admin.ModelAdmin):
         if not obj.created_by_id:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
+

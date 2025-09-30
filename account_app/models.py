@@ -59,6 +59,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 import hashlib
 import jdatetime
 import math
+from django.db import models, connection
+from decimal import Decimal
 
 class InventoryCount(models.Model):  # حذف class تکراری
     product_name = models.CharField(max_length=100, verbose_name="نام کالا")
@@ -75,10 +77,6 @@ class InventoryCount(models.Model):  # حذف class تکراری
         decimal_places=2,
         verbose_name="درصد سود",
         default=Decimal('30.00'),
-        validators=[
-            MinValueValidator(Decimal('0.00')),
-            MaxValueValidator(Decimal('100.00'))
-        ]
     )
 
     class Meta:
@@ -237,6 +235,16 @@ from django.db import models
 from decimal import Decimal
 import math
 
+from django.db import models
+from decimal import Decimal
+
+from django.db import models
+from decimal import Decimal
+from django.db.models import F
+
+from django.db import models, transaction
+from django.db.models import F
+from decimal import Decimal
 
 
 class ProductPricing(models.Model):
@@ -268,15 +276,35 @@ class ProductPricing(models.Model):
         verbose_name_plural = "قیمت‌گذاری محصولات"
 
     def save(self, *args, **kwargs):
-        # قیمت معیار را مستقیماً برابر بالاترین قیمت خرید قرار دهید
-        if self.highest_purchase_price is not None:
-            self.standard_price = self.highest_purchase_price
+        # ابتدا object رو ذخیره می‌کنیم
         super().save(*args, **kwargs)
+
+        # سپس مستقیماً در دیتابیس آپدیت می‌کنیم
+        self.force_update_standard_price()
+
+    def force_update_standard_price(self):
+        """آپدیت قطعی قیمت معیار با استفاده از transaction"""
+        try:
+            with transaction.atomic():
+                # محاسبه قیمت جدید
+                if self.highest_purchase_price is not None and self.adjustment_percentage is not None:
+                    adjustment_amount = self.highest_purchase_price * (self.adjustment_percentage / Decimal('100'))
+                    new_price = self.highest_purchase_price + adjustment_amount
+
+                    # آپدیت مستقیم در دیتابیس
+                    ProductPricing.objects.filter(pk=self.pk).update(
+                        standard_price=new_price
+                    )
+
+                    # رفرش object از دیتابیس
+                    self.refresh_from_db()
+                    print(f"✅ قیمت معیار با موفقیت در دیتابیس ذخیره شد: {self.standard_price}")
+
+        except Exception as e:
+            print(f"❌ خطا در ذخیره‌سازی: {e}")
 
     def __str__(self):
         return f"{self.product_name} - {self.standard_price}"
-
-
 
 # ------------------------------------------------------------------------------
 from django.db import models
