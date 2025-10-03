@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'dashbord_app.apps.DashbordAppConfig',
     'cantact_app.apps.CantactAppConfig',
     'invoice_app.apps.InvoiceAppConfig',
+    'it_app.apps.ItAppConfig',
 ]
 JALALI_DATE_DEFAULTS = {
    'Strftime': {

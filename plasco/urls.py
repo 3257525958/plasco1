@@ -28,6 +28,7 @@ urlpatterns = [
     path('dashbord/', include('dashbord_app.urls')),
     path('account/', include('account_app.urls')),
     path('invoice/', include('invoice_app.urls')),
+    path('it/', include('it_app.urls')),
 
 ]
 USE_X_FORWARDED_HOST = True

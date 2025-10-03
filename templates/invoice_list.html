@@ -1,0 +1,144 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لیست فاکتورها</title>
+    <!-- Link to Bootstrap CSS for easy styling (optional but recommended) -->
+    <link href="https://cdn.jsdelivr.net/right-to-left/bootstrap/3.3.7/css/bootstrap-rtl.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            font-family: 'Tahoma', sans-serif;
+        }
+        .checkbox-cell {
+            width: 50px;
+        }
+        .actions {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>لیست فاکتورها</h1>
+
+        <form method="post" action="{% url 'reset_remaining_quantity' %}" id="invoiceForm">
+            {% csrf_token %}
+
+            <!-- Selection Actions -->
+            <div class="actions">
+                <button type="button" class="btn btn-default btn-sm" id="selectAll">انتخاب همه</button>
+                <button type="button" class="btn btn-default btn-sm" id="deselectAll">لغو انتخاب همه</button>
+            </div>
+
+            <!-- Invoices Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell">انتخاب</th>
+                            <th>شماره سریال</th>
+                            <th>فروشنده</th>
+                            <th>تاریخ</th>
+                            <th>تعداد آیتم‌ها</th>
+                            <th>تعداد باقیمانده</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invoice in invoices %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="selected_invoices" value="{{ invoice.id }}" class="invoice-checkbox">
+                            </td>
+                            <td>{{ invoice.serial_number }}</td>
+                            <td>{{ invoice.seller }}</td>
+                            <td>{{ invoice.jalali_date }}</td>
+                            <td>{{ invoice.items.count }}</td>
+                            <td>
+                                {% for item in invoice.items.all %}
+                                    {{ item.remaining_quantity }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">هیچ فاکتوری یافت نشد.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Main Form Buttons -->
+            <div class="actions">
+                <button type="button" class="btn btn-info" onclick="location.href='/'">بازگشت به صفحه اصلی</button>
+                <button type="button" class="btn btn-warning" id="resetButton">ریست کردن تعداد باقیمانده</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">تایید عملیات</h4>
+                </div>
+                <div class="modal-body">
+                    <p>با این کار، <strong>تعداد باقیمانده</strong> برای آیتم‌های فاکتور(های) انتخاب شده، با <strong>تعداد اولیه</strong> برابر می‌شود. آیا مطمئن هستید؟</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">لغو</button>
+                    <button type="button" class="btn btn-warning" id="confirmReset">تایید</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include jQuery and Bootstrap JS for the modal -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <script>
+        // Select All / Deselect All functionality
+        document.getElementById('selectAll').addEventListener('click', function() {
+            var checkboxes = document.getElementsByClassName('invoice-checkbox');
+            for (var checkbox of checkboxes) {
+                checkbox.checked = true;
+            }
+        });
+
+        document.getElementById('deselectAll').addEventListener('click', function() {
+            var checkboxes = document.getElementsByClassName('invoice-checkbox');
+            for (var checkbox of checkboxes) {
+                checkbox.checked = false;
+            }
+        });
+
+        // Reset Button handling with confirmation modal
+        document.getElementById('resetButton').addEventListener('click', function() {
+            // Check if at least one invoice is selected
+            var selectedInvoices = document.querySelectorAll('input[name="selected_invoices"]:checked');
+            if (selectedInvoices.length === 0) {
+                alert('لطفاً حداقل یک فاکتور را انتخاب کنید.');
+                return;
+            }
+
+            // Show the confirmation modal
+            $('#confirmationModal').modal('show');
+        });
+
+        // Confirm Reset button in the modal
+        document.getElementById('confirmReset').addEventListener('click', function() {
+            // Submit the form after confirmation
+            document.getElementById('invoiceForm').submit();
+            // Hide the modal
+            $('#confirmationModal').modal('hide');
+        });
+    </script>
+</body>
+</html>
