@@ -1,64 +1,12 @@
 
 
-from django.db import models
 from django.contrib.auth import get_user_model
-from django.utils import timezone
-import jdatetime
 from cantact_app.models import Branch
 
 User = get_user_model()
-
-import jdatetime
-import uuid
-from django.db import models
-from django.utils.text import slugify
-
-
-# class InventoryCount(models.Model):
-#     product_name = models.CharField(max_length=100, verbose_name="نام کالا")
-#     is_new = models.BooleanField(default=True, verbose_name="کالای جدید")
-#     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="شعبه")
-#     quantity = models.PositiveIntegerField(verbose_name="تعداد")
-#     count_date = models.CharField(max_length=10, verbose_name="تاریخ شمارش", default="")
-#     counter = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="شمارنده")
-#     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
-#     barcode_data = models.CharField(max_length=100, blank=True, null=True, verbose_name="داده بارکد")
-#     selling_price = models.PositiveIntegerField(verbose_name="قیمت فروش", blank=True, null=True)
-#     profit_percentage = models.DecimalField(
-#         max_digits=5,
-#         decimal_places=2,
-#         verbose_name="درصد سود",
-#         default=30.00
-#     )
-#
-#     class Meta:
-#         verbose_name = "شمارش انبار"
-#         verbose_name_plural = "شمارش های انبار"
-#         ordering = ['-created_at']
-#
-#     def save(self, *args, **kwargs):
-#         # تنظیم تاریخ امروز به صورت خودکار
-#         if not self.count_date:
-#             jalali_date = jdatetime.datetime.now().strftime('%Y/%m/%d')
-#             self.count_date = jalali_date
-#
-#         # تولید خودکار بارکد اگر وجود نداشته باشد
-#         if not self.barcode_data:
-#             import hashlib
-#             hash_object = hashlib.md5(self.product_name.encode())
-#             hex_dig = hash_object.hexdigest()
-#             self.barcode_data = hex_dig[:12]
-#
-#         super().save(*args, **kwargs)
-#
-#     def __str__(self):
-#         return f"{self.product_name} - {self.branch.name} - {self.quantity}"
-
 from decimal import Decimal, InvalidOperation
-from django.core.validators import MinValueValidator, MaxValueValidator
 import hashlib
 import jdatetime
-import math
 from django.db import models, connection
 from decimal import Decimal
 
@@ -88,12 +36,12 @@ class InventoryCount(models.Model):  # حذف class تکراری
         """
         اعتبارسنجی خودکار قبل از ذخیره‌سازی
         """
-        try:
-            profit_value = Decimal(str(self.profit_percentage))
-            if profit_value < Decimal('0.00') or profit_value > Decimal('100.00'):
-                self.profit_percentage = Decimal('30.00')
-        except (TypeError, ValueError, InvalidOperation):
-            self.profit_percentage = Decimal('30.00')
+        # try:
+        #     profit_value = Decimal(str(self.profit_percentage))
+        #     if profit_value < Decimal('0.00') or profit_value > Decimal('10000.00'):
+        #         self.profit_percentage = Decimal('30.00')
+        # except (TypeError, ValueError, InvalidOperation):
+        #     self.profit_percentage = Decimal('30.00')
 
     def save(self, *args, **kwargs):
         # اعتبارسنجی قبل از ذخیره

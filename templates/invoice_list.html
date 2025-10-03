@@ -5,139 +5,515 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لیست فاکتورها</title>
-    <!-- Link to Bootstrap CSS for easy styling (optional but recommended) -->
-    <link href="https://cdn.jsdelivr.net/right-to-left/bootstrap/3.3.7/css/bootstrap-rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
     <style>
-        body {
-            padding: 20px;
-            font-family: 'Tahoma', sans-serif;
+        :root {
+            --primary-color: #2E7D32;
+            --secondary-color: #388E3C;
+            --accent-color: #1B5E20;
+            --success-color: #4CAF50;
+            --warning-color: #FF9800;
+            --danger-color: #F44336;
+            --info-color: #2196F3;
+            --text-color: #2c3e50;
+            --light-bg: #f9f9f9;
+            --border-color: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --input-bg: #f1f8e9;
+            --gradient-primary: linear-gradient(135deg, #2E7D32, #4CAF50);
+            --gradient-success: linear-gradient(135deg, #4CAF50, #66BB6A);
+            --gradient-warning: linear-gradient(135deg, #FF9800, #FFB74D);
+            --gradient-danger: linear-gradient(135deg, #F44336, #EF5350);
+            --gradient-info: linear-gradient(135deg, #2196F3, #42A5F5);
         }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+            min-height: 100vh;
+            padding: 10px;
+            color: var(--text-color);
+            direction: rtl;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .branch-info {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .section-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e8f5e9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--gradient-success);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-warning {
+            background: var(--gradient-warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #FFB74D, #FFCC80);
+            transform: translateY(-2px);
+        }
+
+        .btn-info {
+            background: var(--gradient-info);
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: linear-gradient(135deg, #42A5F5, #64B5F6);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn-secondary {
+            background: #78909c;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #546e7a;
+            transform: translateY(-2px);
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .invoice-table th {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .invoice-table td {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .invoice-table tr:hover td {
+            background-color: #f8f9fa;
+        }
+
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-buttons .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+
         .checkbox-cell {
             width: 50px;
         }
-        .actions {
-            margin-top: 20px;
-            margin-bottom: 20px;
+
+        .selection-actions {
+            margin-bottom: 15px;
+        }
+
+        .selection-actions .btn {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 20px;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .bg-success {
+            background: var(--success-color) !important;
+        }
+
+        .bg-warning {
+            background: var(--warning-color) !important;
+        }
+
+        .bg-danger {
+            background: var(--danger-color) !important;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.85rem;
+            }
+            
+            .invoice-table {
+                font-size: 0.8rem;
+            }
+            
+            .invoice-table th,
+            .invoice-table td {
+                padding: 8px 5px;
+            }
+            
+            .section-card {
+                padding: 12px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .action-buttons .btn {
+                min-width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>لیست فاکتورها</h1>
+        <div class="header">
+            <h1><i class="fas fa-list"></i> لیست فاکتورها</h1>
+        </div>
 
-        <form method="post" action="{% url 'reset_remaining_quantity' %}" id="invoiceForm">
-            {% csrf_token %}
+        <div class="branch-info">
+            <i class="fas fa-store"></i> سیستم مدیریت فاکتورها | 
+            <i class="fas fa-user"></i> کاربر: ادمین
+        </div>
 
-            <!-- Selection Actions -->
-            <div class="actions">
-                <button type="button" class="btn btn-default btn-sm" id="selectAll">انتخاب همه</button>
-                <button type="button" class="btn btn-default btn-sm" id="deselectAll">لغو انتخاب همه</button>
-            </div>
+        <div class="section-card">
+            <h3 class="section-title"><i class="fas fa-receipt"></i> مدیریت فاکتورها</h3>
+            
+            <!-- فرم اصلی برای تمام عملیات -->
+            <form method="post" id="invoiceForm">
+                {% csrf_token %}
+                <input type="hidden" name="action_type" id="actionType" value="">
+                
+                <!-- دکمه‌های انتخاب -->
+                <div class="selection-actions">
+                    <button type="button" class="btn btn-primary btn-sm" id="selectAll">
+                        <i class="fas fa-check-square"></i> انتخاب همه
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="deselectAll">
+                        <i class="fas fa-times-circle"></i> لغو انتخاب همه
+                    </button>
+                </div>
 
-            <!-- Invoices Table -->
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th class="checkbox-cell">انتخاب</th>
-                            <th>شماره سریال</th>
-                            <th>فروشنده</th>
-                            <th>تاریخ</th>
-                            <th>تعداد آیتم‌ها</th>
-                            <th>تعداد باقیمانده</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for invoice in invoices %}
-                        <tr>
-                            <td>
-                                <input type="checkbox" name="selected_invoices" value="{{ invoice.id }}" class="invoice-checkbox">
-                            </td>
-                            <td>{{ invoice.serial_number }}</td>
-                            <td>{{ invoice.seller }}</td>
-                            <td>{{ invoice.jalali_date }}</td>
-                            <td>{{ invoice.items.count }}</td>
-                            <td>
-                                {% for item in invoice.items.all %}
-                                    {{ item.remaining_quantity }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center">هیچ فاکتوری یافت نشد.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                <!-- جدول فاکتورها -->
+                <div class="table-responsive">
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th class="checkbox-cell">
+                                    <input type="checkbox" id="selectAllCheckbox">
+                                </th>
+                                <th>شماره سریال</th>
+                                <th>فروشنده</th>
+                                <th>تاریخ فاکتور</th>
+                                <th>تاریخ صدور</th>
+                                <th>تعداد آیتم‌ها</th>
+                                <th>وضعیت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="selected_invoices" value="{{ invoice.id }}" class="invoice-checkbox">
+                                </td>
+                                <td>
+                                    <strong>{{ invoice.serial_number }}</strong>
+                                </td>
+                                <td>{{ invoice.seller }}</td>
+                                <td>{{ invoice.jalali_date }}</td>
+                                <td>{{ invoice.issue_date|date:"Y/m/d" }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ invoice.items.count }}</span>
+                                </td>
+                                <td>
+                                    {% with total_items=invoice.items.count %}
+                                        {% with remaining_items=invoice.items.all|length %}
+                                            {% if remaining_items == total_items %}
+                                                <span class="status-badge bg-success">کامل</span>
+                                            {% elif remaining_items == 0 %}
+                                                <span class="status-badge bg-danger">اتمام</span>
+                                            {% else %}
+                                                <span class="status-badge bg-warning">جزیی</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endwith %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted">هیچ فاکتوری یافت نشد.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-            <!-- Main Form Buttons -->
-            <div class="actions">
-                <button type="button" class="btn btn-info" onclick="location.href='/'">بازگشت به صفحه اصلی</button>
-                <button type="button" class="btn btn-warning" id="resetButton">ریست کردن تعداد باقیمانده</button>
-            </div>
-        </form>
+                <!-- دکمه‌های اقدام اصلی -->
+                <div class="action-buttons mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="location.href='/'">
+                        <i class="fas fa-arrow-right"></i> بازگشت به صفحه اصلی
+                    </button>
+                    <button type="button" class="btn btn-warning" id="resetButton">
+                        <i class="fas fa-redo"></i> ریست کردن تعداد باقیمانده
+                    </button>
+                    <button type="button" class="btn btn-info" id="distributeButton">
+                        <i class="fas fa-warehouse"></i> توزیع مساوی در انبار
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <!-- Confirmation Modal -->
-    <div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
+    <!-- مودال تایید ریست -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">تایید عملیات</h4>
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-warning"></i> تایید عملیات</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>با این کار، <strong>تعداد باقیمانده</strong> برای آیتم‌های فاکتور(های) انتخاب شده، با <strong>تعداد اولیه</strong> برابر می‌شود. آیا مطمئن هستید؟</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>توجه:</strong> با این کار، <strong>تعداد باقیمانده</strong> برای آیتم‌های فاکتور(های) انتخاب شده، با <strong>تعداد اولیه</strong> برابر می‌شود.
+                    </div>
+                    <p class="mb-0">آیا از انجام این عملیات اطمینان دارید؟</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">لغو</button>
-                    <button type="button" class="btn btn-warning" id="confirmReset">تایید</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> لغو
+                    </button>
+                    <button type="button" class="btn btn-warning" id="confirmReset">
+                        <i class="fas fa-check"></i> تایید و ادامه
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Include jQuery and Bootstrap JS for the modal -->
+    <!-- مودال تایید توزیع -->
+<div class="modal fade" id="distributionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-warehouse text-info"></i> تایید توزیع در انبار</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>ویژگی‌های توزیع هوشمند:</strong>
+                    <ul class="mt-2 mb-0">
+                        <li>کالاهای تکراری در فاکتورهای مختلف <strong>جمع‌زنی</strong> می‌شوند</li>
+                        <li>توزیع <strong>تقریباً مساوی</strong> بین تمام شعب انجام می‌شود</li>
+                        <li>اگر کالا از قبل در انبار وجود داشته باشد، <strong>تعداد اضافه</strong> می‌شود</li>
+                        <li><strong>تعداد باقیمانده تمام آیتم‌ها صفر خواهد شد</strong></li>
+                        <li>این عملیات غیرقابل بازگشت است</li>
+                    </ul>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>مثال:</strong> اگر "قاشق" در ۲ فاکتور با مجموع ۱۰ عدد باشد، بین شعب تقسیم می‌شود (نه ۲ بار ثبت می‌شود)
+                </div>
+                <p class="mb-0">آیا از انجام این عملیات اطمینان دارید؟</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> لغو
+                </button>
+                <button type="button" class="btn btn-info" id="confirmDistribution">
+                    <i class="fas fa-check"></i> تایید و توزیع هوشمند
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+    
+    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Select All / Deselect All functionality
-        document.getElementById('selectAll').addEventListener('click', function() {
-            var checkboxes = document.getElementsByClassName('invoice-checkbox');
-            for (var checkbox of checkboxes) {
-                checkbox.checked = true;
-            }
-        });
+        $(document).ready(function() {
+            // انتخاب همه
+            $('#selectAllCheckbox, #selectAll').on('click', function() {
+                $('.invoice-checkbox').prop('checked', true);
+            });
 
-        document.getElementById('deselectAll').addEventListener('click', function() {
-            var checkboxes = document.getElementsByClassName('invoice-checkbox');
-            for (var checkbox of checkboxes) {
-                checkbox.checked = false;
-            }
-        });
+            // لغو انتخاب همه
+            $('#deselectAll').on('click', function() {
+                $('.invoice-checkbox').prop('checked', false);
+            });
 
-        // Reset Button handling with confirmation modal
-        document.getElementById('resetButton').addEventListener('click', function() {
-            // Check if at least one invoice is selected
-            var selectedInvoices = document.querySelectorAll('input[name="selected_invoices"]:checked');
-            if (selectedInvoices.length === 0) {
-                alert('لطفاً حداقل یک فاکتور را انتخاب کنید.');
-                return;
-            }
+            // مدیریت دکمه ریست
+            $('#resetButton').on('click', function() {
+                var selectedInvoices = $('input[name="selected_invoices"]:checked');
+                
+                if (selectedInvoices.length === 0) {
+                    alert('لطفاً حداقل یک فاکتور را انتخاب کنید.');
+                    return;
+                }
 
-            // Show the confirmation modal
-            $('#confirmationModal').modal('show');
-        });
+                // تنظیم action برای ریست
+                $('#actionType').val('reset_quantity');
+                
+                // نمایش مودال تایید
+                var confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+                confirmationModal.show();
+            });
 
-        // Confirm Reset button in the modal
-        document.getElementById('confirmReset').addEventListener('click', function() {
-            // Submit the form after confirmation
-            document.getElementById('invoiceForm').submit();
-            // Hide the modal
-            $('#confirmationModal').modal('hide');
+            // مدیریت دکمه توزیع
+            $('#distributeButton').on('click', function() {
+                var selectedInvoices = $('input[name="selected_invoices"]:checked');
+                
+                if (selectedInvoices.length === 0) {
+                    alert('لطفاً حداقل یک فاکتور را انتخاب کنید.');
+                    return;
+                }
+
+                // تنظیم action برای توزیع
+                $('#actionType').val('distribute_inventory');
+                
+                // نمایش مودال تایید
+                var distributionModal = new bootstrap.Modal(document.getElementById('distributionModal'));
+                distributionModal.show();
+            });
+
+            // تایید ریست در مودال
+            $('#confirmReset').on('click', function() {
+                $('#invoiceForm').attr('action', "{% url 'reset_remaining_quantity' %}");
+                $('#invoiceForm').submit();
+                $('#confirmationModal').modal('hide');
+            });
+
+            // تایید توزیع در مودال
+            $('#confirmDistribution').on('click', function() {
+                $('#invoiceForm').attr('action', "{% url 'distribute_inventory' %}");
+                $('#invoiceForm').submit();
+                $('#distributionModal').modal('hide');
+            });
+
+            // هماهنگی چک‌باکس هدر با بقیه
+            $('#selectAllCheckbox').on('change', function() {
+                $('.invoice-checkbox').prop('checked', this.checked);
+            });
+
+            $('.invoice-checkbox').on('change', function() {
+                if (!$('.invoice-checkbox:checked').length) {
+                    $('#selectAllCheckbox').prop('checked', false);
+                } else if ($('.invoice-checkbox:checked').length === $('.invoice-checkbox').length) {
+                    $('#selectAllCheckbox').prop('checked', true);
+                }
+            });
         });
     </script>
 </body>
