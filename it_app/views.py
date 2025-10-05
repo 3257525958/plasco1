@@ -183,3 +183,64 @@ def distribute_inventory(request):
         messages.error(request, f'❌ خطا در توزیع کالاها: {str(e)}')
 
     return redirect('invoice_list')
+
+
+
+
+# ---------------------------------------------------------------پاک کردن قیمت ها------------------
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.views.decorators.http import require_http_methods
+from account_app.models import ProductPricing
+
+
+def is_superuser(user):
+    return user.is_superuser
+
+
+@login_required
+@user_passes_test(is_superuser)
+@require_http_methods(["GET", "POST"])
+def delete_all_product_pricing(request):
+    """
+    ویو برای حذف تمام رکوردهای ProductPricing با تأیید کاربر
+    """
+    print("🔍 1 - ویو فراخوانی شد")
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'confirm':
+            # شمارش رکوردها قبل از حذف
+            record_count = ProductPricing.objects.count()
+
+            if record_count == 0:
+                messages.warning(request, '❌ هیچ رکوردی برای حذف وجود ندارد.')
+                return redirect('delete_all_product_pricing')
+
+            try:
+                # حذف تمام رکوردها
+                deleted_count, deleted_details = ProductPricing.objects.all().delete()
+                messages.success(request, f'✅ با موفقیت {deleted_count} رکورد قیمت‌گذاری حذف شد.')
+
+            except Exception as e:
+                error_msg = f'❌ خطا در حذف رکوردها: {str(e)}'
+                messages.error(request, error_msg)
+
+            return redirect('delete_all_product_pricing')
+
+        elif action == 'cancel':
+            messages.info(request, '🔒 عملیات حذف لغو شد.')
+            return redirect('delete_all_product_pricing')
+        else:
+            messages.error(request, '❌ عمل نامعتبر!')
+            return redirect('delete_all_product_pricing')
+
+    # GET request - نمایش صفحه تأیید
+    record_count = ProductPricing.objects.count()
+    context = {
+        'record_count': record_count,
+        'page_title': 'حذف تمام اطلاعات قیمت‌گذاری',
+    }
+    return render(request, 'delete_all_product_pricing.html', context)

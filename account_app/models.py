@@ -58,23 +58,38 @@ class InventoryCount(models.Model):  # حذف class تکراری
             hex_dig = hash_object.hexdigest()
             self.barcode_data = hex_dig[:12]
 
-        # اگر قیمت فروش تنظیم نشده، آن را محاسبه کن
-        if not self.selling_price:
-            try:
-                # پیدا کردن قیمت معیار برای این محصول
-                pricing = ProductPricing.objects.get(product_name=self.product_name)
-                if pricing.standard_price is not None:
-                    try:
-                        profit_percentage = Decimal(str(self.profit_percentage))
-                    except (TypeError, ValueError, InvalidOperation):
-                        profit_percentage = Decimal('30.00')
+        print(f"✅ شروع محاسبه قیمت برای کالا: {self.product_name}")
 
-                    new_price = pricing.standard_price * (1 + profit_percentage / 100)
-                    self.selling_price = Decimal(math.ceil(new_price / 1000) * 1000)
-            except ProductPricing.DoesNotExist:
-                pass
+        # ایجاد ProductPricing اگر وجود ندارد
+        try:
+            pricing = ProductPricing.objects.get(product_name=self.product_name)
+            print(f"✅ ProductPricing یافت شد: {pricing}")
+        except ProductPricing.DoesNotExist:
+            # ایجاد ProductPricing با مقادیر پیشفرض
+            pricing = ProductPricing.objects.create(
+                product_name=self.product_name,
+                highest_purchase_price=Decimal('0'),
+                standard_price=Decimal('0')
+            )
+            print(f"✅ ProductPricing جدید ایجاد شد برای: {self.product_name}")
+
+        # محاسبه قیمت فروش
+        if pricing.standard_price is not None and pricing.standard_price > 0:
+            try:
+                profit_percentage = Decimal(str(self.profit_percentage))
+            except (TypeError, ValueError):
+                profit_percentage = Decimal('30.00')
+
+            print(f"✅ درصد سود استفاده شده: {profit_percentage}")
+
+            new_price = pricing.standard_price * (1 + profit_percentage / 100)
+            self.selling_price = Decimal(math.ceil(new_price / 1000) * 1000)
+            print(f"✅ قیمت فروش محاسبه و تنظیم شد: {self.selling_price}")
+        else:
+            print("⚠️ قیمت معیار صفر یا None است، قیمت فروش تنظیم نشد")
 
         super().save(*args, **kwargs)
+        print("✅ متد save با موفقیت اجرا شد.")
 
     def __str__(self):
         return f"{self.product_name} - {self.branch.name} - {self.quantity}"

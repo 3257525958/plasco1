@@ -275,22 +275,6 @@ arabic_reshaper.configuration_for_arabic_letters = {
 
 import sys
 import arabic_reshaper
-from bidi.algorithm import get_display
-from django.http import JsonResponse, HttpResponse
-from django.template.loader import render_to_string
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views import View
-from django.db import transaction
-import json
-import logging
-from decimal import Decimal
-from datetime import datetime
-
-# مدل‌های مورد نیاز را import کنید
-from .models import InventoryCount, Branch
-from dashbord_app.models import Invoice, InvoiceItem
-from account_app.models import FinancialDocument, FinancialDocumentItem  # فرض می‌کنیم این مدل‌ها وجود دارند
 
 
 
@@ -335,10 +319,6 @@ class StoreInvoiceItems(View):
     @transaction.atomic
     def post(self, request):
         try:
-            print("=" * 50)
-            print("StoreInvoiceItems view called")
-            print("=" * 50)
-
             # بررسی توکن یکبار مصرف
             data = json.loads(request.body)
             request_id = data.get('request_id')
@@ -346,28 +326,23 @@ class StoreInvoiceItems(View):
             if request_id:
                 cache_key = f"invoice_request_{request_id}"
                 if cache.get(cache_key):
-                    print("Request already processed")
                     return JsonResponse({'success': False, 'error': 'این درخواست قبلاً پردازش شده است'})
                 cache.set(cache_key, True, timeout=300)
 
             if not request.user.is_authenticated:
-                print("User not authenticated")
                 return JsonResponse({'success': False, 'error': 'لطفاً ابتدا وارد سیستم شوید'})
 
             items = data.get('items', [])
             invoice_id = data.get('invoice_id')
 
             if not invoice_id:
-                print("Invoice ID is required")
                 return JsonResponse({'success': False, 'error': 'شناسه فاکتور الزامی است'})
 
             # دریافت اطلاعات فاکتور
             try:
                 invoice = Invoice.objects.get(id=invoice_id)
                 invoice_items = InvoiceItem.objects.filter(invoice=invoice)
-                print(f"Invoice found: {invoice.serial_number}")
             except Invoice.DoesNotExist:
-                print("Invoice not found")
                 return JsonResponse({'success': False, 'error': 'فاکتور یافت نشد'})
 
             # ایجاد دیکشنری برای جمع‌بندی مقادیر ذخیره‌شده برای هر محصول
@@ -388,7 +363,6 @@ class StoreInvoiceItems(View):
                     new_remaining = invoice_item.remaining_quantity - stored_quantities[product_name]
                     invoice_item.remaining_quantity = max(0, new_remaining)
                     invoice_item.save()
-                    print(f"Updated remaining quantity for {product_name}: {invoice_item.remaining_quantity}")
 
             # ایجاد یک دیکشنری برای ذخیره مقادیر هر محصول در هر شعبه
             product_branch_totals = {}
@@ -426,14 +400,20 @@ class StoreInvoiceItems(View):
 
                     # به روزرسانی موجودی انبار
                     try:
+                        print(100000000000000000000000000000000222222222222)
                         inventory_count = InventoryCount.objects.get(
                             product_name=product_name,
                             branch=branch
                         )
+                        print(11)
                         inventory_count.quantity += quantity
+                        print(111)
                         inventory_count.save()
+                        print(1111)
                         print(f"Updated inventory for {product_name} in {branch.name}: +{quantity}")
                     except InventoryCount.DoesNotExist:
+                        print(888888)
+                        print(quantity)
                         inventory_count = InventoryCount.objects.create(
                             product_name=product_name,
                             branch=branch,
@@ -441,7 +421,6 @@ class StoreInvoiceItems(View):
                             counter=request.user,
                             is_new=True
                         )
-                        print(f"Created new inventory for {product_name} in {branch.name}: {quantity}")
 
                     # به روزرسانی ProductPricing برای این محصول (فقط یک بار برای هر محصول)
                     if product_name not in processed_products:
@@ -449,6 +428,7 @@ class StoreInvoiceItems(View):
                         processed_products.add(product_name)
 
                 else:
+                    print(3)
                     product_branch_totals[product_branch_key]['quantity'] += quantity
                     inventory_count = InventoryCount.objects.get(
                         product_name=product_name,
@@ -456,7 +436,6 @@ class StoreInvoiceItems(View):
                     )
                     inventory_count.quantity += quantity
                     inventory_count.save()
-                    print(f"Added more quantity to inventory for {product_name} in {branch.name}: +{quantity}")
 
             # تبدیل داده‌های موقت به فرمت مورد نیاز برای چاپ
             for key, data in product_branch_totals.items():
@@ -503,12 +482,9 @@ class StoreInvoiceItems(View):
         به روزرسانی ProductPricing برای یک محصول خاص
         """
         try:
-            print(f"در حال به روزرسانی ProductPricing برای: {product_name}")
-
             # یافتن بالاترین قیمت واحد برای این محصول از InvoiceItem
             highest_price_item = InvoiceItem.objects.filter(
-                product_name=product_name
-            ).order_by('-unit_price').first()
+                product_name=product_name).order_by('-unit_price').first()
 
             if highest_price_item:
                 print(f"بالاترین قیمت یافت شد: {highest_price_item.unit_price}")
@@ -517,14 +493,23 @@ class StoreInvoiceItems(View):
                 invoice = highest_price_item.invoice
 
                 # ایجاد یا به روزرسانی ProductPricing
-                product_pricing, created = ProductPricing.objects.update_or_create(
+                product_pricing, created = ProductPricing.objects.get_or_create(
                     product_name=product_name,
                     defaults={
                         'highest_purchase_price': highest_price_item.unit_price,
                         'invoice_date': invoice.jalali_date,
-                        'invoice_number': invoice.serial_number
+                        'invoice_number': invoice.serial_number,
+                        'standard_price': highest_price_item.unit_price  # این خط جدید
                     }
                 )
+
+                if not created:
+                    # اگر از قبل وجود داشت، به روزرسانی کن
+                    product_pricing.highest_purchase_price = highest_price_item.unit_price
+                    product_pricing.invoice_date = invoice.jalali_date
+                    product_pricing.invoice_number = invoice.serial_number
+                    product_pricing.standard_price = highest_price_item.unit_price
+                    product_pricing.save()
 
                 if created:
                     print(f"ایجاد شد ProductPricing جدید برای: {product_name}")
@@ -533,12 +518,19 @@ class StoreInvoiceItems(View):
 
             else:
                 print(f"هیچ فاکتوری برای محصول {product_name} یافت نشد")
+                # ایجاد ProductPricing با مقادیر پیشفرض اگر فاکتوری یافت نشد
+                ProductPricing.objects.get_or_create(
+                    product_name=product_name,
+                    defaults={
+                        'highest_purchase_price': Decimal('0'),
+                        'standard_price': Decimal('0')
+                    }
+                )
 
         except Exception as e:
             print(f"خطا در به روزرسانی ProductPricing برای {product_name}: {str(e)}")
             import traceback
             traceback.print_exc()
-
     def update_invoice_remaining_quantities(self, invoice, print_data):
         """به روزرسانی مقادیر باقیمانده فاکتور بر اساس موجودی اضافه شده"""
         for invoice_item in invoice.items.all():
