@@ -7,6 +7,8 @@ import math
 from dashbord_app.models import Invoice, InvoiceItem
 from cantact_app.models import Branch
 from account_app.models import InventoryCount
+from django.db.models import Max
+from decimal import Decimal
 
 
 def invoice_list(request):
@@ -116,6 +118,29 @@ def distribute_inventory(request):
             messages.warning(request, 'هیچ کالایی با تعداد باقیمانده معتبر برای توزیع یافت نشد.')
             return redirect('invoice_list')
 
+        # 🔴🔴 تغییر جدید: اطمینان از وجود ProductPricing برای هر محصول
+        for product in products_to_distribute:
+            product_name = product['name']
+
+            try:
+                # محاسبه highest_purchase_price از روی فاکتورها
+                highest_purchase = InvoiceItem.objects.filter(
+                    product_name=product_name,
+                    invoice_id__in=selected_invoice_ids
+                ).aggregate(max_price=Max('unit_price'))['max_price'] or Decimal('0')
+
+                # استفاده از max_selling_price که قبلاً محاسبه شده
+                standard_price = product['max_selling_price']
+
+                ProductPricing.objects.create(
+                    product_name=product_name,
+                    highest_purchase_price=highest_purchase,
+                    standard_price=standard_price
+                )
+
+            except ProductPricing.DoesNotExist:
+                # اگر وجود نداشت، ایجاد کن
+                pass
         # توزیع کالاها بر اساس remaining_quantity
         total_distributed = 0
         distribution_details = []
@@ -183,8 +208,6 @@ def distribute_inventory(request):
         messages.error(request, f'❌ خطا در توزیع کالاها: {str(e)}')
 
     return redirect('invoice_list')
-
-
 
 
 # ---------------------------------------------------------------پاک کردن قیمت ها------------------
