@@ -224,7 +224,6 @@ def is_superuser(user):
     return user.is_superuser
 
 
-@login_required
 @user_passes_test(is_superuser)
 @require_http_methods(["GET", "POST"])
 def delete_all_product_pricing(request):
