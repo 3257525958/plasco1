@@ -59,6 +59,7 @@ def reset_remaining_quantity(request):
 @require_POST
 @transaction.atomic
 def distribute_inventory(request):
+    print(11111111111111111111111111111111111111111111)
     """
     توزیع مساوی کالاهای فاکتورهای انتخاب شده بین شعب - فقط بر اساس remaining_quantity
     """
