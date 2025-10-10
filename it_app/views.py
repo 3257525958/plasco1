@@ -21,6 +21,7 @@ def invoice_list(request):
 
 @require_POST
 def reset_remaining_quantity(request):
+    print(22222222222222222222222222222222222222222222)
     """
     ریست کردن تعداد باقیمانده فاکتورهای انتخاب شده
     """
@@ -227,6 +228,7 @@ def is_superuser(user):
 @user_passes_test(is_superuser)
 @require_http_methods(["GET", "POST"])
 def delete_all_product_pricing(request):
+    print(44444444444444444444444444444444444)
     """
     ویو برای حذف تمام رکوردهای ProductPricing با تأیید کاربر
     """
@@ -280,6 +282,7 @@ from account_app.models import InventoryCount
 
 @require_POST
 def clear_inventory(request):
+    print(33333333333333333333333333333333333333)
     """
     پاک کردن تمام رکوردهای مدل InventoryCount پس از تأیید کاربر
     """
