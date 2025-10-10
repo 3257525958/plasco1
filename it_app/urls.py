@@ -8,4 +8,7 @@ urlpatterns = [
 
     path('delete-all-product-pricing/', views.delete_all_product_pricing, name='delete_all_product_pricing'),
 
+    # URL جدید برای پاک کردن انبار
+    path('clear-inventory/', views.clear_inventory, name='clear_inventory'),
+
 ]

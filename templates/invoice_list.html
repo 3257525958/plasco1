@@ -1,3 +1,4 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -369,13 +370,56 @@
                     <button type="button" class="btn btn-info" id="distributeButton">
                         <i class="fas fa-warehouse"></i> توزیع مساوی در انبار
                     </button>
-                </div>
+                    <!-- دکمه جدید برای پاک کردن دیتای قیمت‌ها -->
+                    <button type="button" class="btn btn-danger" id="deletePricingButton">
+                        <i class="fas fa-trash-alt"></i> پاک کردن دیتای قیمت‌ها
+                    </button>
+                    <button type="button" class="btn btn-danger" id="clearInventoryButton">
+                        <i class="fas fa-trash-alt"></i> پاک کردن تمام داده‌های انبار
+                    </button>
+                </div>            
+            
             </form>
         </div>
     </div>
 
-    <!-- مودال تایید ریست -->
-    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-hidden="true">
+    
+<!-- مودال تایید پاک کردن دیتای قیمت‌ها -->
+<div class="modal fade" id="deletePricingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-danger"></i> تایید پاک کردن دیتای قیمت‌ها</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <strong>هشدار جدی:</strong> این عملیات <strong class="text-danger">تمام داده‌های قیمت‌گذاری محصولات</strong> را به طور کامل پاک خواهد کرد.
+                </div>
+                <ul class="mb-3">
+                    <li>تمام records های جدول قیمت‌گذاری حذف خواهند شد</li>
+                    <li>این عملیات <strong>غیرقابل بازگشت</strong> است</li>
+                    <li>پس از پاک‌سازی، باید داده‌های قیمت‌گذاری جدید را مجدداً وارد کنید</li>
+                </ul>
+                <p class="mb-0"><strong>آیا از انجام این عملیات اطمینان دارید؟</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> لغو عملیات
+                </button>
+                <form method="post" action="{% url 'delete_all_product_pricing' %}" id="deletePricingForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-check"></i> بله، پاک کردن داده‌های قیمت
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>    
+<!-- مودال تایید ریست -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -400,8 +444,41 @@
             </div>
         </div>
     </div>
-
-    <!-- مودال تایید توزیع -->
+<!-- مودال تایید پاک کردن تمام داده‌های انبار -->
+<div class="modal fade" id="clearInventoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-danger"></i> تایید پاک کردن تمام داده‌های انبار</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-skull-crossbones"></i>
+                    <strong>هشدار جدی:</strong> این عملیات <strong class="text-danger">تمام داده‌های موجود در مدل InventoryCount</strong> را به طور کامل پاک خواهد کرد.
+                </div>
+                <ul class="mb-3">
+                    <li>تمام records های جدول انبار حذف خواهند شد</li>
+                    <li>این عملیات <strong>غیرقابل بازگشت</strong> است</li>
+                    <li>پس از پاک‌سازی، باید داده‌های جدید را مجدداً وارد کنید</li>
+                </ul>
+                <p class="mb-0"><strong>آیا از انجام این عملیات اطمینان دارید؟</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> لغو عملیات
+                </button>
+                <form method="post" action="{% url 'clear_inventory' %}" id="clearInventoryForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-check"></i> بله، پاک کردن تمام داده‌ها
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>    
+<!-- مودال تایید توزیع -->
 <div class="modal fade" id="distributionModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -487,6 +564,32 @@
                 var distributionModal = new bootstrap.Modal(document.getElementById('distributionModal'));
                 distributionModal.show();
             });
+            // مدیریت دکمه پاک کردن انبار
+            $('#clearInventoryButton').on('click', function() {
+    // نمایش مودال تایید
+    var clearInventoryModal = new bootstrap.Modal(document.getElementById('clearInventoryModal'));
+    clearInventoryModal.show();
+});
+            // مدیریت دکمه پاک کردن دیتای قیمت‌ها
+            $('#deletePricingButton').on('click', function() {
+                // نمایش مودال تایید
+                var deletePricingModal = new bootstrap.Modal(document.getElementById('deletePricingModal'));
+                deletePricingModal.show();
+            });
+            
+            // غیرفعال کردن ارسال فرم از طریق Enter برای جلوگیری از ارسال تصادفی
+            $('#deletePricingForm').on('keypress', function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                }
+            });
+            
+            // غیرفعال کردن ارسال فرم از طریق Enter برای جلوگیری از ارسال تصادفی
+            $('#clearInventoryForm').on('keypress', function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                }
+            });
 
             // تایید ریست در مودال
             $('#confirmReset').on('click', function() {
@@ -518,3 +621,4 @@
     </script>
 </body>
 </html>
+

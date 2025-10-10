@@ -267,3 +267,33 @@ def delete_all_product_pricing(request):
         'page_title': 'حذف تمام اطلاعات قیمت‌گذاری',
     }
     return render(request, 'delete_all_product_pricing.html', context)
+
+
+
+# ------------------------------------------------------پاک کردن کل دیتاهای انبار------------------------------------------
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.views.decorators.http import require_POST
+from account_app.models import InventoryCount
+
+
+@require_POST
+def clear_inventory(request):
+    """
+    پاک کردن تمام رکوردهای مدل InventoryCount پس از تأیید کاربر
+    """
+    try:
+        # بررسی وجود رکورد برای نمایش پیام مناسب
+        record_count = InventoryCount.objects.count()
+
+        if record_count == 0:
+            messages.warning(request, "در حال حاضر هیچ داده‌ای در انبار وجود ندارد.")
+        else:
+            # پاک کردن تمام رکوردها
+            deleted_count = InventoryCount.objects.all().delete()[0]
+            messages.success(request, f"✅ تمام داده‌های انبار ({deleted_count} رکورد) با موفقیت پاک شدند.")
+
+    except Exception as e:
+        messages.error(request, f"❌ خطا در پاک کردن داده‌های انبار: {str(e)}")
+
+    return redirect('invoice_list')  # تغییر به نام URL واقعی شما
