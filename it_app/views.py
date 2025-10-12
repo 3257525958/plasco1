@@ -60,10 +60,8 @@ def reset_remaining_quantity(request):
 @require_POST
 @transaction.atomic
 def distribute_inventory(request):
-    print(11111111111111111111111111111111111111111111)
-    """
-    توزیع مساوی کالاهای فاکتورهای انتخاب شده بین شعب - فقط بر اساس remaining_quantity
-    """
+    print("Start distribute_inventory")
+
     selected_invoice_ids = request.POST.getlist('selected_invoices')
 
     if not selected_invoice_ids:
@@ -79,17 +77,17 @@ def distribute_inventory(request):
 
         branch_count = len(branches)
 
-        # 🔴 تغییر مهم: فقط آیتم‌هایی که remaining_quantity دارند
+        # فقط آیتم‌هایی که remaining_quantity دارند
         all_items = InvoiceItem.objects.filter(
             invoice_id__in=selected_invoice_ids,
-            remaining_quantity__gt=0  # فقط باقیمانده‌های بیشتر از صفر
+            remaining_quantity__gt=0
         ).select_related('invoice')
 
         if not all_items:
             messages.warning(request, 'هیچ کالایی با تعداد باقیمانده برای توزیع یافت نشد.')
             return redirect('invoice_list')
 
-        # گروه‌بندی کالاها بر اساس نام و نوع - فقط remaining_quantity
+        # گروه‌بندی کالاها
         product_summary = {}
         for item in all_items:
             key = f"{item.product_name}|{item.product_type}"
@@ -97,12 +95,12 @@ def distribute_inventory(request):
                 product_summary[key] = {
                     'name': item.product_name,
                     'type': item.product_type,
-                    'total_remaining': 0,  # 🔴 فقط باقیمانده
+                    'total_remaining': 0,
                     'max_selling_price': item.selling_price or item.unit_price,
                     'is_new': item.product_type == 'new',
                     'source_items': []
                 }
-            # 🔴 تغییر: جمع‌زنی remaining_quantity به جای quantity
+
             product_summary[key]['total_remaining'] += item.remaining_quantity
             product_summary[key]['max_selling_price'] = max(
                 product_summary[key]['max_selling_price'],
@@ -110,7 +108,6 @@ def distribute_inventory(request):
             )
             product_summary[key]['source_items'].append(item.id)
 
-        # آماده‌سازی داده‌ها برای توزیع
         products_to_distribute = []
         for key, data in product_summary.items():
             if data['total_remaining'] > 0:
@@ -120,81 +117,93 @@ def distribute_inventory(request):
             messages.warning(request, 'هیچ کالایی با تعداد باقیمانده معتبر برای توزیع یافت نشد.')
             return redirect('invoice_list')
 
-        # 🔴🔴 تغییر جدید: اطمینان از وجود ProductPricing برای هر محصول
+        print(f"Products to distribute: {len(products_to_distribute)}")
+
+        # 🔴 اصلاح بخش ProductPricing
         for product in products_to_distribute:
             product_name = product['name']
+            print(f"Processing product: {product_name}")
 
             try:
-                # محاسبه highest_purchase_price از روی فاکتورها
+                # محاسبه highest_purchase_price
                 highest_purchase = InvoiceItem.objects.filter(
                     product_name=product_name,
                     invoice_id__in=selected_invoice_ids
                 ).aggregate(max_price=Max('unit_price'))['max_price'] or Decimal('0')
 
-                # استفاده از max_selling_price که قبلاً محاسبه شده
                 standard_price = product['max_selling_price']
-                print(99999999999999999999999999999999999999999999999)
-                ProductPricing.objects.create(
+
+                # استفاده از update_or_create برای جلوگیری از خطاهای تکراری
+                pricing_obj, created = ProductPricing.objects.update_or_create(
                     product_name=product_name,
-                    highest_purchase_price=highest_purchase,
-                    standard_price=standard_price
+                    defaults={
+                        'highest_purchase_price': highest_purchase,
+                        'standard_price': standard_price
+                    }
                 )
 
-            except ProductPricing.DoesNotExist:
-                # اگر وجود نداشت، ایجاد کن
-                pass
-        # توزیع کالاها بر اساس remaining_quantity
+                print(f"✅ Product pricing {'created' if created else 'updated'}: {product_name}")
+
+            except Exception as e:
+                print(f"❌ Error in ProductPricing for {product_name}: {str(e)}")
+                # ادامه دادن به جای توقف
+                continue
+
+        print("Starting distribution to branches")
+
+        # توزیع کالاها
         total_distributed = 0
         distribution_details = []
-        print(0000000000000000000000000000000000000000000000000)
+
         for product in products_to_distribute:
-            print('lllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll')
-            # 🔴 تغییر: استفاده از total_remaining به جای total_quantity
             total_remaining = product['total_remaining']
             base_per_branch = total_remaining // branch_count
             remainder = total_remaining % branch_count
 
             product_distributed = 0
+            print(f"Distributing {product['name']}: {total_remaining} units")
 
             for i, branch in enumerate(branches):
-                print('pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp')
                 qty_for_branch = base_per_branch
                 if i < remainder:
                     qty_for_branch += 1
 
                 if qty_for_branch > 0:
-                    print('mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm')
-                    # پیدا کردن یا ایجاد رکورد انبار
-                    inventory_obj, created = InventoryCount.objects.get_or_create(
-                        product_name=product['name'],
-                        branch=branch,
-                        is_new=product['is_new'],
-                        defaults={
-                            'quantity': qty_for_branch,
-                            'counter': request.user,
-                            'selling_price': product['max_selling_price'],
-                            'profit_percentage': Decimal('30.00')
-                        }
-                    )
-
-                    if not created:
-                        # به روزرسانی رکورد موجود
-                        inventory_obj.quantity += qty_for_branch
-                        inventory_obj.selling_price = max(
-                            inventory_obj.selling_price or 0,
-                            product['max_selling_price']
+                    try:
+                        inventory_obj, created = InventoryCount.objects.get_or_create(
+                            product_name=product['name'],
+                            branch=branch,
+                            is_new=product['is_new'],
+                            defaults={
+                                'quantity': qty_for_branch,
+                                'counter': request.user,
+                                'selling_price': product['max_selling_price'],
+                                'profit_percentage': Decimal('30.00')
+                            }
                         )
-                        inventory_obj.save()
 
-                    product_distributed += qty_for_branch
-                    total_distributed += qty_for_branch
+                        if not created:
+                            inventory_obj.quantity += qty_for_branch
+                            inventory_obj.selling_price = max(
+                                inventory_obj.selling_price or 0,
+                                product['max_selling_price']
+                            )
+                            inventory_obj.save()
+
+                        product_distributed += qty_for_branch
+                        total_distributed += qty_for_branch
+
+                    except Exception as e:
+                        print(f"Error distributing to branch {branch.name}: {str(e)}")
+                        continue
 
             distribution_details.append(
                 f"{product['name']} ({product['type']}): {product_distributed} عدد"
             )
 
-        # 🔴 تغییر: فقط آیتم‌هایی که remaining_quantity داشتند صفر می‌شوند
+        # صفر کردن remaining_quantity
         zeroed_count = all_items.update(remaining_quantity=0)
+        print(f"Zeroed {zeroed_count} items")
 
         # پیام موفقیت
         detail_message = "\n".join(distribution_details)
@@ -210,11 +219,10 @@ def distribute_inventory(request):
         )
 
     except Exception as e:
-        print(8888888888888888888888888888888888888888888888888888888888888888)
+        print(f"❌ General error in distribute_inventory: {str(e)}")
         messages.error(request, f'❌ خطا در توزیع کالاها: {str(e)}')
 
     return redirect('invoice_list')
-
 
 # ---------------------------------------------------------------پاک کردن قیمت ها------------------
 from django.shortcuts import render, redirect
