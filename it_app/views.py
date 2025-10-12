@@ -148,6 +148,7 @@ def distribute_inventory(request):
         distribution_details = []
 
         for product in products_to_distribute:
+            print('lllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll')
             # 🔴 تغییر: استفاده از total_remaining به جای total_quantity
             total_remaining = product['total_remaining']
             base_per_branch = total_remaining // branch_count
@@ -156,11 +157,13 @@ def distribute_inventory(request):
             product_distributed = 0
 
             for i, branch in enumerate(branches):
+                print('pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp')
                 qty_for_branch = base_per_branch
                 if i < remainder:
                     qty_for_branch += 1
 
                 if qty_for_branch > 0:
+                    print('mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm')
                     # پیدا کردن یا ایجاد رکورد انبار
                     inventory_obj, created = InventoryCount.objects.get_or_create(
                         product_name=product['name'],
