@@ -133,7 +133,7 @@ def distribute_inventory(request):
 
                 # استفاده از max_selling_price که قبلاً محاسبه شده
                 standard_price = product['max_selling_price']
-
+                print(99999999999999999999999999999999999999999999999)
                 ProductPricing.objects.create(
                     product_name=product_name,
                     highest_purchase_price=highest_purchase,
@@ -146,7 +146,7 @@ def distribute_inventory(request):
         # توزیع کالاها بر اساس remaining_quantity
         total_distributed = 0
         distribution_details = []
-
+        print(0000000000000000000000000000000000000000000000000)
         for product in products_to_distribute:
             print('lllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll')
             # 🔴 تغییر: استفاده از total_remaining به جای total_quantity
