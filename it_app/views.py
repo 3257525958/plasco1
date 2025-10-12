@@ -223,11 +223,8 @@ from django.views.decorators.http import require_http_methods
 from account_app.models import ProductPricing
 
 
-def is_superuser(user):
-    return user.is_superuser
 
 
-@user_passes_test(is_superuser)
 @require_http_methods(["GET", "POST"])
 def delete_all_product_pricing(request):
     print(44444444444444444444444444444444444)
