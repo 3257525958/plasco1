@@ -210,6 +210,7 @@ def distribute_inventory(request):
         )
 
     except Exception as e:
+        print(8888888888888888888888888888888888888888888888888888888888888888)
         messages.error(request, f'❌ خطا در توزیع کالاها: {str(e)}')
 
     return redirect('invoice_list')
