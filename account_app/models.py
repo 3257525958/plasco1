@@ -78,7 +78,7 @@ class InventoryCount(models.Model):  # حذف class تکراری
             try:
                 profit_percentage = Decimal(str(self.profit_percentage))
             except (TypeError, ValueError):
-                profit_percentage = Decimal('30.00')
+                profit_percentage = Decimal('100.00')
 
             print(f"✅ درصد سود استفاده شده: {profit_percentage}")
 
