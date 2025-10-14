@@ -995,63 +995,117 @@
     </div>
 </div>
     <!-- مودال پرداخت نسیه -->
-    <div class="modal fade" id="creditPaymentModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-calendar-day"></i> اطلاعات پرداخت نسیه</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- مودال پرداخت نسیه - اصلاح شده -->
+<div class="modal fade" id="creditPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-calendar-day"></i> اطلاعات پرداخت نسیه</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>مبلغ کل فاکتور: <span id="credit-invoice-total">0</span> تومان</strong>
                 </div>
-                <div class="modal-body">
-                    <form id="credit-payment-form">
+                
+                <form id="credit-payment-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>نام *</label>
+                                <input type="text" name="customer_name" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>نام خانوادگی *</label>
+                                <input type="text" name="customer_family" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>کد ملی *</label>
+                                <input type="text" name="national_id" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>تلفن *</label>
+                                <input type="text" name="phone" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>آدرس</label>
+                        <textarea name="address" class="form-control" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>مبلغ نسیه (تومان) *</label>
+                                <input type="number" name="credit_amount" class="form-control" id="credit-amount" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>تاریخ سررسید *</label>
+                                <div class="date-picker-container">
+                                    <i class="fas fa-calendar-alt date-picker-icon" onclick="openDueDatePicker()"></i>
+                                    <input type="text" name="due_date" class="form-control" id="due-date" readonly required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- بخش مبلغ باقیمانده -->
+                    <div class="border-top pt-3 mt-3">
+                        <h6><i class="fas fa-calculator"></i> محاسبه مبلغ باقیمانده</h6>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>نام:</label>
-                                    <input type="text" name="customer_name" class="form-control" required>
+                                    <label>مبلغ باقیمانده</label>
+                                    <input type="number" name="remaining_amount" class="form-control" id="credit-remaining-amount" readonly>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>نام خانوادگی:</label>
-                                    <input type="text" name="customer_family" class="form-control" required>
+                                    <label>روش پرداخت باقیمانده *</label>
+                                    <select name="remaining_payment_method" class="form-control" id="credit-remaining-payment-method" required>
+                                        <option value="cash">نقدی</option>
+                                        <option value="pos">دستگاه پوز</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>تلفن:</label>
-                                    <input type="text" name="phone" class="form-control" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>کد ملی:</label>
-                                    <input type="text" name="national_id" class="form-control" required>
-                                </div>
+                        
+                        <!-- انتخاب دستگاه پوز برای باقیمانده -->
+                        <div id="credit-remaining-pos-section" style="display: none;">
+                            <div class="form-group">
+                                <label>انتخاب دستگاه پوز برای پرداخت باقیمانده</label>
+                                <select name="remaining_pos_device_id" class="form-control" id="credit-remaining-pos-device">
+                                    {% for device in pos_devices %}
+                                        <option value="{{ device.id }}">{{ device.name }} - {{ device.bank_name }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>آدرس:</label>
-                            <textarea name="address" class="form-control" rows="3"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>تاریخ سررسید:</label>
-                            <div class="date-picker-container">
-                                <i class="fas fa-calendar-alt date-picker-icon" onclick="openDueDatePicker()"></i>
-                                <input type="text" name="due_date" class="form-control" id="due-date" readonly required>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
-                    <button type="button" class="btn btn-primary" onclick="saveCreditPayment()">ذخیره اطلاعات نسیه</button>
-                </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                <button type="button" class="btn btn-primary" onclick="saveCreditPayment()">
+                    <i class="fas fa-save"></i> ذخیره اطلاعات نسیه
+                </button>
             </div>
         </div>
     </div>
+</div>
+
 
 {% load static %}
 <!DOCTYPE html>
@@ -1738,6 +1792,24 @@ function showAllPOSDevices() {
 // توابع پرداخت چک و نسیه
 // =============================================
 
+// توابع جدید برای مدیریت نسیه
+function updateCreditRemainingAmount() {
+    const invoiceTotal = calculateInvoiceTotal().totalAmount;
+    const creditAmount = parseInt($('#credit-amount').val()) || 0;
+    const remainingAmount = Math.max(0, invoiceTotal - creditAmount);
+    
+    $('#credit-remaining-amount').val(remainingAmount);
+    
+    // نمایش/پنهان کردن بخش دستگاه پوز
+    const remainingMethod = $('#credit-remaining-payment-method').val();
+    $('#credit-remaining-pos-section').toggle(remainingMethod === 'pos');
+}
+
+function updateCreditModalInvoiceTotal() {
+    const invoiceTotal = calculateInvoiceTotal().totalAmount;
+    $('#credit-invoice-total').text(invoiceTotal.toLocaleString('fa-IR'));
+    updateCreditRemainingAmount();
+}
 function saveCreditPayment() {
     const formData = {
         'customer_name': $('input[name="customer_name"]').val(),
@@ -1747,6 +1819,8 @@ function saveCreditPayment() {
         'address': $('textarea[name="address"]').val(),
         'due_date': $('input[name="due_date"]').val()
     };
+
+    console.log("🟢 در حال ذخیره اطلاعات نسیه...", formData);
 
     if (!formData.customer_name || !formData.customer_family || !formData.phone || 
         !formData.national_id || !formData.due_date) {
@@ -1761,14 +1835,28 @@ function saveCreditPayment() {
         data: JSON.stringify(formData),
         headers: {'X-CSRFToken': getCookie('csrftoken')},
         success: function(data) {
+            console.log("✅ پاسخ سرور برای نسیه:", data);
             if (data.status === 'success') {
                 showToast('اطلاعات نسیه با موفقیت ذخیره شد', 'success');
                 $('#creditPaymentModal').modal('hide');
+                
+                // 🔴 این بخش حیاتی را اضافه کنید:
+                console.log("🟢 در حال ثبت نهایی فاکتور...");
+                setTimeout(() => {
+                    if (typeof finalizeInvoice === 'function') {
+                        finalizeInvoice('save_only');
+                    } else {
+                        console.error("❌ تابع finalizeInvoice یافت نشد!");
+                        showToast('خطا در ثبت فاکتور', 'error');
+                    }
+                }, 1000);
+                
             } else {
-                showToast('خطا در ذخیره اطلاعات نسیه', 'error');
+                showToast('خطا در ذخیره اطلاعات نسیه: ' + data.message, 'error');
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error("❌ خطا در ارسال درخواست نسیه:", error);
             showToast('خطا در ارتباط با سرور', 'error');
         }
     });
@@ -1962,28 +2050,6 @@ function setupEventListeners() {
     $('#customer-name, #customer-phone').on('blur', saveCustomerInfo);
 
     // انتخاب روش پرداخت
-    $('.payment-method-btn').click(function() {
-    const method = $(this).data('method');
-    currentPaymentMethod = method;
-    
-    $('.payment-method-btn').removeClass('active');
-    $(this).addClass('active');
-    
-    $('#pos-devices-section').toggle(method === 'pos');
-    
-    if (method === 'check') {
-        $('#checkPaymentModal').modal('show');
-    } else if (method === 'credit') {
-        // این بخش اضافه شده - نمایش مودال نسیه
-        $('#creditPaymentModal').modal('show');
-    }
-    
-    savePaymentMethod(method);
-    
-    if (method === 'pos') {
-        setTimeout(saveSelectedPosDevice, 100);
-    }
-});
     
     // تغییر دستگاه POS
     $('#pos-device').on('change', saveSelectedPosDevice);
@@ -2008,6 +2074,38 @@ function setupEventListeners() {
     });
 
     $('#addDeviceButton').on('click', addPosDevice);
+    
+        // در بخش setupEventListeners اضافه کنید:
+    $('#credit-amount').on('input', updateCreditRemainingAmount);
+    $('#credit-remaining-payment-method').on('change', updateCreditRemainingAmount);
+    
+    // هنگام باز کردن مودال نسیه
+    $('#creditPaymentModal').on('show.bs.modal', function() {
+        updateCreditModalInvoiceTotal();
+    });
+    
+    // در بخش انتخاب روش پرداخت، قسمت نسیه را اصلاح کنید:
+        $('.payment-method-btn').click(function() {
+        const method = $(this).data('method');
+        currentPaymentMethod = method;
+        
+        $('.payment-method-btn').removeClass('active');
+        $(this).addClass('active');
+        
+        $('#pos-devices-section').toggle(method === 'pos');
+        
+        if (method === 'check') {
+            $('#checkPaymentModal').modal('show');
+        } else if (method === 'credit') {
+            $('#creditPaymentModal').modal('show');
+        }
+        
+        savePaymentMethod(method);
+        
+        if (method === 'pos') {
+            setTimeout(saveSelectedPosDevice, 100);
+        }
+    });
 }
 // =============================================
 // Event Listeners ساده و مستقیم
@@ -2078,8 +2176,6 @@ $(document).ready(function() {
 window.finalizeInvoice = finalizeInvoice;
 window.cancelInvoice = cancelInvoice;
 // =============================================
-
-
 // تابع برای به‌روزرسانی مبلغ باقیمانده
 function updateRemainingAmount() {
     const invoiceTotal = calculateInvoiceTotal().totalAmount;
@@ -2170,8 +2266,6 @@ $('#checkPaymentModal').on('show.bs.modal', function() {
 
 
 
-
-
 // =============================================
 // قرار دادن توابع در scope جهانی
 // =============================================
@@ -2186,7 +2280,121 @@ window.saveCreditPayment = saveCreditPayment;
 window.showAllPOSDevices = showAllPOSDevices;
 window.addPosDevice = addPosDevice;
 
+// در انتهای فایل JavaScript اضافه کنید:
+window.saveCreditPayment = saveCreditPayment;
+window.updateCreditRemainingAmount = updateCreditRemainingAmount;
+// راه حل ساده - این کد را به انتهای فایل JavaScript اضافه کنید
+
+// مطمئن شوید تابع در دسترس است
+window.saveCreditPayment = saveCreditPayment;
+
     </script>
+    <script>
+// این کد را قبل از </body> اضافه کنید
+console.log("🟢 JavaScript در حال اجرا است");
+
+// تابع saveCreditPayment را مطمئن شوید اینگونه تعریف شده است:
+function saveCreditPayment() {
+    console.log("✅ تابع saveCreditPayment فراخوانی شد!");
+    
+    const creditAmount = parseInt($('#credit-amount').val()) || 0;  // 🔴 مقدار از فیلد گرفته شود
+    
+    const formData = {
+        'customer_name': document.querySelector('#creditPaymentModal input[name="customer_name"]').value,
+        'customer_family': document.querySelector('#creditPaymentModal input[name="customer_family"]').value,
+        'phone': document.querySelector('#creditPaymentModal input[name="phone"]').value,
+        'national_id': document.querySelector('#creditPaymentModal input[name="national_id"]').value,
+        'address': document.querySelector('#creditPaymentModal textarea[name="address"]').value,
+        'due_date': document.querySelector('#creditPaymentModal input[name="due_date"]').value,
+        // 🔴 ارسال credit_amount از فیلد فرم
+        'credit_amount': creditAmount,
+        'remaining_amount': parseInt($('#credit-remaining-amount').val()) || 0,
+        'remaining_payment_method': $('#credit-remaining-payment-method').val(),
+        'remaining_pos_device_id': $('#credit-remaining-pos-device').val()
+    };
+
+    console.log("📋 داده‌های فرم:", formData);
+
+    // بررسی فیلدهای ضروری
+    if (!formData.customer_name || !formData.customer_family || !formData.phone || 
+        !formData.national_id || !formData.due_date) {
+        alert('لطفا تمام فیلدهای ضروری را پر کنید');
+        return;
+    }
+
+    // ارسال درخواست AJAX
+    fetch("{% url 'invoice_app:save_credit_payment' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("✅ پاسخ سرور:", data);
+        if (data.status === 'success') {
+            alert('اطلاعات نسیه با موفقیت ذخیره شد');
+            // بستن مودال
+            var modal = bootstrap.Modal.getInstance(document.getElementById('creditPaymentModal'));
+            modal.hide();
+            
+            // ثبت نهایی فاکتور
+            setTimeout(() => {
+                console.log("🟢 در حال ثبت نهایی فاکتور...");
+                if (typeof finalizeInvoice === 'function') {
+                    finalizeInvoice('save_only');
+                } else {
+                    location.reload();
+                }
+            }, 1000);
+        } else {
+            alert('خطا در ذخیره اطلاعات نسیه: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('❌ خطا:', error);
+        alert('خطا در ارتباط با سرور');
+    });
+}
+function updateCreditRemainingAmount() {
+    const invoiceTotal = calculateInvoiceTotal().totalAmount;
+    const creditAmount = parseInt($('#credit-amount').val()) || 0;
+    const remainingAmount = Math.max(0, invoiceTotal - creditAmount);
+    
+    $('#credit-remaining-amount').val(remainingAmount);
+    
+    // نمایش/پنهان کردن بخش دستگاه پوز
+    const remainingMethod = $('#credit-remaining-payment-method').val();
+    $('#credit-remaining-pos-section').toggle(remainingMethod === 'pos');
+}
+
+// مقداردهی اولیه هنگام باز شدن مودال
+$('#creditPaymentModal').on('show.bs.modal', function() {
+    const invoiceTotal = calculateInvoiceTotal().totalAmount;
+    $('#credit-invoice-total').text(invoiceTotal.toLocaleString('fa-IR'));
+    $('#credit-amount').val(invoiceTotal); // مقدار پیش‌فرض مبلغ نسیه = مبلغ کل فاکتور
+    updateCreditRemainingAmount();
+});
+// مطمئن شوید تابع در scope جهانی است
+window.saveCreditPayment = saveCreditPayment;
+console.log("✅ تابع saveCreditPayment در window قرار داده شد");
+
+// تست: بررسی اینکه دکمه کار می‌کند
+document.addEventListener('DOMContentLoaded', function() {
+    var saveButton = document.querySelector('#creditPaymentModal .btn-primary');
+    if (saveButton) {
+        console.log("✅ دکمه ذخیره نسیه یافت شد");
+        saveButton.addEventListener('click', function() {
+            console.log("🟢 دکمه کلیک شد - در حال فراخوانی saveCreditPayment");
+            saveCreditPayment();
+        });
+    } else {
+        console.log("❌ دکمه ذخیره نسیه یافت نشد");
+    }
+});
+</script>
 </body>
 </html>
 

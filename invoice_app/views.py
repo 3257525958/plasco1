@@ -419,34 +419,6 @@ def save_check_payment(request):
 
 @login_required
 @csrf_exempt
-def save_credit_payment(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-
-            required_fields = ['customer_name', 'customer_family', 'phone', 'national_id', 'due_date']
-
-            for field in required_fields:
-                if not data.get(field):
-                    return JsonResponse({'status': 'error', 'message': f'فیلد {field} الزامی است'})
-
-            request.session['credit_payment_data'] = {
-                'customer_name': data.get('customer_name', '').strip(),
-                'customer_family': data.get('customer_family', '').strip(),
-                'phone': data.get('phone', '').strip(),
-                'address': data.get('address', '').strip(),
-                'national_id': data.get('national_id', '').strip(),
-                'due_date': data.get('due_date', '')
-            }
-            request.session.modified = True
-
-            return JsonResponse({'status': 'success'})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': f'خطا: {str(e)}'})
-    return JsonResponse({'status': 'error'})
-
-@login_required
-@csrf_exempt
 def save_discount(request):
     if request.method == 'POST':
         try:
@@ -550,6 +522,7 @@ def manage_pos_devices(request):
 @login_required
 @csrf_exempt
 def finalize_invoice(request):
+    print(22222222222222222222222222)
     """
     ویوی نهایی کردن و ثبت فاکتور فروش
     """
@@ -762,31 +735,54 @@ def finalize_invoice(request):
                 else:
                     print("⚠️ اطلاعات چک در session وجود ندارد")
             # ثبت اطلاعات پرداخت نسیه
+            # در تابع finalize_invoice، بخش ثبت اطلاعات نسیه را اصلاح کنید:
+            # در finalize_invoice، بخش نسیه را اینگونه اصلاح کنید:
+            # در finalize_invoice، بخش نسیه را اینگونه اصلاح کنید:
+            # در finalize_invoice، بخش نسیه:
             elif payment_method == 'credit':
                 credit_data = request.session.get('credit_payment_data')
                 if credit_data:
                     try:
-                        # تبدیل تاریخ سررسید از رشته به آبجکت تاریخ
-                        due_date = datetime.strptime(credit_data['due_date'], '%Y-%m-%d').date()
+                        # تبدیل تاریخ سررسید
+                        due_date_str = credit_data['due_date']
+                        if '/' in due_date_str:
+                            year, month, day = map(int, due_date_str.split('/'))
+                            jalali_date = jdatetime.date(year, month, day)
+                            gregorian_date = jalali_date.togregorian()
+                            due_date = gregorian_date
+                        else:
+                            due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
 
-                        CreditPayment.objects.create(
+                        # پیدا کردن دستگاه پوز اگر روش پرداخت باقیمانده POS باشد
+                        remaining_pos_device = None
+                        if credit_data.get('remaining_payment_method') == 'pos' and credit_data.get(
+                                'remaining_pos_device_id'):
+                            try:
+                                remaining_pos_device = POSDevice.objects.get(
+                                    id=credit_data['remaining_pos_device_id'],
+                                    is_active=True
+                                )
+                            except POSDevice.DoesNotExist:
+                                pass
+
+                        # 🔴 استفاده از credit_amount از session
+                        credit_payment = CreditPayment.objects.create(
                             invoice=invoice,
                             customer_name=credit_data['customer_name'],
                             customer_family=credit_data['customer_family'],
-                            phone=credit_data['phone'],
-                            address=credit_data.get('address', ''),
                             national_id=credit_data['national_id'],
+                            address=credit_data.get('address', ''),
+                            phone=credit_data['phone'],
+                            credit_amount=credit_data.get('credit_amount', 0),  # 🔴 اینجا باید از session بخواند
+                            remaining_amount=credit_data.get('remaining_amount', 0),
+                            remaining_payment_method=credit_data.get('remaining_payment_method', 'cash'),
+                            pos_device=remaining_pos_device,
                             due_date=due_date
                         )
-                        print("✅ اطلاعات نسیه ثبت شد")
+                        print(f"✅ اطلاعات نسیه ثبت شد - مبلغ: {credit_data.get('credit_amount', 0)}")
+
                     except Exception as e:
                         print(f"❌ خطا در ثبت اطلاعات نسیه: {str(e)}")
-                        import traceback
-                        print(traceback.format_exc())
-                else:
-                    print("⚠️ اطلاعات نسیه در session وجود ندارد")
-
-            # پاک کردن session داده‌های فاکتور جاری
             session_keys_to_remove = [
                 'invoice_items', 'customer_name', 'customer_phone',
                 'payment_method', 'discount', 'pos_device_id',
@@ -989,3 +985,41 @@ def confirm_check_payment(request):
         'status': 'error',
         'message': 'درخواست نامعتبر'
     })
+
+
+@login_required
+@csrf_exempt
+def save_credit_payment(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            print("📋 اطلاعات دریافتی نسیه:", data)
+
+            # 🔴 اصلاح: استفاده از credit_amount از داده‌های فرم
+            credit_amount = int(data.get('credit_amount', 0))
+
+            # ذخیره اطلاعات کامل در session
+            credit_data = {
+                'customer_name': data.get('customer_name', '').strip(),
+                'customer_family': data.get('customer_family', '').strip(),
+                'national_id': data.get('national_id', '').strip(),
+                'address': data.get('address', '').strip(),
+                'phone': data.get('phone', '').strip(),
+                'due_date': data.get('due_date', ''),
+                # 🔴 استفاده از credit_amount از فرم، نه total_amount
+                'credit_amount': credit_amount,
+                'remaining_amount': data.get('remaining_amount', 0),
+                'remaining_payment_method': data.get('remaining_payment_method', 'cash'),
+                'remaining_pos_device_id': data.get('remaining_pos_device_id')
+            }
+
+            request.session['credit_payment_data'] = credit_data
+            request.session.modified = True
+
+            print("✅ اطلاعات نسیه در session ذخیره شد:", credit_data)
+            return JsonResponse({'status': 'success'})
+
+        except Exception as e:
+            print(f"❌ خطا در ذخیره اطلاعات نسیه: {str(e)}")
+            return JsonResponse({'status': 'error', 'message': f'خطا: {str(e)}'})
+    return JsonResponse({'status': 'error'})

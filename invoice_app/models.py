@@ -123,6 +123,8 @@ class CheckPayment(models.Model):
     check_date = models.DateField(verbose_name="تاریخ چک")
     created_at = models.DateTimeField(auto_now_add=True)
 
+
+# models.py - اصلاح مدل CreditPayment
 class CreditPayment(models.Model):
     invoice = models.OneToOneField('Invoicefrosh', on_delete=models.CASCADE, related_name='credit_payment')
     customer_name = models.CharField(max_length=100, verbose_name="نام")
@@ -131,5 +133,13 @@ class CreditPayment(models.Model):
     address = models.TextField(verbose_name="آدرس")
     national_id = models.CharField(max_length=10, verbose_name="کد ملی")
     due_date = models.DateField(verbose_name="تاریخ سررسید")
-    created_at = models.DateTimeField(auto_now_add=True)
 
+    # فیلدهای جدید مشابه چک
+    credit_amount = models.PositiveIntegerField(verbose_name="مبلغ نسیه", default=0)
+    remaining_amount = models.PositiveIntegerField(verbose_name="مبلغ باقیمانده", default=0)
+    remaining_payment_method = models.CharField(max_length=10, choices=Invoicefrosh.PAYMENT_METHODS, default='cash',
+                                                verbose_name="روش پرداخت باقیمانده")
+    pos_device = models.ForeignKey(POSDevice, on_delete=models.SET_NULL, null=True, blank=True,
+                                   verbose_name="دستگاه پوز برای باقیمانده")
+
+    created_at = models.DateTimeField(auto_now_add=True)

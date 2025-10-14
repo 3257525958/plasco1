@@ -24,7 +24,7 @@ class POSDeviceAdmin(admin.ModelAdmin):
 
 
 class CheckPaymentAdmin(admin.ModelAdmin):
-    list_display = ['invoice', 'owner_full_name', 'check_number', 'amount', 'remaining_amount',
+    list_display = ['invoice', 'owner_full_name', 'check_number', 'amount_display', 'remaining_amount_display',
                     'remaining_payment_method', 'check_date', 'created_at']
     list_filter = ['check_date', 'remaining_payment_method', 'created_at']
     search_fields = ['owner_name', 'owner_family', 'check_number', 'national_id', 'phone']
@@ -53,10 +53,21 @@ class CheckPaymentAdmin(admin.ModelAdmin):
 
     owner_full_name.short_description = 'نام کامل صاحب چک'
 
+    def amount_display(self, obj):
+        return f"{obj.amount:,} تومان"
+
+    amount_display.short_description = 'مبلغ چک'
+
+    def remaining_amount_display(self, obj):
+        return f"{obj.remaining_amount:,} تومان"
+
+    remaining_amount_display.short_description = 'مبلغ باقیمانده'
+
 
 class CreditPaymentAdmin(admin.ModelAdmin):
-    list_display = ['invoice', 'customer_full_name', 'phone', 'due_date', 'created_at']
-    list_filter = ['due_date', 'created_at']
+    list_display = ['invoice', 'customer_full_name', 'phone', 'credit_amount_display',
+                    'remaining_amount_display', 'remaining_payment_method', 'due_date', 'created_at']
+    list_filter = ['due_date', 'created_at', 'remaining_payment_method']
     search_fields = ['customer_name', 'customer_family', 'national_id', 'phone']
     readonly_fields = ['invoice', 'created_at']
 
@@ -68,7 +79,10 @@ class CreditPaymentAdmin(admin.ModelAdmin):
             'fields': ('customer_name', 'customer_family', 'national_id', 'phone', 'address')
         }),
         ('اطلاعات نسیه', {
-            'fields': ('due_date',)
+            'fields': ('credit_amount', 'due_date')
+        }),
+        ('پرداخت باقیمانده', {
+            'fields': ('remaining_amount', 'remaining_payment_method', 'pos_device')
         }),
         ('تاریخ‌ها', {
             'fields': ('created_at',)
@@ -79,6 +93,16 @@ class CreditPaymentAdmin(admin.ModelAdmin):
         return f"{obj.customer_name} {obj.customer_family}"
 
     customer_full_name.short_description = 'نام کامل مشتری'
+
+    def credit_amount_display(self, obj):
+        return f"{obj.credit_amount:,} تومان"
+
+    credit_amount_display.short_description = 'مبلغ نسیه'
+
+    def remaining_amount_display(self, obj):
+        return f"{obj.remaining_amount:,} تومان"
+
+    remaining_amount_display.short_description = 'مبلغ باقیمانده'
 
 
 class InvoiceItemfroshInline(admin.TabularInline):
@@ -129,7 +153,10 @@ class CreditPaymentInline(admin.StackedInline):
             'fields': ('customer_name', 'customer_family', 'national_id', 'phone', 'address')
         }),
         ('اطلاعات نسیه', {
-            'fields': ('due_date',)
+            'fields': ('credit_amount', 'due_date')
+        }),
+        ('پرداخت باقیمانده', {
+            'fields': ('remaining_amount', 'remaining_payment_method', 'pos_device')
         }),
         ('تاریخ‌ها', {
             'fields': ('created_at',)
@@ -139,8 +166,8 @@ class CreditPaymentInline(admin.StackedInline):
 
 @admin.register(Invoicefrosh)
 class InvoicefroshAdmin(admin.ModelAdmin):
-    list_display = ['serial_number', 'branch', 'customer_name', 'total_amount', 'payment_method_display',
-                    'is_paid', 'is_finalized', 'created_at_jalali']
+    list_display = ['serial_number', 'branch', 'customer_name', 'total_amount_display',
+                    'payment_method_display', 'is_paid', 'is_finalized', 'created_at_jalali']
     list_filter = ['branch', 'payment_method', 'is_paid', 'is_finalized', 'created_at']
     search_fields = ['serial_number', 'customer_name', 'customer_phone']
     readonly_fields = ['serial_number', 'created_at', 'created_by', 'total_without_discount']
@@ -180,6 +207,11 @@ class InvoicefroshAdmin(admin.ModelAdmin):
 
     payment_method_display.short_description = 'روش پرداخت'
 
+    def total_amount_display(self, obj):
+        return f"{obj.total_amount:,} تومان"
+
+    total_amount_display.short_description = 'مبلغ کل'
+
     def created_at_jalali(self, obj):
         return obj.get_jalali_date() + ' ' + obj.get_jalali_time()
 
@@ -198,17 +230,36 @@ class InvoicefroshAdmin(admin.ModelAdmin):
 
 @admin.register(InvoiceItemfrosh)
 class InvoiceItemfroshAdmin(admin.ModelAdmin):
-    list_display = ['invoice', 'product', 'quantity', 'price', 'discount', 'total_price', 'standard_price']
+    list_display = ['invoice', 'product', 'quantity', 'price_display', 'discount_display',
+                    'total_price_display', 'standard_price_display']
     list_filter = ['invoice__branch', 'invoice__created_at']
     search_fields = ['product__product_name', 'invoice__serial_number']
     readonly_fields = ['invoice', 'product', 'quantity', 'price', 'total_price', 'standard_price', 'discount']
 
+    def price_display(self, obj):
+        return f"{obj.price:,} تومان"
+
+    price_display.short_description = 'قیمت واحد'
+
+    def discount_display(self, obj):
+        return f"{obj.discount:,} تومان"
+
+    discount_display.short_description = 'تخفیف'
+
+    def total_price_display(self, obj):
+        return f"{obj.total_price:,} تومان"
+
+    total_price_display.short_description = 'قیمت کل'
+
+    def standard_price_display(self, obj):
+        return f"{obj.standard_price:,} تومان"
+
+    standard_price_display.short_description = 'قیمت معیار'
+
     def has_add_permission(self, request):
-        # جلوگیری از افزودن آیتم جدید مستقل از فاکتور
         return False
 
     def has_delete_permission(self, request, obj=None):
-        # جلوگیری از حذف آیتم‌ها
         return False
 
 
