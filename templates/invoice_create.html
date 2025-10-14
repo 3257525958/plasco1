@@ -880,78 +880,119 @@
     </div>
 
     <!-- مودال پرداخت چک -->
-    <div class="modal fade" id="checkPaymentModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-money-check"></i> اطلاعات پرداخت چک</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- مودال پرداخت چک - اصلاح شده -->
+<div class="modal fade" id="checkPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-money-check"></i> اطلاعات پرداخت چک</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>مبلغ کل فاکتور: <span id="check-invoice-total">0</span> تومان</strong>
                 </div>
-                <div class="modal-body">
-                    <form id="check-payment-form">
+                
+                <form id="check-payment-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>نام صاحب چک *</label>
+                                <input type="text" name="owner_name" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>نام خانوادگی صاحب چک *</label>
+                                <input type="text" name="owner_family" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>کد ملی *</label>
+                                <input type="text" name="national_id" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>تلفن *</label>
+                                <input type="text" name="phone" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>آدرس</label>
+                        <textarea name="address" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>شماره چک *</label>
+                                <input type="text" name="check_number" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>مبلغ چک (تومان) *</label>
+                                <input type="number" name="amount" class="form-control" id="check-amount" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>تاریخ چک *</label>
+                        <div class="date-picker-container">
+                            <i class="fas fa-calendar-alt date-picker-icon" onclick="openCheckDatePicker()"></i>
+                            <input type="text" name="check_date" class="form-control" id="check-date" readonly required>
+                        </div>
+                    </div>
+                    
+                    <!-- بخش مبلغ باقیمانده -->
+                    <div class="border-top pt-3 mt-3">
+                        <h6><i class="fas fa-calculator"></i> محاسبه مبلغ باقیمانده</h6>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>نام صاحب چک:</label>
-                                    <input type="text" name="owner_name" class="form-control" required>
+                                    <label>مبلغ باقیمانده</label>
+                                    <input type="number" name="remaining_amount" class="form-control" id="remaining-amount" readonly>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>نام خانوادگی صاحب چک:</label>
-                                    <input type="text" name="owner_family" class="form-control" required>
+                                    <label>روش پرداخت باقیمانده *</label>
+                                    <select name="remaining_payment_method" class="form-control" id="remaining-payment-method" required>
+                                        <option value="cash">نقدی</option>
+                                        <option value="pos">دستگاه پوز</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>کد ملی:</label>
-                                    <input type="text" name="national_id" class="form-control" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>تلفن:</label>
-                                    <input type="text" name="phone" class="form-control" required>
-                                </div>
+                        
+                        <!-- انتخاب دستگاه پوز برای باقیمانده -->
+                        <div id="remaining-pos-section" style="display: none;">
+                            <div class="form-group">
+                                <label>انتخاب دستگاه پوز برای پرداخت باقیمانده</label>
+                                <select name="remaining_pos_device_id" class="form-control" id="remaining-pos-device">
+                                    {% for device in pos_devices %}
+                                        <option value="{{ device.id }}">{{ device.name }} - {{ device.bank_name }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>آدرس:</label>
-                            <textarea name="address" class="form-control" rows="3"></textarea>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>شماره چک:</label>
-                                    <input type="text" name="check_number" class="form-control" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>مبلغ چک (تومان):</label>
-                                    <input type="number" name="amount" class="form-control" required>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>تاریخ چک:</label>
-                            <div class="date-picker-container">
-                                <i class="fas fa-calendar-alt date-picker-icon" onclick="openCheckDatePicker()"></i>
-                                <input type="text" name="check_date" class="form-control" id="check-date" readonly required>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
-                    <button type="button" class="btn btn-primary" onclick="saveCheckPayment()">ذخیره اطلاعات چک</button>
-                </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                <button type="button" class="btn btn-warning" onclick="saveCheckPayment()">
+                    <i class="fas fa-save"></i> ذخیره اطلاعات چک
+                </button>
             </div>
         </div>
     </div>
-
+</div>
     <!-- مودال پرداخت نسیه -->
     <div class="modal fade" id="creditPaymentModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -1695,43 +1736,6 @@ function showAllPOSDevices() {
 // =============================================
 // توابع پرداخت چک و نسیه
 // =============================================
-function saveCheckPayment() {
-    const formData = {
-        'owner_name': $('input[name="owner_name"]').val(),
-        'owner_family': $('input[name="owner_family"]').val(),
-        'national_id': $('input[name="national_id"]').val(),
-        'phone': $('input[name="phone"]').val(),
-        'address': $('textarea[name="address"]').val(),
-        'check_number': $('input[name="check_number"]').val(),
-        'amount': $('input[name="amount"]').val(),
-        'check_date': $('input[name="check_date"]').val()
-    };
-
-    if (!formData.owner_name || !formData.owner_family || !formData.national_id || 
-        !formData.phone || !formData.check_number || !formData.amount || !formData.check_date) {
-        showToast('لطفا تمام فیلدهای ضروری را پر کنید', 'error');
-        return;
-    }
-
-    $.ajax({
-        url: "{% url 'invoice_app:save_check_payment' %}",
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(formData),
-        headers: {'X-CSRFToken': getCookie('csrftoken')},
-        success: function(data) {
-            if (data.status === 'success') {
-                showToast('اطلاعات چک با موفقیت ذخیره شد', 'success');
-                $('#checkPaymentModal').modal('hide');
-            } else {
-                showToast('خطا در ذخیره اطلاعات چک', 'error');
-            }
-        },
-        error: function() {
-            showToast('خطا در ارتباط با سرور', 'error');
-        }
-    });
-}
 
 function saveCreditPayment() {
     const formData = {
@@ -2072,6 +2076,99 @@ $(document).ready(function() {
 window.finalizeInvoice = finalizeInvoice;
 window.cancelInvoice = cancelInvoice;
 // =============================================
+
+
+// تابع برای به‌روزرسانی مبلغ باقیمانده
+function updateRemainingAmount() {
+    const invoiceTotal = calculateInvoiceTotal().totalAmount;
+    const checkAmount = parseInt($('#check-amount').val()) || 0;
+    const remainingAmount = Math.max(0, invoiceTotal - checkAmount);
+    
+    $('#remaining-amount').val(remainingAmount);
+    
+    // نمایش/پنهان کردن بخش دستگاه پوز
+    const remainingMethod = $('#remaining-payment-method').val();
+    $('#remaining-pos-section').toggle(remainingMethod === 'pos');
+}
+
+// تابع ذخیره اطلاعات چک - اصلاح شده
+function saveCheckPayment() {
+    const formData = {
+        'owner_name': $('input[name="owner_name"]').val(),
+        'owner_family': $('input[name="owner_family"]').val(),
+        'national_id': $('input[name="national_id"]').val(),
+        'phone': $('input[name="phone"]').val(),
+        'address': $('textarea[name="address"]').val(),
+        'check_number': $('input[name="check_number"]').val(),
+        'amount': parseInt($('input[name="amount"]').val()) || 0,
+        'remaining_amount': parseInt($('input[name="remaining_amount"]').val()) || 0,
+        'remaining_payment_method': $('select[name="remaining_payment_method"]').val(),
+        'remaining_pos_device_id': $('select[name="remaining_pos_device_id"]').val(),
+        'check_date': $('input[name="check_date"]').val()
+    };
+
+    // اعتبارسنجی
+    const requiredFields = ['owner_name', 'owner_family', 'national_id', 'phone', 'check_number', 'amount', 'check_date'];
+    for (const field of requiredFields) {
+        if (!formData[field]) {
+            showToast(`لطفا فیلد ${field} را پر کنید`, 'error');
+            return;
+        }
+    }
+
+    // بررسی منطقی بودن مبلغ چک
+    const invoiceTotal = calculateInvoiceTotal().totalAmount;
+    if (formData.amount > invoiceTotal) {
+        showToast('مبلغ چک نمی‌تواند از مبلغ کل فاکتور بیشتر باشد', 'error');
+        return;
+    }
+
+    // نمایش پیام تأیید
+    if (confirm(`آیا از ذخیره اطلاعات چک اطمینان دارید؟\n\nبا تأیید این عمل، فاکتور ثبت نهایی خواهد شد.`)) {
+        $.ajax({
+            url: "{% url 'invoice_app:save_check_payment' %}",
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+            success: function(data) {
+                if (data.status === 'success') {
+                    showToast('اطلاعات چک با موفقیت ذخیره شد', 'success');
+                    $('#checkPaymentModal').modal('hide');
+                    
+                    // ثبت نهایی فاکتور
+                    setTimeout(() => {
+                        finalizeInvoice('save_only');
+                    }, 1000);
+                } else {
+                    showToast('خطا در ذخیره اطلاعات چک: ' + data.message, 'error');
+                }
+            },
+            error: function() {
+                showToast('خطا در ارتباط با سرور', 'error');
+            }
+        });
+    }
+}
+
+// تابع برای به‌روزرسانی مبلغ فاکتور در مودال چک
+function updateCheckModalInvoiceTotal() {
+    const invoiceTotal = calculateInvoiceTotal().totalAmount;
+    $('#check-invoice-total').text(invoiceTotal.toLocaleString('fa-IR'));
+    updateRemainingAmount();
+}
+// در بخش setupEventListeners اضافه کنید:
+$('#check-amount').on('input', updateRemainingAmount);
+$('#remaining-payment-method').on('change', updateRemainingAmount);
+
+// هنگام باز کردن مودال چک
+$('#checkPaymentModal').on('show.bs.modal', function() {
+    updateCheckModalInvoiceTotal();
+});
+
+
+
+
 
 // =============================================
 // قرار دادن توابع در scope جهانی

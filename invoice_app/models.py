@@ -33,42 +33,6 @@ class POSDevice(models.Model):
         super().save(*args, **kwargs)
 
 
-class CheckPayment(models.Model):
-    invoice = models.OneToOneField('Invoicefrosh', on_delete=models.CASCADE, related_name='check_payment')
-    owner_name = models.CharField(max_length=100, verbose_name="نام صاحب چک")
-    owner_family = models.CharField(max_length=100, verbose_name="نام خانوادگی صاحب چک")
-    national_id = models.CharField(max_length=10, verbose_name="کد ملی")
-    address = models.TextField(verbose_name="آدرس")
-    phone = models.CharField(max_length=15, verbose_name="تلفن")
-    check_number = models.CharField(max_length=50, verbose_name="شماره چک")
-    amount = models.PositiveIntegerField(verbose_name="مبلغ چک")
-    check_date = models.DateField(verbose_name="تاریخ چک")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = "پرداخت چک"
-        verbose_name_plural = "پرداخت‌های چک"
-
-    def __str__(self):
-        return f"چک {self.check_number} - {self.owner_name} {self.owner_family}"
-
-
-class CreditPayment(models.Model):
-    invoice = models.OneToOneField('Invoicefrosh', on_delete=models.CASCADE, related_name='credit_payment')
-    customer_name = models.CharField(max_length=100, verbose_name="نام")
-    customer_family = models.CharField(max_length=100, verbose_name="نام خانوادگی")
-    phone = models.CharField(max_length=15, verbose_name="تلفن")
-    address = models.TextField(verbose_name="آدرس")
-    national_id = models.CharField(max_length=10, verbose_name="کد ملی")
-    due_date = models.DateField(verbose_name="تاریخ سررسید")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = "پرداخت نسیه"
-        verbose_name_plural = "پرداخت‌های نسیه"
-
-    def __str__(self):
-        return f"نسیه - {self.customer_name} {self.customer_family}"
 
 
 class Invoicefrosh(models.Model):
@@ -143,4 +107,29 @@ class InvoiceItemfrosh(models.Model):
 
     def __str__(self):
         return f"{self.product.product_name} - {self.quantity}"
+
+class CheckPayment(models.Model):
+    invoice = models.OneToOneField('Invoicefrosh', on_delete=models.CASCADE, related_name='check_payment')
+    owner_name = models.CharField(max_length=100, verbose_name="نام صاحب چک")
+    owner_family = models.CharField(max_length=100, verbose_name="نام خانوادگی صاحب چک")
+    national_id = models.CharField(max_length=10, verbose_name="کد ملی")
+    address = models.TextField(verbose_name="آدرس")
+    phone = models.CharField(max_length=15, verbose_name="تلفن")
+    check_number = models.CharField(max_length=50, verbose_name="شماره چک")
+    amount = models.PositiveIntegerField(verbose_name="مبلغ چک")
+    remaining_amount = models.PositiveIntegerField(verbose_name="مبلغ باقیمانده", default=0)
+    remaining_payment_method = models.CharField(max_length=10, choices=Invoicefrosh.PAYMENT_METHODS, default='cash', verbose_name="روش پرداخت باقیمانده")
+    pos_device = models.ForeignKey(POSDevice, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="دستگاه پوز برای باقیمانده")
+    check_date = models.DateField(verbose_name="تاریخ چک")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class CreditPayment(models.Model):
+    invoice = models.OneToOneField('Invoicefrosh', on_delete=models.CASCADE, related_name='credit_payment')
+    customer_name = models.CharField(max_length=100, verbose_name="نام")
+    customer_family = models.CharField(max_length=100, verbose_name="نام خانوادگی")
+    phone = models.CharField(max_length=15, verbose_name="تلفن")
+    address = models.TextField(verbose_name="آدرس")
+    national_id = models.CharField(max_length=10, verbose_name="کد ملی")
+    due_date = models.DateField(verbose_name="تاریخ سررسید")
+    created_at = models.DateTimeField(auto_now_add=True)
 

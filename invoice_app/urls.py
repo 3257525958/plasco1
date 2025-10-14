@@ -23,4 +23,5 @@ urlpatterns = [
     path('print/<int:invoice_id>/', views.invoice_print, name='invoice_print'),
     path('cancel/', views.cancel_invoice, name='invoice_cancel'),
     path('get-summary/', views.get_invoice_summary, name='get_invoice_summary'),
+    path('confirm-check-payment/', views.confirm_check_payment, name='confirm_check_payment'),
 ]

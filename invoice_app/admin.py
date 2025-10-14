@@ -1,50 +1,222 @@
-
-
 from django.contrib import admin
 from .models import POSDevice, CheckPayment, CreditPayment, Invoicefrosh, InvoiceItemfrosh
 
 
 @admin.register(POSDevice)
 class POSDeviceAdmin(admin.ModelAdmin):
-    list_display = ['name', 'account_holder', 'bank_name', 'is_default', 'is_active']
-    list_filter = ['is_default', 'is_active', 'bank_name']
-    search_fields = ['name', 'account_holder', 'bank_name']
+    list_display = ['name', 'account_holder', 'bank_name', 'card_number', 'is_default', 'is_active', 'created_at']
+    list_filter = ['is_default', 'is_active', 'bank_name', 'created_at']
+    search_fields = ['name', 'account_holder', 'bank_name', 'card_number', 'account_number']
     list_editable = ['is_default', 'is_active']
+    readonly_fields = ['created_at']
+
+    fieldsets = (
+        ('اطلاعات اصلی', {
+            'fields': ('name', 'is_default', 'is_active')
+        }),
+        ('اطلاعات حساب', {
+            'fields': ('account_holder', 'card_number', 'account_number', 'bank_name')
+        }),
+        ('تاریخ‌ها', {
+            'fields': ('created_at',)
+        })
+    )
 
 
-@admin.register(CheckPayment)
 class CheckPaymentAdmin(admin.ModelAdmin):
-    list_display = ['invoice', 'owner_name', 'owner_family', 'check_number', 'amount', 'check_date']
-    list_filter = ['check_date']
-    search_fields = ['owner_name', 'owner_family', 'check_number', 'national_id']
-    readonly_fields = ['invoice']
+    list_display = ['invoice', 'owner_full_name', 'check_number', 'amount', 'remaining_amount',
+                    'remaining_payment_method', 'check_date', 'created_at']
+    list_filter = ['check_date', 'remaining_payment_method', 'created_at']
+    search_fields = ['owner_name', 'owner_family', 'check_number', 'national_id', 'phone']
+    readonly_fields = ['invoice', 'created_at']
+
+    fieldsets = (
+        ('اطلاعات فاکتور', {
+            'fields': ('invoice',)
+        }),
+        ('اطلاعات صاحب چک', {
+            'fields': ('owner_name', 'owner_family', 'national_id', 'phone', 'address')
+        }),
+        ('اطلاعات چک', {
+            'fields': ('check_number', 'amount', 'check_date')
+        }),
+        ('پرداخت باقیمانده', {
+            'fields': ('remaining_amount', 'remaining_payment_method', 'pos_device')
+        }),
+        ('تاریخ‌ها', {
+            'fields': ('created_at',)
+        })
+    )
+
+    def owner_full_name(self, obj):
+        return f"{obj.owner_name} {obj.owner_family}"
+
+    owner_full_name.short_description = 'نام کامل صاحب چک'
 
 
-@admin.register(CreditPayment)
 class CreditPaymentAdmin(admin.ModelAdmin):
-    list_display = ['invoice', 'customer_name', 'customer_family', 'due_date']
-    list_filter = ['due_date']
-    search_fields = ['customer_name', 'customer_family', 'national_id']
-    readonly_fields = ['invoice']
+    list_display = ['invoice', 'customer_full_name', 'phone', 'due_date', 'created_at']
+    list_filter = ['due_date', 'created_at']
+    search_fields = ['customer_name', 'customer_family', 'national_id', 'phone']
+    readonly_fields = ['invoice', 'created_at']
+
+    fieldsets = (
+        ('اطلاعات فاکتور', {
+            'fields': ('invoice',)
+        }),
+        ('اطلاعات مشتری', {
+            'fields': ('customer_name', 'customer_family', 'national_id', 'phone', 'address')
+        }),
+        ('اطلاعات نسیه', {
+            'fields': ('due_date',)
+        }),
+        ('تاریخ‌ها', {
+            'fields': ('created_at',)
+        })
+    )
+
+    def customer_full_name(self, obj):
+        return f"{obj.customer_name} {obj.customer_family}"
+
+    customer_full_name.short_description = 'نام کامل مشتری'
 
 
 class InvoiceItemfroshInline(admin.TabularInline):
     model = InvoiceItemfrosh
     extra = 0
     readonly_fields = ['product', 'quantity', 'price', 'total_price', 'standard_price', 'discount']
+    can_delete = False
+
+    fieldsets = (
+        (None, {
+            'fields': ('product', 'quantity', 'price', 'discount', 'total_price', 'standard_price')
+        }),
+    )
+
+
+class CheckPaymentInline(admin.StackedInline):
+    model = CheckPayment
+    extra = 0
+    max_num = 1
+    can_delete = False
+    readonly_fields = ['created_at']
+
+    fieldsets = (
+        ('اطلاعات صاحب چک', {
+            'fields': ('owner_name', 'owner_family', 'national_id', 'phone', 'address')
+        }),
+        ('اطلاعات چک', {
+            'fields': ('check_number', 'amount', 'check_date')
+        }),
+        ('پرداخت باقیمانده', {
+            'fields': ('remaining_amount', 'remaining_payment_method', 'pos_device')
+        }),
+        ('تاریخ‌ها', {
+            'fields': ('created_at',)
+        })
+    )
+
+
+class CreditPaymentInline(admin.StackedInline):
+    model = CreditPayment
+    extra = 0
+    max_num = 1
+    can_delete = False
+    readonly_fields = ['created_at']
+
+    fieldsets = (
+        ('اطلاعات مشتری', {
+            'fields': ('customer_name', 'customer_family', 'national_id', 'phone', 'address')
+        }),
+        ('اطلاعات نسیه', {
+            'fields': ('due_date',)
+        }),
+        ('تاریخ‌ها', {
+            'fields': ('created_at',)
+        })
+    )
 
 
 @admin.register(Invoicefrosh)
 class InvoicefroshAdmin(admin.ModelAdmin):
-    list_display = ['serial_number', 'branch', 'customer_name', 'total_amount', 'payment_method', 'is_paid',
-                    'created_at']
+    list_display = ['serial_number', 'branch', 'customer_name', 'total_amount', 'payment_method_display',
+                    'is_paid', 'is_finalized', 'created_at_jalali']
     list_filter = ['branch', 'payment_method', 'is_paid', 'is_finalized', 'created_at']
     search_fields = ['serial_number', 'customer_name', 'customer_phone']
-    readonly_fields = ['serial_number', 'created_at', 'created_by']
+    readonly_fields = ['serial_number', 'created_at', 'created_by', 'total_without_discount']
     inlines = [InvoiceItemfroshInline]
+
+    fieldsets = (
+        ('اطلاعات اصلی', {
+            'fields': ('serial_number', 'branch', 'created_by', 'created_at')
+        }),
+        ('اطلاعات مالی', {
+            'fields': ('total_without_discount', 'discount', 'total_amount')
+        }),
+        ('اطلاعات پرداخت', {
+            'fields': ('payment_method', 'pos_device', 'is_paid', 'payment_date')
+        }),
+        ('وضعیت فاکتور', {
+            'fields': ('is_finalized',)
+        }),
+        ('اطلاعات مشتری', {
+            'fields': ('customer_name', 'customer_phone')
+        })
+    )
+
+    def get_inlines(self, request, obj):
+        """
+        نمایش اینلاین مناسب بر اساس روش پرداخت
+        """
+        if obj:
+            if obj.payment_method == 'check':
+                return [InvoiceItemfroshInline, CheckPaymentInline]
+            elif obj.payment_method == 'credit':
+                return [InvoiceItemfroshInline, CreditPaymentInline]
+        return [InvoiceItemfroshInline]
+
+    def payment_method_display(self, obj):
+        return obj.get_payment_method_display()
+
+    payment_method_display.short_description = 'روش پرداخت'
+
+    def created_at_jalali(self, obj):
+        return obj.get_jalali_date() + ' ' + obj.get_jalali_time()
+
+    created_at_jalali.short_description = 'تاریخ ایجاد (شمسی)'
 
     def save_model(self, request, obj, form, change):
         if not obj.created_by_id:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'branch', 'created_by', 'pos_device'
+        ).prefetch_related('items')
+
+
+@admin.register(InvoiceItemfrosh)
+class InvoiceItemfroshAdmin(admin.ModelAdmin):
+    list_display = ['invoice', 'product', 'quantity', 'price', 'discount', 'total_price', 'standard_price']
+    list_filter = ['invoice__branch', 'invoice__created_at']
+    search_fields = ['product__product_name', 'invoice__serial_number']
+    readonly_fields = ['invoice', 'product', 'quantity', 'price', 'total_price', 'standard_price', 'discount']
+
+    def has_add_permission(self, request):
+        # جلوگیری از افزودن آیتم جدید مستقل از فاکتور
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # جلوگیری از حذف آیتم‌ها
+        return False
+
+
+# ثبت مدل‌ها با کلاس‌های Admin سفارشی
+admin.site.register(CheckPayment, CheckPaymentAdmin)
+admin.site.register(CreditPayment, CreditPaymentAdmin)
+
+# تنظیمات مربوط به ادمین
+admin.site.site_header = 'سیستم مدیریت فروش'
+admin.site.site_title = 'پنل مدیریت فروش'
+admin.site.index_title = 'مدیریت فروش و فاکتورها'

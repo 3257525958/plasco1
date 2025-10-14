@@ -1,3 +1,4 @@
+import jdatetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -379,15 +380,18 @@ def save_check_payment(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
+            print("📋 اطلاعات دریافتی چک:", data)  # لاگ برای دیباگ
 
             required_fields = ['owner_name', 'owner_family', 'national_id', 'phone',
-                               'check_number', 'amount', 'check_date']
+                               'check_number', 'amount', 'check_date', 'remaining_amount',
+                               'remaining_payment_method']
 
             for field in required_fields:
                 if not data.get(field):
                     return JsonResponse({'status': 'error', 'message': f'فیلد {field} الزامی است'})
 
-            request.session['check_payment_data'] = {
+            # ذخیره اطلاعات چک در session
+            check_data = {
                 'owner_name': data.get('owner_name', '').strip(),
                 'owner_family': data.get('owner_family', '').strip(),
                 'national_id': data.get('national_id', '').strip(),
@@ -395,14 +399,23 @@ def save_check_payment(request):
                 'phone': data.get('phone', '').strip(),
                 'check_number': data.get('check_number', '').strip(),
                 'amount': int(data.get('amount', 0)),
+                'remaining_amount': int(data.get('remaining_amount', 0)),
+                'remaining_payment_method': data.get('remaining_payment_method', 'cash'),
+                'remaining_pos_device_id': data.get('remaining_pos_device_id'),
                 'check_date': data.get('check_date', '')
             }
+
+            request.session['check_payment_data'] = check_data
             request.session.modified = True
+
+            print("✅ اطلاعات چک در session ذخیره شد:", check_data)
 
             return JsonResponse({'status': 'success'})
         except Exception as e:
+            print(f"❌ خطا در ذخیره اطلاعات چک: {str(e)}")
             return JsonResponse({'status': 'error', 'message': f'خطا: {str(e)}'})
     return JsonResponse({'status': 'error'})
+
 
 @login_required
 @csrf_exempt
@@ -533,12 +546,12 @@ def manage_pos_devices(request):
 
     return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
 
+
 @login_required
 @csrf_exempt
 def finalize_invoice(request):
     """
     ویوی نهایی کردن و ثبت فاکتور فروش
-    این ویو تمام مراحل ثبت فاکتور را انجام می‌دهد
     """
     print("🔴 1 - تابع finalize_invoice فراخوانی شد")
 
@@ -574,10 +587,8 @@ def finalize_invoice(request):
 
             # بررسی موجودی هر آیتم قبل از ثبت نهایی
             stock_errors = []
-            print(2222222222222222222222222222)
             for index, item_data in enumerate(items, 1):
                 try:
-                    print(33333333333)
                     product = InventoryCount.objects.get(id=item_data['product_id'], branch=branch)
                     if product.quantity < item_data['quantity']:
                         stock_errors.append(
@@ -586,9 +597,7 @@ def finalize_invoice(request):
                 except InventoryCount.DoesNotExist:
                     stock_errors.append(f"ردیف {index}: کالا یافت نشد (ID: {item_data['product_id']})")
 
-            # اگر خطای موجودی وجود دارد، به کاربر گزارش دهیم
             if stock_errors:
-                print(444444444)
                 error_message = "موجودی برخی کالاها کافی نیست:\n" + "\n".join(stock_errors)
                 return JsonResponse({
                     'status': 'error',
@@ -597,7 +606,6 @@ def finalize_invoice(request):
                 })
 
             # ایجاد فاکتور اصلی
-            print(55555555)
             invoice = Invoicefrosh.objects.create(
                 branch=branch,
                 created_by=request.user,
@@ -615,7 +623,6 @@ def finalize_invoice(request):
 
             # ثبت دستگاه POS اگر روش پرداخت POS باشد
             if payment_method == 'pos':
-                print(6666666666666)
                 pos_device_id = request.session.get('pos_device_id')
                 if pos_device_id:
                     try:
@@ -624,25 +631,15 @@ def finalize_invoice(request):
                         invoice.save()
                         print(f"✅ دستگاه پوز ثبت شد: {pos_device.name}")
                     except POSDevice.DoesNotExist:
-                        # اگر دستگاه پیدا نشد، از پیش‌فرض استفاده کن
                         default_pos = POSDevice.objects.filter(is_default=True, is_active=True).first()
                         if default_pos:
                             invoice.pos_device = default_pos
                             invoice.save()
                             print(f"✅ دستگاه پوز پیش‌فرض ثبت شد: {default_pos.name}")
-                else:
-                    # اگر دستگاه انتخاب نشده، از پیش‌فرض استفاده کن
-                    default_pos = POSDevice.objects.filter(is_default=True, is_active=True).first()
-                    if default_pos:
-                        invoice.pos_device = default_pos
-                        invoice.save()
-                        print(f"✅ دستگاه پوز پیش‌فرض ثبت شد: {default_pos.name}")
 
             # ایجاد آیتم‌های فاکتور و به روزرسانی موجودی
             for item_index, item_data in enumerate(items, 1):
-                print(777)
                 try:
-                    print(88888888888888)
                     product = InventoryCount.objects.get(id=item_data['product_id'], branch=branch)
 
                     # محاسبه قیمت‌های دقیق
@@ -650,61 +647,37 @@ def finalize_invoice(request):
                     item_discount = item_data.get('discount', 0)
                     item_final_price = item_total - item_discount
 
-                    # ایجاد آیتم فاکتور
-                    print(999999999999)
+                    # ایمن‌سازی بیشتر برای دریافت standard_price
+                    standard_price_value = item_data['price']
+
                     try:
-                        # ایمن‌سازی بیشتر برای دریافت standard_price
-                        standard_price_value = item_data['price']  # مقدار پیش‌فرض
+                        product_pricing = ProductPricing.objects.filter(
+                            product_name=product.product_name
+                        ).first()
 
-                        # جستجوی ProductPricing با مدیریت خطاهای بهتر
-                        try:
-                            product_pricing = ProductPricing.objects.filter(
-                                product_name=product.product_name
-                            ).first()
+                        if product_pricing and product_pricing.standard_price is not None:
+                            standard_price_value = float(product_pricing.standard_price)
+                            print(f"✅ قیمت معیار از ProductPricing گرفته شد: {standard_price_value}")
+                        else:
+                            print(f"⚠️ قیمت معیار یافت نشد، از قیمت فروش استفاده می‌شود: {standard_price_value}")
 
-                            if product_pricing and product_pricing.standard_price is not None:
-                                print(product_pricing.standard_price)
-                                print(3333333333333333333333333333333333333333333333333333)
-                                standard_price_value = float(product_pricing.standard_price)
-                                print(f"✅ قیمت معیار از ProductPricing گرفته شد: {standard_price_value}")
-                            else:
-                                print(f"⚠️ قیمت معیار یافت نشد، از قیمت فروش استفاده می‌شود: {standard_price_value}")
+                    except Exception as pricing_error:
+                        print(f"⚠️ خطا در جستجوی ProductPricing: {str(pricing_error)}")
 
-                        except Exception as pricing_error:
-                            print(f"⚠️ خطا در جستجوی ProductPricing: {str(pricing_error)}")
+                    # ایجاد آیتم فاکتور
+                    invoice_item = InvoiceItemfrosh(
+                        invoice=invoice,
+                        product=product,
+                        quantity=item_data['quantity'],
+                        price=item_data['price'],
+                        total_price=item_total,
+                        discount=item_discount,
+                        standard_price=standard_price_value
+                    )
+                    invoice_item.save()
 
-                        # ایجاد آیتم فاکتور
-                        invoice_item = InvoiceItemfrosh(
-                            invoice=invoice,
-                            product=product,
-                            quantity=item_data['quantity'],
-                            price=item_data['price'],
-                            total_price=item_total,
-                            discount=item_discount,
-                            standard_price=standard_price_value
-                        )
-                        invoice_item.save()
+                    print(f"✅ آیتم فاکتور با موفقیت ایجاد شد - Standard Price: {standard_price_value}")
 
-                        print(f"✅ آیتم فاکتور با موفقیت ایجاد شد - Standard Price: {standard_price_value}")
-
-                    except Exception as e:
-                        print(f"❌ خطا در ایجاد آیتم فاکتور: {str(e)}")
-                        # در صورت خطا، با مقادیر پایه ایجاد کن
-                        try:
-                            InvoiceItemfrosh.objects.create(
-                                invoice=invoice,
-                                product=product,
-                                quantity=item_data['quantity'],
-                                price=item_data['price'],
-                                total_price=item_total,
-                                discount=item_discount,
-                                standard_price=item_data['price']  # حداقل مقدار
-                            )
-                            print("✅ آیتم فاکتور با مقادیر پایه ایجاد شد")
-                        except Exception as fallback_error:
-                            print(f"❌ خطا حتی در ایجاد fallback: {str(fallback_error)}")
-
-                    print(00000000000)
                     # به روزرسانی موجودی انبار (کسر کردن)
                     old_quantity = product.quantity
                     product.quantity -= item_data['quantity']
@@ -720,15 +693,51 @@ def finalize_invoice(request):
                     print(f"❌ خطا در آیتم {item_index}: {str(e)}")
                     continue
 
-            # ثبت اطلاعات پرداخت چک
+            # ثبت اطلاعات پرداخت چک - اصلاح شده
+            # ثبت اطلاعات پرداخت چک - اصلاح شده
             if payment_method == 'check':
                 check_data = request.session.get('check_payment_data')
                 if check_data:
                     try:
-                        # تبدیل تاریخ چک از رشته به آبجکت تاریخ
-                        check_date = datetime.strptime(check_data['check_date'], '%Y-%m-%d').date()
+                        # تبدیل تاریخ چک از رشته شمسی به آبجکت تاریخ میلادی
+                        check_date_str = check_data['check_date']
+                        print(f"📅 تاریخ چک دریافتی: {check_date_str}")
 
-                        CheckPayment.objects.create(
+                        # تبدیل تاریخ شمسی به میلادی
+                        try:
+                            # اگر تاریخ به فرمت ۱۴۰۴/۰۷/۲۶ است
+                            if '/' in check_date_str:
+                                year, month, day = map(int, check_date_str.split('/'))
+                                # تبدیل تاریخ شمسی به میلادی
+                                jalali_date = jdatetime.date(year, month, day)
+                                gregorian_date = jalali_date.togregorian()
+                                check_date = gregorian_date
+                                print(f"✅ تاریخ تبدیل شده: {jalali_date} → {gregorian_date}")
+                            else:
+                                # اگر فرمت دیگری دارد، از روش قبلی استفاده کن
+                                check_date = datetime.strptime(check_date_str, '%Y-%m-%d').date()
+                        except Exception as date_error:
+                            print(f"❌ خطا در تبدیل تاریخ: {date_error}")
+                            # در صورت خطا، از تاریخ امروز استفاده کن
+                            check_date = timezone.now().date()
+                            print(f"⚠️ از تاریخ امروز استفاده شد: {check_date}")
+
+                        # پیدا کردن دستگاه پوز اگر روش پرداخت باقیمانده POS باشد
+                        remaining_pos_device = None
+                        if check_data.get('remaining_payment_method') == 'pos' and check_data.get(
+                                'remaining_pos_device_id'):
+                            try:
+                                remaining_pos_device = POSDevice.objects.get(
+                                    id=check_data['remaining_pos_device_id'],
+                                    is_active=True
+                                )
+                                print(f"✅ دستگاه پوز برای باقیمانده: {remaining_pos_device.name}")
+                            except POSDevice.DoesNotExist:
+                                print("⚠️ دستگاه پوز برای باقیمانده یافت نشد")
+
+                        # ثبت اطلاعات چک در دیتابیس
+                        print("📋 در حال ثبت اطلاعات چک در دیتابیس...")
+                        check_payment = CheckPayment.objects.create(
                             invoice=invoice,
                             owner_name=check_data['owner_name'],
                             owner_family=check_data['owner_family'],
@@ -737,14 +746,21 @@ def finalize_invoice(request):
                             phone=check_data['phone'],
                             check_number=check_data['check_number'],
                             amount=check_data['amount'],
+                            remaining_amount=check_data.get('remaining_amount', 0),
+                            remaining_payment_method=check_data.get('remaining_payment_method', 'cash'),
+                            pos_device=remaining_pos_device,
                             check_date=check_date
                         )
-                        print("✅ اطلاعات چک ثبت شد")
+                        print(f"✅ اطلاعات چک با موفقیت ثبت شد - ID: {check_payment.id}")
+                        print(
+                            f"📊 جزئیات چک: {check_data['owner_name']} {check_data['owner_family']} - مبلغ: {check_data['amount']}")
+
                     except Exception as e:
                         print(f"❌ خطا در ثبت اطلاعات چک: {str(e)}")
+                        import traceback
+                        print(f"📋 جزئیات خطا:\n{traceback.format_exc()}")
                 else:
                     print("⚠️ اطلاعات چک در session وجود ندارد")
-
             # ثبت اطلاعات پرداخت نسیه
             elif payment_method == 'credit':
                 credit_data = request.session.get('credit_payment_data')
@@ -765,6 +781,8 @@ def finalize_invoice(request):
                         print("✅ اطلاعات نسیه ثبت شد")
                     except Exception as e:
                         print(f"❌ خطا در ثبت اطلاعات نسیه: {str(e)}")
+                        import traceback
+                        print(traceback.format_exc())
                 else:
                     print("⚠️ اطلاعات نسیه در session وجود ندارد")
 
@@ -780,21 +798,10 @@ def finalize_invoice(request):
                     del request.session[key]
                     print(f"✅ حذف شده از session: {key}")
 
-            # تأیید نهایی که session پاک شده
             request.session.modified = True
-            remaining_items = request.session.get('invoice_items', [])
-            print(f"✅ تأیید پاکسازی session - آیتم‌های باقیمانده: {len(remaining_items)}")
 
-            # ثبت لاگ نهایی برای پیگیری
             print(f"🎉 فاکتور {invoice.id} با موفقیت ثبت شد!")
-            print(f"📊 اطلاعات فاکتور:")
-            print(f"   - شماره سریال: {invoice.serial_number}")
-            print(f"   - مبلغ کل: {total_amount} تومان")
-            print(f"   - تعداد آیتم‌ها: {len(items)}")
-            print(f"   - روش پرداخت: {payment_method}")
-            print(f"   - مشتری: {request.session.get('customer_name', 'نامشخص')}")
 
-            # بازگشت پاسخ موفق
             return JsonResponse({
                 'status': 'success',
                 'message': 'فاکتور با موفقیت ثبت شد',
@@ -804,18 +811,10 @@ def finalize_invoice(request):
                 'items_count': len(items),
                 'payment_method': payment_method,
                 'customer_name': invoice.customer_name or 'نامشخص',
-                'reset_required': True  # فلگ برای بازنشانی صفحه در کلاینت
-            })
-
-        except json.JSONDecodeError as e:
-            print(f"❌ خطای JSON: {str(e)}")
-            return JsonResponse({
-                'status': 'error',
-                'message': f'خطا در پردازش داده‌های ارسالی: {str(e)}'
+                'reset_required': True
             })
 
         except Exception as e:
-            # ثبت خطای کامل برای دیباگ
             import traceback
             error_traceback = traceback.format_exc()
             print(f"❌ خطای غیرمنتظره در ثبت فاکتور: {str(e)}")
@@ -827,8 +826,6 @@ def finalize_invoice(request):
                 'debug_info': 'لطفا با پشتیبانی تماس بگیرید'
             })
 
-    # اگر درخواست POST نبود
-    print("❌ درخواست غیر POST دریافت شد")
     return JsonResponse({
         'status': 'error',
         'message': 'درخواست نامعتبر. لطفا از فرم صحیح استفاده کنید.'
@@ -961,3 +958,34 @@ def cancel_invoice(request):
 
     # ریدایرکت به صفحه ایجاد فاکتور که فرم انتخاب شعبه را نشان می‌دهد
     return redirect('invoice_app:create_invoice')
+
+
+@login_required
+@csrf_exempt
+def confirm_check_payment(request):
+    """
+    تأیید نهایی پرداخت چک و ثبت فاکتور
+    """
+    if request.method == 'POST':
+        try:
+            # بررسی وجود اطلاعات چک در session
+            check_data = request.session.get('check_payment_data')
+            if not check_data:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'اطلاعات چک یافت نشد. لطفا مجدداً اطلاعات چک را وارد کنید.'
+                })
+
+            # فراخوانی ویوی نهایی کردن فاکتور
+            return finalize_invoice(request)
+
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'خطا در تأیید پرداخت چک: {str(e)}'
+            })
+
+    return JsonResponse({
+        'status': 'error',
+        'message': 'درخواست نامعتبر'
+    })
