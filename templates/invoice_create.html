@@ -1,4 +1,5 @@
 
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -1962,27 +1963,28 @@ function setupEventListeners() {
 
     // انتخاب روش پرداخت
     $('.payment-method-btn').click(function() {
-        const method = $(this).data('method');
-        currentPaymentMethod = method;
-        
-        $('.payment-method-btn').removeClass('active');
-        $(this).addClass('active');
-        
-        $('#pos-devices-section').toggle(method === 'pos');
-        
-        if (method === 'check') {
-            $('#checkPaymentModal').modal('show');
-        } else if (method === 'credit') {
-            $('#creditPaymentModal').modal('show');
-        }
-        
-        savePaymentMethod(method);
-        
-        if (method === 'pos') {
-            setTimeout(saveSelectedPosDevice, 100);
-        }
-    });
-
+    const method = $(this).data('method');
+    currentPaymentMethod = method;
+    
+    $('.payment-method-btn').removeClass('active');
+    $(this).addClass('active');
+    
+    $('#pos-devices-section').toggle(method === 'pos');
+    
+    if (method === 'check') {
+        $('#checkPaymentModal').modal('show');
+    } else if (method === 'credit') {
+        // این بخش اضافه شده - نمایش مودال نسیه
+        $('#creditPaymentModal').modal('show');
+    }
+    
+    savePaymentMethod(method);
+    
+    if (method === 'pos') {
+        setTimeout(saveSelectedPosDevice, 100);
+    }
+});
+    
     // تغییر دستگاه POS
     $('#pos-device').on('change', saveSelectedPosDevice);
 
