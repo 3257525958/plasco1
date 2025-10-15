@@ -13,13 +13,14 @@ from decimal import Decimal
 class InventoryCount(models.Model):  # حذف class تکراری
     product_name = models.CharField(max_length=100, verbose_name="نام کالا")
     is_new = models.BooleanField(default=True, verbose_name="کالای جدید")
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="شعبه")
     quantity = models.IntegerField(verbose_name="تعداد")
     count_date = models.CharField(max_length=10, verbose_name="تاریخ شمارش", default="")
-    counter = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="شمارنده")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     barcode_data = models.CharField(max_length=100, blank=True, null=True, verbose_name="داده بارکد")
     selling_price = models.PositiveIntegerField(verbose_name="قیمت فروش", blank=True, null=True)
+    # در models.py اصلاح کنید:
+    branch = models.ForeignKey(Branch, on_delete=models.PROTECT, verbose_name="شعبه")
+    counter = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name="شمارنده")
     profit_percentage = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -90,6 +91,22 @@ class InventoryCount(models.Model):  # حذف class تکراری
 
         super().save(*args, **kwargs)
         print("✅ متد save با موفقیت اجرا شد.")
+
+        def delete(self, *args, **kwargs):
+            # اطلاعات کامل قبل از حذف
+            logger.critical(f"🚨 DELETE InventoryCount - ID: {self.id}")
+            logger.critical(f"📦 Product: {self.product_name}")
+            logger.critical(f"🏢 Branch: {self.branch.name} (ID: {self.branch.id})")
+            logger.critical(f"👤 Counter: {self.counter.username} (ID: {self.counter.id})")
+            logger.critical(f"📅 Created: {self.created_at}")
+
+            # بررسی stack trace برای پیدا کردن عامل حذف
+            import traceback
+            stack_trace = ''.join(traceback.format_stack())
+            logger.critical(f"🔍 Stack trace:\n{stack_trace}")
+
+            super().delete(*args, **kwargs)
+            logger.critical(f"✅ InventoryCount {self.id} deleted")
 
     def __str__(self):
         return f"{self.product_name} - {self.branch.name} - {self.quantity}"
