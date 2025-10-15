@@ -93,20 +93,25 @@ class InventoryCount(models.Model):  # حذف class تکراری
         print("✅ متد save با موفقیت اجرا شد.")
 
         def delete(self, *args, **kwargs):
-            # اطلاعات کامل قبل از حذف
-            logger.critical(f"🚨 DELETE InventoryCount - ID: {self.id}")
-            logger.critical(f"📦 Product: {self.product_name}")
-            logger.critical(f"🏢 Branch: {self.branch.name} (ID: {self.branch.id})")
-            logger.critical(f"👤 Counter: {self.counter.username} (ID: {self.counter.id})")
-            logger.critical(f"📅 Created: {self.created_at}")
-
-            # بررسی stack trace برای پیدا کردن عامل حذف
             import traceback
-            stack_trace = ''.join(traceback.format_stack())
-            logger.critical(f"🔍 Stack trace:\n{stack_trace}")
+            import sys
+
+            print("=" * 80, file=sys.stderr)
+            print("🚨 CRITICAL: InventoryCount BEING DELETED!", file=sys.stderr)
+            print("🚨 DELETE InventoryCount - ID:", self.id, file=sys.stderr)
+            print("📦 Product:", self.product_name, file=sys.stderr)
+            print("🏢 Branch:", self.branch.name, "(ID:", self.branch.id + ")", file=sys.stderr)
+            print("👤 Counter:", self.counter.username, "(ID:", self.counter.id + ")", file=sys.stderr)
+            print("📅 Created:", self.created_at, file=sys.stderr)
+
+            # چاپ stack trace
+            print("🔍 Stack trace:", file=sys.stderr)
+            for line in traceback.format_stack():
+                print(line, file=sys.stderr)
+
+            print("=" * 80, file=sys.stderr)
 
             super().delete(*args, **kwargs)
-            logger.critical(f"✅ InventoryCount {self.id} deleted")
 
     def __str__(self):
         return f"{self.product_name} - {self.branch.name} - {self.quantity}"
