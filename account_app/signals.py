@@ -1,4 +1,5 @@
 
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import models
@@ -25,3 +26,4 @@ def update_inventory_prices(sender, instance, created, **kwargs):
             if item.selling_price != rounded_price:
                 item.selling_price = rounded_price
                 item.save()  # استفاده از save به جای update
+

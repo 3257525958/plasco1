@@ -1064,3 +1064,112 @@ def session_test(request):
     return HttpResponse(f"Session test: {test_value}")
 
 
+
+# -------------------------------------------------------------------------
+def search_branches_count(request):
+    """جستجوی شعب برای بخش انبارگردانی"""
+    query = request.GET.get('q', '')
+
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
+    branches = Branch.objects.filter(
+        Q(name__icontains=query) | Q(address__icontains=query)
+    )[:10]
+
+    results = []
+    for branch in branches:
+        results.append({
+            'id': branch.id,
+            'name': branch.name,
+            'address': branch.address
+        })
+
+    return JsonResponse({'results': results})
+def search_products_count(request):
+    """جستجوی محصولات برای انبارگردانی - فقط محصولات شعبه انتخاب شده"""
+    try:
+        query = request.GET.get('q', '')
+        branch_id = request.GET.get('branch_id', '')
+
+        if len(query) < 2:
+            return JsonResponse({'results': []})
+
+        if not branch_id:
+            return JsonResponse({'results': []})
+
+        # جستجو فقط در محصولات شعبه انتخاب شده
+        products_query = InventoryCount.objects.filter(
+            Q(product_name__icontains=query) &
+            Q(branch_id=branch_id)
+        ).select_related('branch', 'counter')
+
+        results = []
+        for product in products_query:
+            results.append({
+                'id': product.id,
+                'product_name': product.product_name,
+                'branch_id': product.branch.id,
+                'branch_name': product.branch.name,
+                'current_quantity': product.quantity,
+                'last_counter': product.counter.username if product.counter else 'نامشخص',
+                'last_count_date': product.count_date,
+                'text': f"{product.product_name} (موجودی: {product.quantity})"
+            })
+
+        return JsonResponse({'results': results})
+
+    except Exception as e:
+        logger.error(f"Error in product search for count: {str(e)}")
+        return JsonResponse({'results': []})
+def get_product_details(request):
+    """دریافت اطلاعات کامل محصول برای نمایش تاریخچه"""
+    try:
+        product_name = request.GET.get('product_name', '')
+        branch_id = request.GET.get('branch_id', '')
+
+        if not product_name or not branch_id:
+            return JsonResponse({
+                'exists': False,
+                'current_quantity': 0,
+                'last_counts': []
+            })
+
+        # دریافت اطلاعات فعلی محصول
+        current_product = InventoryCount.objects.filter(
+            product_name=product_name,
+            branch_id=branch_id
+        ).first()
+
+        # دریافت تاریخچه شمارش‌ها
+        last_counts = InventoryCount.objects.filter(
+            product_name=product_name,
+            branch_id=branch_id
+        ).order_by('-created_at')[:5].values(
+            'count_date',
+            'counter__username',
+            'quantity',
+            'created_at'
+        )
+
+        current_quantity = current_product.quantity if current_product else 0
+        last_counter = current_product.counter.username if current_product and current_product.counter else 'نامشخص'
+        last_count_date = current_product.count_date if current_product else 'نامشخص'
+
+        return JsonResponse({
+            'exists': current_product is not None,
+            'current_quantity': current_quantity,
+            'last_counter': last_counter,
+            'last_count_date': last_count_date,
+            'last_counts': list(last_counts)
+        })
+
+    except Exception as e:
+        logger.error(f"Error in get_product_details: {str(e)}")
+        return JsonResponse({
+            'exists': False,
+            'current_quantity': 0,
+            'last_counts': []
+        })
+
+

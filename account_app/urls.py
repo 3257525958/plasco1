@@ -52,5 +52,11 @@ path('store-invoice-items/', views.StoreInvoiceItems.as_view(), name='store_invo
     path('payment-methods/<int:pk>/set-default/', views.set_default_payment_method, name='set_default_payment_method'),
     path('check-auth/', views.check_auth_status, name='check_auth_status'),
     path('session-test/', views.session_test, name='session_test'),
+
+
+    # ---------------------انبارگردانی-------------
+path('search-branches-count/', views.search_branches_count, name='search_branches_count'),
+path('search-products-count/', views.search_products_count, name='search_products_count'),
+path('get-product-details/', views.get_product_details, name='get_product_details'),
 ]
 

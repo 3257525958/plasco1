@@ -1014,20 +1014,333 @@
             }
         });
 
-        // توابع مربوط به انبارگردانی (اگر نیاز دارید)
-        let countItems = [];
-        let currentProductType = 'new';
-        let searchTimeout = null;
+        
+        
+        
+        // مدیریت تب انبارگردانی
+let countItems = [];
+let currentProductType = 'new';
+let searchTimeout = null;
 
-        function resetCountForm() {
-            $('#count-product').val('');
-            $('#count-quantity').val('0');
-            $('#product-type-container').hide();
-            $('#product-search-results').hide().empty();
-            $('#product-history').hide();
-            $('#product-type-new').prop('checked', true);
-            currentProductType = 'new';
+function resetCountForm() {
+    $('#count-product').val('');
+    $('#count-quantity').val('0');
+    $('#product-type-container').hide();
+    $('#product-search-results').hide().empty();
+    $('#product-history').hide();
+    $('#product-type-new').prop('checked', true);
+    currentProductType = 'new';
+    $('#selected-branch').hide();
+}
+
+// جستجوی شعب برای انبارگردانی
+$('#count-branch-search').on('input', function() {
+    const query = $(this).val().trim();
+    
+    if (query.length < 2) {
+        $('#branch-search-results').hide().empty();
+        return;
+    }
+    
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+        $.ajax({
+            url: "{% url 'search_branches_count' %}",
+            data: { q: query },
+            dataType: 'json',
+            success: function(data) {
+                if (data.results && data.results.length > 0) {
+                    let html = '';
+                    data.results.forEach(branch => {
+                        html += `
+                            <div class="search-result-item" data-branch-id="${branch.id}" data-branch-name="${branch.name}">
+                                <strong>${branch.name}</strong>
+                                <div>${branch.address}</div>
+                            </div>
+                        `;
+                    });
+                    $('#branch-search-results').html(html).show();
+                } else {
+                    $('#branch-search-results').html('<div class="search-result-item">هیچ شعبه‌ای یافت نشد</div>').show();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error in branch search:', error);
+                showMessage('خطا در جستجوی شعب', 'error');
+            }
+        });
+    }, 300);
+});
+
+// انتخاب شعبه از نتایج
+$(document).on('click', '#branch-search-results .search-result-item', function() {
+    const branchId = $(this).data('branch-id');
+    const branchName = $(this).data('branch-name');
+    
+    $('#count-branch-search').val(branchName);
+    $('#count-branch').val(branchId);
+    $('#selected-branch').html(`شعبه انتخاب شده: <strong>${branchName}</strong>`).show();
+    $('#branch-search-results').hide();
+    
+    // پاک کردن فیلد محصول وقتی شعبه تغییر می‌کند
+    $('#count-product').val('');
+    $('#product-history').hide();
+});
+
+// جستجوی محصولات برای انبارگردانی
+$('#count-product').on('input', function() {
+    const query = $(this).val().trim();
+    const branchId = $('#count-branch').val();
+    
+    if (!branchId) {
+        showMessage('لطفاً ابتدا شعبه را انتخاب کنید', 'error');
+        return;
+    }
+    
+    if (query.length < 2) {
+        $('#product-search-results').hide().empty();
+        return;
+    }
+    
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+        $.ajax({
+            url: "{% url 'search_products_count' %}",
+            data: { 
+                q: query,
+                branch_id: branchId
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.results && data.results.length > 0) {
+                    let html = '';
+                    data.results.forEach(product => {
+                        html += `
+                            <div class="search-result-item" 
+                                 data-product-id="${product.id}"
+                                 data-product-name="${product.product_name}"
+                                 data-branch-id="${product.branch_id}"
+                                 data-current-quantity="${product.current_quantity}">
+                                <strong>${product.product_name}</strong>
+                                <div>شعبه: ${product.branch_name} - موجودی فعلی: ${product.current_quantity}</div>
+                                <div>آخرین شمارش: ${product.last_count_date} توسط ${product.last_counter}</div>
+                            </div>
+                        `;
+                    });
+                    $('#product-search-results').html(html).show();
+                } else {
+                    $('#product-search-results').html('<div class="search-result-item">هیچ محصولی یافت نشد</div>').show();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error in product search:', error);
+                showMessage('خطا در جستجوی محصولات', 'error');
+            }
+        });
+    }, 300);
+});
+
+// انتخاب محصول از نتایج
+$(document).on('click', '#product-search-results .search-result-item', function() {
+    const productName = $(this).data('product-name');
+    const branchId = $(this).data('branch-id');
+    const currentQuantity = $(this).data('current-quantity');
+    
+    $('#count-product').val(productName);
+    $('#product-search-results').hide();
+    
+    // نمایش اطلاعات محصول انتخاب شده
+    $.ajax({
+        url: "{% url 'get_product_details' %}",
+        data: { 
+            product_name: productName,
+            branch_id: branchId
+        },
+        dataType: 'json',
+        success: function(data) {
+            let historyHtml = '';
+            
+            if (data.exists) {
+                historyHtml += `
+                    <div class="last-count-item">
+                        <i class="fas fa-box"></i>
+                        <span>موجودی فعلی: <strong>${data.current_quantity}</strong></span>
+                    </div>
+                    <div class="last-count-item">
+                        <i class="fas fa-user"></i>
+                        <span>آخرین شمارنده: <strong>${data.last_counter}</strong></span>
+                    </div>
+                    <div class="last-count-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>تاریخ آخرین شمارش: <strong>${data.last_count_date}</strong></span>
+                    </div>
+                `;
+                
+                if (data.last_counts && data.last_counts.length > 0) {
+                    historyHtml += `<div style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 5px;">`;
+                    historyHtml += `<strong>تاریخچه شمارش‌ها:</strong>`;
+                    data.last_counts.forEach(count => {
+                        historyHtml += `
+                            <div style="font-size: 0.7rem; margin-top: 3px;">
+                                ${count.count_date}: ${count.quantity} عدد (${count.counter__username || 'نامشخص'})
+                            </div>
+                        `;
+                    });
+                    historyHtml += `</div>`;
+                }
+            } else {
+                historyHtml = '<div>این محصول برای اولین بار در این شعبه شمارش می‌شود</div>';
+            }
+            
+            $('#last-count-info').html(historyHtml);
+            $('#product-history').show();
+        },
+        error: function(xhr, status, error) {
+            console.error('Error getting product details:', error);
+            $('#last-count-info').html('<div>خطا در دریافت اطلاعات محصول</div>');
+            $('#product-history').show();
         }
+    });
+});
+
+// افزودن به لیست شمارش
+$('#add-count-btn').click(function() {
+    const productName = $('#count-product').val().trim();
+    const branchId = $('#count-branch').val();
+    const branchName = $('#count-branch-search').val();
+    const quantity = parseInt($('#count-quantity').val());
+    
+    if (!productName) {
+        showMessage('لطفاً محصول را انتخاب کنید', 'error');
+        return;
+    }
+    
+    if (!branchId) {
+        showMessage('لطفاً شعبه را انتخاب کنید', 'error');
+        return;
+    }
+    
+    if (isNaN(quantity) || quantity < 0) {
+        showMessage('لطفاً تعداد معتبر وارد کنید', 'error');
+        return;
+    }
+    
+    // اضافه کردن به لیست
+    const itemId = Date.now().toString();
+    countItems.push({
+        id: itemId,
+        productName: productName,
+        branchId: branchId,
+        branchName: branchName,
+        quantity: quantity,
+        productType: currentProductType
+    });
+    
+    updateCountList();
+    
+    // پاک کردن فرم
+    $('#count-product').val('');
+    $('#count-quantity').val('0');
+    $('#product-history').hide();
+    
+    showMessage('محصول به لیست اضافه شد', 'success');
+});
+
+// به روزرسانی لیست شمارش
+function updateCountList() {
+    const $countList = $('#count-list');
+    $countList.empty();
+    
+    countItems.forEach((item, index) => {
+        const row = `
+            <tr data-item-id="${item.id}">
+                <td>${item.productName}</td>
+                <td>${item.branchName}</td>
+                <td>${item.productType === 'new' ? 'جدید' : 'قدیمی'}</td>
+                <td>${item.quantity}</td>
+                <td>
+                    <button class="btn btn-sm remove-count-item" data-item-id="${item.id}">
+                        <i class="fas fa-times"></i> حذف
+                    </button>
+                </td>
+            </tr>
+        `;
+        $countList.append(row);
+    });
+    
+    if (countItems.length > 0) {
+        $('#count-list-container').show();
+    } else {
+        $('#count-list-container').hide();
+    }
+}
+
+// حذف از لیست شمارش
+$(document).on('click', '.remove-count-item', function() {
+    const itemId = $(this).data('item-id');
+    countItems = countItems.filter(item => item.id !== itemId);
+    updateCountList();
+});
+
+// ثبت نهایی انبارگردانی
+$('#count-submit-btn').click(function() {
+    if (countItems.length === 0) {
+        showMessage('هیچ محصولی برای ثبت وجود ندارد', 'error');
+        return;
+    }
+    
+    if (!confirm('آیا از ثبت انبارگردانی مطمئن هستید؟')) {
+        return;
+    }
+    
+    // غیرفعال کردن دکمه
+    $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال ثبت...');
+    
+    $.ajax({
+        url: "{% url 'update_inventory_count' %}",
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            items: countItems
+        }),
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        success: function(data) {
+            if (data.success) {
+                showMessage(data.message, 'success');
+                // پاکسازی فرم بعد از ثبت موفق
+                countItems = [];
+                resetCountForm();
+                $('#count-list-container').hide();
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showMessage(data.error, 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error updating inventory:', error);
+            showMessage('خطا در ثبت انبارگردانی', 'error');
+        },
+        complete: function() {
+            $('#count-submit-btn').prop('disabled', false).html('<i class="fas fa-save"></i> به روزرسانی انبار');
+        }
+    });
+});
+
+// بازگشت از انبارگردانی
+$('#count-back-btn').click(function() {
+    if (countItems.length > 0) {
+        if (!confirm('تغییرات ذخیره نشده از بین خواهند رفت. آیا مطمئن هستید؟')) {
+            return;
+        }
+    }
+    resetCountForm();
+    $('#count-list-container').hide();
+});
     </script>
 </body>
 </html>
