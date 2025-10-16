@@ -637,41 +637,60 @@ def logindef(request):
     button_back = request.POST.get("button_back")
     button_send = request.POST.get("button_send")
     login_etebar[0] = 'f'
-    if button_back == 'accept' :
-        return redirect('/')
-    if button_send == 'accept' :
-        login_etebar[0] = 'false'
-        if (username == '' ) or (username == None):
-            login_etebar[0] = 'empty'
-        users = accuntmodel.objects.all()
-        for user in users :
-            if username == user.melicode :
-                login_etebar[0] = 'false_in_paswoord'
-                if password == user.pasword :
-                    login_etebar[0] = 'true'
-                    a = User.objects.filter(username=username)
-                    a.delete()
-                    User.objects.create_user(
-                                                username=user.melicode,
-                                                password=user.pasword,
-                                                first_name=user.firstname,
-                                                last_name=user.lastname,
-                                            )
 
-                    user_login =authenticate(request,
-                                             username=user.melicode,
-                                             password=user.pasword,
-                                             )
+    if button_back == 'accept':
+        return redirect('/')
+
+    if button_send == 'accept':
+        login_etebar[0] = 'false'
+        if not username:
+            login_etebar[0] = 'empty'
+            return render(request, 'new_loggin.html', context={
+                "firstname": firstname_r[0],
+                "lastname": lastname_r[0],
+                "melicod": melicod_r[0],
+                "phonnumber": phonnumber_r[0],
+                'login_etebar': login_etebar[0],
+            })
+
+        users = accuntmodel.objects.all()
+        for user in users:
+            if username == user.melicode:
+                login_etebar[0] = 'false_in_paswoord'
+                if password == user.pasword:
+                    login_etebar[0] = 'true'
+
+                    # ✅ به جای حذف و ایجاد جدید، بررسی کن کاربر وجود داره یا نه
+                    try:
+                        # اگر کاربر از قبل وجود داره، از همون استفاده کن
+                        existing_user = User.objects.get(username=user.melicode)
+                    except User.DoesNotExist:
+                        # اگر کاربر وجود نداره، جدید ایجاد کن
+                        existing_user = User.objects.create_user(
+                            username=user.melicode,
+                            password=user.pasword,
+                            first_name=user.firstname,
+                            last_name=user.lastname,
+                        )
+
+                    user_login = authenticate(
+                        request,
+                        username=user.melicode,
+                        password=user.pasword,
+                    )
+
                     if user_login is not None:
                         login(request, user_login)
+                        # می‌تونی اینجا redirect کنی به صفحه اصلی
                         # return redirect('/')
-    return render(request,'new_loggin.html',context={
-                                                                    "firstname": firstname_r[0],
-                                                                    "lastname": lastname_r[0],
-                                                                    "melicod": melicod_r[0],
-                                                                    "phonnumber": phonnumber_r[0],
-                                                                    'login_etebar':login_etebar[0],
-                                                                    })
+
+    return render(request, 'new_loggin.html', context={
+        "firstname": firstname_r[0],
+        "lastname": lastname_r[0],
+        "melicod": melicod_r[0],
+        "phonnumber": phonnumber_r[0],
+        'login_etebar': login_etebar[0],
+    })
 ignor_etebar = ['false']
 melicod_ignor = ['']
 

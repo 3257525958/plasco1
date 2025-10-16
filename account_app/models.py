@@ -92,26 +92,6 @@ class InventoryCount(models.Model):  # حذف class تکراری
         super().save(*args, **kwargs)
         print("✅ متد save با موفقیت اجرا شد.")
 
-        def delete(self, *args, **kwargs):
-            import traceback
-            import sys
-
-            print("=" * 80, file=sys.stderr)
-            print("🚨 CRITICAL: InventoryCount BEING DELETED!", file=sys.stderr)
-            print("🚨 DELETE InventoryCount - ID:", self.id, file=sys.stderr)
-            print("📦 Product:", self.product_name, file=sys.stderr)
-            print("🏢 Branch:", self.branch.name, "(ID:", self.branch.id + ")", file=sys.stderr)
-            print("👤 Counter:", self.counter.username, "(ID:", self.counter.id + ")", file=sys.stderr)
-            print("📅 Created:", self.created_at, file=sys.stderr)
-
-            # چاپ stack trace
-            print("🔍 Stack trace:", file=sys.stderr)
-            for line in traceback.format_stack():
-                print(line, file=sys.stderr)
-
-            print("=" * 80, file=sys.stderr)
-
-            super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"{self.product_name} - {self.branch.name} - {self.quantity}"
