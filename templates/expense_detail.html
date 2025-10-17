@@ -1,0 +1,266 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جزئیات هزینه</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2E7D32;
+            --secondary-color: #388E3C;
+            --accent-color: #1B5E20;
+            --text-color: #2c3e50;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        
+        .content {
+            padding: 25px;
+        }
+
+        .receipt-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .receipt-image:hover {
+            transform: scale(1.02);
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            border-bottom: 2px solid var(--primary-color);
+            font-weight: bold;
+        }
+
+        .image-card {
+            transition: all 0.3s ease;
+        }
+
+        .image-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 8px;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-receipt"></i> جزئیات هزینه</h1>
+        </div>
+        
+        <div class="content">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-info-circle"></i> اطلاعات هزینه</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>شرح هزینه:</strong>
+                                <p class="mt-1">{{ expense.description }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <strong>مبلغ:</strong>
+                                <p class="mt-1">{{ expense.amount|floatformat:"0" }} تومان</p>
+                            </div>
+                            <div class="mb-3">
+                                <strong>شعبه:</strong>
+                                <p class="mt-1">{{ expense.branch.name }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <strong>تاریخ ثبت:</strong>
+                                <p class="mt-1">{{ expense.expense_date|date:"Y/m/d" }}</p>
+                            </div>
+                            <div>
+                                <strong>ثبت شده توسط:</strong>
+                                <p class="mt-1">{{ expense.user.firstname }} {{ expense.user.lastname }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-camera"></i> عکس‌های فاکتور</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if expense.images.all %}
+                                <div class="text-center">
+                                    <i class="fas fa-images fa-3x text-success mb-3"></i>
+                                    <p>تعداد عکس‌ها: {{ expense.images.count }}</p>
+                                    <small class="text-muted">برای مشاهده عکس در سایز بزرگ، روی آن کلیک کنید</small>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-image fa-3x mb-3"></i>
+                                    <p>هیچ عکس فاکتوری آپلود نشده است.</p>
+                                    <small class="text-muted">آپلود عکس کاملاً اختیاری بود</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if expense.images.all %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-images"></i> گالری عکس‌های فاکتور</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for image in expense.images.all %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card image-card">
+                                <img src="{% if image.compressed_image %}{{ image.compressed_image.url }}{% else %}{{ image.image.url }}{% endif %}" 
+                                     class="card-img-top receipt-image" 
+                                     alt="فاکتور هزینه"
+                                     onclick="openModal('{% if image.compressed_image %}{{ image.compressed_image.url }}{% else %}{{ image.image.url }}{% endif %}')">
+                                <div class="card-body text-center">
+                                    <small class="text-muted">عکس {{ forloop.counter }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="text-center mt-4">
+                <a href="{% url 'expense_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right"></i> بازگشت به لیست
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال برای نمایش عکس در سایز بزرگ -->
+    <div class="modal fade" id="imageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">عکس فاکتور</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" alt="فاکتور" class="img-fluid rounded">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function openModal(imageUrl) {
+            document.getElementById('modalImage').src = imageUrl;
+            const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+            modal.show();
+        }
+
+        $(document).ready(function() {
+            // اضافه کردن انیمیشن به کارت‌ها
+            $('.card').each(function(index) {
+                $(this).css('animation-delay', (index * 0.1) + 's');
+            });
+        });
+    </script>
+</body>
+</html>

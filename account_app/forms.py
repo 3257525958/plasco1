@@ -99,3 +99,56 @@ class PaymentMethodForm(forms.ModelForm):
                 self.add_error('account_owner', 'برای روش پرداخت واریز به حساب، نام صاحب حساب الزامی است')
 
         return cleaned_data
+
+# ----------------------ثبت هزینه ها----------------------------------------------------------------------------
+from django import forms
+from .models import Expense, ExpenseImage
+from cantact_app.models import Branch
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
+
+
+class ExpenseForm(forms.ModelForm):
+    images = MultipleFileField(
+        required=False,
+        label='عکس‌های فاکتور (اختیاری)'
+    )
+
+    class Meta:
+        model = Expense
+        fields = ['description', 'amount', 'branch']
+        widgets = {
+            'description': forms.Textarea(attrs={
+                'rows': 4,
+                'class': 'form-control',
+                'placeholder': 'شرح کامل هزینه را وارد کنید...'
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'مبلغ به تومان'
+            }),
+            'branch': forms.Select(attrs={
+                'class': 'form-control'
+            })
+        }
+        labels = {
+            'description': 'شرح هزینه *',
+            'amount': 'مبلغ هزینه (تومان) *',
+            'branch': 'شعبه *'
+        }

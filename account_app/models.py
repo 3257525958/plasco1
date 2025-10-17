@@ -352,3 +352,91 @@ class PaymentMethod(models.Model):
                 raise ValidationError({'account_owner': 'برای روش پرداخت واریز به حساب، نام صاحب حساب الزامی است'})
 
 
+# ----------------------------------------ثبت هزینه ها----------------------------------------------
+from django.db import models
+from django.utils import timezone
+from io import BytesIO
+from PIL import Image
+from django.core.files.base import ContentFile
+import os
+
+
+class Expense(models.Model):
+    user = models.ForeignKey('cantact_app.accuntmodel', on_delete=models.CASCADE, verbose_name="کاربر ثبت کننده")
+    description = models.TextField(max_length=1000, verbose_name="شرح هزینه")
+    amount = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="مبلغ هزینه")
+    branch = models.ForeignKey('cantact_app.Branch', on_delete=models.CASCADE, verbose_name="شعبه")
+    expense_date = models.DateField(auto_now_add=True, verbose_name="تاریخ ثبت")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+
+    class Meta:
+        verbose_name = "هزینه"
+        verbose_name_plural = "هزینه‌ها"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.firstname} {self.user.lastname} - {self.amount} - {self.expense_date}"
+
+
+class ExpenseImage(models.Model):
+    expense = models.ForeignKey(Expense, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(
+        upload_to='expense_receipts/%Y/%m/%d/',
+        verbose_name="عکس فاکتور",
+        null=True,
+        blank=True,
+        default=None
+    )
+    compressed_image = models.ImageField(
+        upload_to='compressed_receipts/%Y/%m/%d/',
+        null=True,
+        blank=True
+    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="تاریخ ایجاد")
+
+    def compress_image(self):
+        if self.image:
+            try:
+                img = Image.open(self.image)
+                max_size = (800, 800)
+                if img.height > max_size[0] or img.width > max_size[1]:
+                    img.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+                img_io = BytesIO()
+
+                if img.mode in ('RGBA', 'LA', 'P'):
+                    background = Image.new('RGB', img.size, (255, 255, 255))
+                    if img.mode == 'P':
+                        img = img.convert('RGBA')
+                    background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                    img = background
+                elif img.mode != 'RGB':
+                    img = img.convert('RGB')
+
+                img.save(img_io, format='JPEG', quality=60, optimize=True)
+
+                original_name = os.path.splitext(os.path.basename(self.image.name))[0]
+                compressed_name = f"compressed_{original_name}.jpg"
+
+                self.compressed_image.save(
+                    compressed_name,
+                    ContentFile(img_io.getvalue()),
+                    save=False
+                )
+
+            except Exception as e:
+                print(f"Error compressing image: {e}")
+                self.compressed_image = self.image
+
+    def save(self, *args, **kwargs):
+        if self.image and (not self.compressed_image or self.image != self.compressed_image):
+            self.compress_image()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "عکس فاکتور"
+        verbose_name_plural = "عکس‌های فاکتور"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Receipt for {self.expense}"

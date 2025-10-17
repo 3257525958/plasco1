@@ -86,3 +86,19 @@ class ProductPricingAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
+# ----------------------------------ثبت هزینه ها--------------------------------------------------------------
+from django.contrib import admin
+from .models import Expense, ExpenseImage
+
+@admin.register(Expense)
+class ExpenseAdmin(admin.ModelAdmin):
+    list_display = ['user', 'amount', 'branch', 'expense_date', 'created_at']
+    list_filter = ['branch', 'expense_date']
+    search_fields = ['user__firstname', 'user__lastname', 'description']
+    readonly_fields = ['created_at']
+
+@admin.register(ExpenseImage)
+class ExpenseImageAdmin(admin.ModelAdmin):
+    list_display = ['expense', 'image']
+    list_filter = ['expense__branch']
+    search_fields = ['expense__user__firstname', 'expense__user__lastname']

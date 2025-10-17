@@ -1173,3 +1173,115 @@ def get_product_details(request):
         })
 
 
+# ---------------------------------ثبت هزینه-------------------------------------------------------
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import JsonResponse
+from .models import Expense, ExpenseImage
+from .forms import ExpenseForm
+from cantact_app.models import accuntmodel, Branch
+import json
+
+
+@login_required
+def expense_create(request):
+    try:
+        user_profile = accuntmodel.objects.get(melicode=request.user.username)
+    except accuntmodel.DoesNotExist:
+        messages.error(request, 'پروفایل کاربری یافت نشد.')
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = ExpenseForm(request.POST, request.FILES)
+        if form.is_valid():
+            expense = form.save(commit=False)
+            expense.user = user_profile
+            expense.save()
+
+            # مدیریت آپلود عکس‌ها - کاملاً اختیاری
+            images = request.FILES.getlist('images')
+            if images:
+                for image in images:
+                    if image.size > 5 * 1024 * 1024:
+                        messages.warning(request, f'عکس {image.name} حجمش بسیار زیاد است و آپلود نشد.')
+                        continue
+
+                    try:
+                        ExpenseImage.objects.create(expense=expense, image=image)
+                    except Exception as e:
+                        messages.warning(request, f'خطا در آپلود عکس {image.name}: {str(e)}')
+
+            messages.success(request, 'هزینه با موفقیت ثبت شد.')
+            return redirect('expense_list')  # بدون namespace
+        else:
+            messages.error(request, 'لطفا خطاهای زیر را اصلاح کنید.')
+    else:
+        form = ExpenseForm()
+
+    branches = Branch.objects.all()
+
+    context = {
+        'form': form,
+        'user_profile': user_profile,
+        'branches': branches,
+    }
+    return render(request, 'expense_create.html', context)
+
+
+@login_required
+def expense_list(request):
+    try:
+        user_profile = accuntmodel.objects.get(melicode=request.user.username)
+    except accuntmodel.DoesNotExist:
+        messages.error(request, 'پروفایل کاربری یافت نشد.')
+        return redirect('home')
+
+    expenses = Expense.objects.filter(user=user_profile).order_by('-created_at')
+
+    context = {
+        'expenses': expenses,
+        'user_profile': user_profile,
+    }
+    return render(request, 'expense_list.html', context)
+
+
+@login_required
+def expense_detail(request, pk):
+    expense = get_object_or_404(Expense, pk=pk)
+
+    try:
+        user_profile = accuntmodel.objects.get(melicode=request.user.username)
+        if expense.user != user_profile:
+            messages.error(request, 'شما دسترسی به این هزینه ندارید.')
+            return redirect('expense_list')  # بدون namespace
+    except accuntmodel.DoesNotExist:
+        messages.error(request, 'پروفایل کاربری یافت نشد.')
+        return redirect('home')
+
+    context = {
+        'expense': expense,
+    }
+    return render(request, 'expense_detail.html', context)
+
+
+@login_required
+def delete_expense_image(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            image_id = data.get('image_id')
+
+            image = get_object_or_404(ExpenseImage, id=image_id)
+
+            user_profile = accuntmodel.objects.get(melicode=request.user.username)
+            if image.expense.user != user_profile:
+                return JsonResponse({'success': False, 'error': 'دسترسی غیرمجاز'})
+
+            image.delete()
+            return JsonResponse({'success': True})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'درخواست نامعتبر'})

@@ -1,0 +1,499 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم ثبت هزینه</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2E7D32;
+            --secondary-color: #388E3C;
+            --accent-color: #1B5E20;
+            --text-color: #2c3e50;
+            --light-bg: #f9f9f9;
+            --border-color: #ddd;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e8f5e9);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .user-info {
+            background: #e8f5e9;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .form-container {
+            padding: 25px;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8f5e9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+            outline: none;
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .image-preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .image-preview {
+            position: relative;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 120px;
+            border-radius: 4px;
+        }
+
+        .remove-image {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            border-color: var(--primary-color);
+            background: #e8f5e9;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .form-errors {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 8px;
+            }
+            
+            .form-container {
+                padding: 15px;
+            }
+            
+            .image-preview-container {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-receipt"></i> سیستم ثبت هزینه</h1>
+        </div>
+
+        <div class="user-info">
+            <div class="row">
+                <div class="col-md-6">
+                    <strong><i class="fas fa-user"></i> نام و نام خانوادگی:</strong>
+                    {{ user_profile.firstname }} {{ user_profile.lastname }}
+                </div>
+                <div class="col-md-6">
+                    <strong><i class="fas fa-id-card"></i> کد ملی:</strong>
+                    {{ user_profile.melicode }}
+                </div>
+            </div>
+        </div>
+
+        <div class="messages">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-container">
+            <form method="post" enctype="multipart/form-data" id="expense-form">
+                {% csrf_token %}
+                
+                <div class="section-card">
+                    <h3 class="section-title"><i class="fas fa-info-circle"></i> اطلاعات هزینه</h3>
+                    
+                    <div class="form-group">
+                        <label for="id_description">شرح هزینه *</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="form-errors">
+                                {% for error in form.description.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="id_amount">مبلغ هزینه (تومان) *</label>
+                                {{ form.amount }}
+                                {% if form.amount.errors %}
+                                    <div class="form-errors">
+                                        {% for error in form.amount.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="id_branch">شعبه *</label>
+                                {{ form.branch }}
+                                {% if form.branch.errors %}
+                                    <div class="form-errors">
+                                        {% for error in form.branch.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <h3 class="section-title"><i class="fas fa-camera"></i> عکس‌های فاکتور</h3>
+                    
+                    <div class="form-group">
+                        <label for="id_images">آپلود عکس فاکتورها (اختیاری)</label>
+                        <div class="file-input-container">
+                            <div class="file-input-label">
+                                <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                                <div>برای آپلود عکس‌ها کلیک کنید یا فایل‌ها را اینجا بکشید</div>
+                                <small class="text-muted">می‌توانید چندین عکس انتخاب کنید (حداکثر حجم هر عکس: 5MB)</small>
+                                <small class="text-success">آپلود عکس کاملاً اختیاری است</small>
+                            </div>
+                            <input type="file" name="images" id="id_images" multiple accept="image/*" class="form-control">
+                        </div>
+                        {% if form.images.errors %}
+                            <div class="form-errors">
+                                {% for error in form.images.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div id="image-previews" class="image-preview-container">
+                        <!-- پیش‌نمایش عکس‌ها اینجا نمایش داده می‌شود -->
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end mt-4">
+                    <a href="{% url 'expense_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-list"></i> مشاهده لیست هزینه‌ها
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> ثبت هزینه
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // مدیریت پیش‌نمایش عکس‌ها
+            $('#id_images').on('change', function(e) {
+                const files = e.target.files;
+                const previewContainer = $('#image-previews');
+                
+                previewContainer.empty();
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    
+                    if (!file.type.match('image.*')) {
+                        continue;
+                    }
+                    
+                    const reader = new FileReader();
+                    
+                    reader.onload = (function(theFile) {
+                        return function(e) {
+                            const preview = $(`
+                                <div class="image-preview">
+                                    <button type="button" class="remove-image" data-index="${i}">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <img src="${e.target.result}" alt="پیش‌نمایش">
+                                    <div class="mt-2 small text-muted">${theFile.name}</div>
+                                    <div class="small text-muted">${(theFile.size / 1024 / 1024).toFixed(2)} MB</div>
+                                </div>
+                            `);
+                            
+                            previewContainer.append(preview);
+                        };
+                    })(file);
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // حذف عکس از پیش‌نمایش
+            $(document).on('click', '.remove-image', function() {
+                const index = $(this).data('index');
+                $(this).closest('.image-preview').remove();
+                
+                // ایجاد یک FileList جدید بدون فایل حذف شده
+                const input = $('#id_images')[0];
+                const files = Array.from(input.files);
+                files.splice(index, 1);
+                
+                const newFileList = new DataTransfer();
+                files.forEach(file => newFileList.items.add(file));
+                input.files = newFileList.files;
+            });
+            
+            // اعتبارسنجی فرم
+            $('#expense-form').on('submit', function(e) {
+                let isValid = true;
+                const errors = [];
+                
+                // بررسی شرح هزینه
+                const description = $('#id_description').val().trim();
+                if (!description) {
+                    errors.push('لطفا شرح هزینه را وارد کنید.');
+                    isValid = false;
+                }
+                
+                // بررسی مبلغ
+                const amount = $('#id_amount').val();
+                if (!amount || parseFloat(amount) <= 0) {
+                    errors.push('لطفا مبلغ معتبر وارد کنید.');
+                    isValid = false;
+                }
+                
+                // بررسی شعبه
+                const branch = $('#id_branch').val();
+                if (!branch) {
+                    errors.push('لطفا شعبه را انتخاب کنید.');
+                    isValid = false;
+                }
+                
+                // بررسی حجم فایل‌ها (فقط اگر فایلی انتخاب شده باشد)
+                const files = $('#id_images')[0].files;
+                for (let i = 0; i < files.length; i++) {
+                    if (files[i].size > 5 * 1024 * 1024) {
+                        errors.push(`عکس "${files[i].name}" حجمش بیشتر از 5MB است.`);
+                        isValid = false;
+                    }
+                }
+                
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('لطفا خطاهای زیر را اصلاح کنید:\n\n' + errors.join('\n'));
+                }
+            });
+            
+            // نمایش اطلاعات فایل هنگام آپلود
+            $('#id_images').on('change', function() {
+                const files = this.files;
+                let totalSize = 0;
+                
+                for (let i = 0; i < files.length; i++) {
+                    totalSize += files[i].size;
+                }
+                
+                if (totalSize > 50 * 1024 * 1024) { // 50MB کل
+                    alert('حجم کل فایل‌های انتخاب شده بسیار زیاد است. لطفا فایل‌های کوچک‌تری انتخاب کنید.');
+                    this.value = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
