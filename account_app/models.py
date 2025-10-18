@@ -360,14 +360,20 @@ from PIL import Image
 from django.core.files.base import ContentFile
 import os
 
-
 class Expense(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'در انتظار تایید'),
+        ('approved', 'تایید شده'),
+        ('rejected', 'رد شده'),
+    ]
+
     user = models.ForeignKey('cantact_app.accuntmodel', on_delete=models.CASCADE, verbose_name="کاربر ثبت کننده")
     description = models.TextField(max_length=1000, verbose_name="شرح هزینه")
     amount = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="مبلغ هزینه")
     branch = models.ForeignKey('cantact_app.Branch', on_delete=models.CASCADE, verbose_name="شعبه")
     expense_date = models.DateField(auto_now_add=True, verbose_name="تاریخ ثبت")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name="وضعیت تایید")
 
     class Meta:
         verbose_name = "هزینه"
@@ -376,7 +382,6 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.user.firstname} {self.user.lastname} - {self.amount} - {self.expense_date}"
-
 
 class ExpenseImage(models.Model):
     expense = models.ForeignKey(Expense, on_delete=models.CASCADE, related_name='images')

@@ -246,6 +246,26 @@
             margin-top: 5px;
         }
 
+        .amount-words {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #495057;
+            min-height: 40px;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .amount-words.active {
+            background: #e8f5e9;
+            border-color: var(--primary-color);
+            color: var(--accent-color);
+            font-weight: 500;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -318,6 +338,9 @@
                             <div class="form-group">
                                 <label for="id_amount">مبلغ هزینه (تومان) *</label>
                                 {{ form.amount }}
+                                <div id="amount-words" class="amount-words">
+                                    مبلغ به حروف اینجا نمایش داده می‌شود
+                                </div>
                                 {% if form.amount.errors %}
                                     <div class="form-errors">
                                         {% for error in form.amount.errors %}
@@ -386,6 +409,152 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
+            // تابع تبدیل اعداد فارسی و عربی به انگلیسی
+            function convertToEnglishDigits(str) {
+                const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+                const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+                
+                let result = str;
+                for (let i = 0; i < 10; i++) {
+                    const persianRegex = new RegExp(persianDigits[i], 'g');
+                    const arabicRegex = new RegExp(arabicDigits[i], 'g');
+                    result = result.replace(persianRegex, i);
+                    result = result.replace(arabicRegex, i);
+                }
+                return result;
+            }
+
+            // تابع تبدیل عدد به حروف فارسی
+            function numberToWords(num) {
+                if (num === 0) return 'صفر';
+                
+                const units = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه'];
+                const teens = ['ده', 'یازده', 'دوازده', 'سیزده', 'چهارده', 'پانزده', 'شانزده', 'هفده', 'هجده', 'نوزده'];
+                const tens = ['', '', 'بیست', 'سی', 'چهل', 'پنجاه', 'شصت', 'هفتاد', 'هشتاد', 'نود'];
+                const hundreds = ['', 'صد', 'دویست', 'سیصد', 'چهارصد', 'پانصد', 'ششصد', 'هفتصد', 'هشتصد', 'نهصد'];
+                const scales = ['', 'هزار', 'میلیون', 'میلیارد', 'تریلیون'];
+                
+                function convertThreeDigits(n) {
+                    let words = '';
+                    
+                    // صدگان
+                    const hundred = Math.floor(n / 100);
+                    if (hundred > 0) {
+                        words += hundreds[hundred] + ' و ';
+                    }
+                    
+                    // دهگان و یکان
+                    const remainder = n % 100;
+                    if (remainder > 0) {
+                        if (remainder < 10) {
+                            words += units[remainder];
+                        } else if (remainder < 20) {
+                            words += teens[remainder - 10];
+                        } else {
+                            const ten = Math.floor(remainder / 10);
+                            const unit = remainder % 10;
+                            words += tens[ten];
+                            if (unit > 0) {
+                                words += ' و ' + units[unit];
+                            }
+                        }
+                    }
+                    
+                    // حذف " و " اضافی از انتها
+                    if (words.endsWith(' و ')) {
+                        words = words.slice(0, -3);
+                    }
+                    
+                    return words;
+                }
+                
+                if (num < 0) {
+                    return 'منفی ' + numberToWords(-num);
+                }
+                
+                let words = '';
+                let scaleIndex = 0;
+                
+                while (num > 0) {
+                    const chunk = num % 1000;
+                    if (chunk > 0) {
+                        let chunkWords = convertThreeDigits(chunk);
+                        if (scaleIndex > 0) {
+                            chunkWords += ' ' + scales[scaleIndex];
+                        }
+                        if (words !== '') {
+                            words = chunkWords + ' و ' + words;
+                        } else {
+                            words = chunkWords;
+                        }
+                    }
+                    num = Math.floor(num / 1000);
+                    scaleIndex++;
+                }
+                
+                return words;
+            }
+
+            // تابع اصلی برای نمایش مبلغ به حروف
+            function updateAmountInWords() {
+                const amountInput = $('#id_amount');
+                const amountWords = $('#amount-words');
+                let value = amountInput.val().trim();
+                
+                if (!value) {
+                    amountWords.text('مبلغ به حروف اینجا نمایش داده می‌شود');
+                    amountWords.removeClass('active');
+                    return;
+                }
+                
+                // تبدیل اعداد فارسی/عربی به انگلیسی
+                value = convertToEnglishDigits(value);
+                
+                // حذف کاراکترهای غیرعددی به جز نقطه برای اعشار
+                value = value.replace(/[^\d.]/g, '');
+                
+                // اگر نقطه وجود دارد، فقط قسمت صحیح را در نظر بگیریم
+                if (value.includes('.')) {
+                    value = value.split('.')[0];
+                }
+                
+                const amount = parseInt(value);
+                
+                if (isNaN(amount) || amount < 0) {
+                    amountWords.text('مبلغ نامعتبر است');
+                    amountWords.removeClass('active');
+                    return;
+                }
+                
+                if (amount === 0) {
+                    amountWords.text('صفر تومان');
+                    amountWords.addClass('active');
+                    return;
+                }
+                
+                try {
+                    const words = numberToWords(amount);
+                    amountWords.text(words + ' تومان');
+                    amountWords.addClass('active');
+                } catch (error) {
+                    amountWords.text('خطا در تبدیل مبلغ');
+                    amountWords.removeClass('active');
+                }
+            }
+
+            // مدیریت رویداد تغییر مقدار مبلغ
+            $('#id_amount').on('input', function() {
+                // تبدیل اعداد فارسی/عربی به انگلیسی در خود فیلد
+                const convertedValue = convertToEnglishDigits($(this).val());
+                $(this).val(convertedValue);
+                
+                // به روزرسانی نمایش حروف
+                updateAmountInWords();
+            });
+
+            // مقدار اولیه
+            updateAmountInWords();
+
             // مدیریت پیش‌نمایش عکس‌ها
             $('#id_images').on('change', function(e) {
                 const files = e.target.files;

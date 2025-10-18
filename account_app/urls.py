@@ -62,6 +62,7 @@ path('get-product-details/', views.get_product_details, name='get_product_detail
     path('expense/create/', views.expense_create, name='expense_create'),
     path('expense/list/', views.expense_list, name='expense_list'),
     path('expense/detail/<int:pk>/', views.expense_detail, name='expense_detail'),
+    path('expense/delete/<int:pk>/', views.delete_expense, name='delete_expense'),
     path('expense/delete-image/', views.delete_expense_image, name='delete_expense_image'),
 ]
 

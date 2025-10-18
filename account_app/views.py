@@ -1230,23 +1230,6 @@ def expense_create(request):
 
 
 @login_required
-def expense_list(request):
-    try:
-        user_profile = accuntmodel.objects.get(melicode=request.user.username)
-    except accuntmodel.DoesNotExist:
-        messages.error(request, 'پروفایل کاربری یافت نشد.')
-        return redirect('home')
-
-    expenses = Expense.objects.filter(user=user_profile).order_by('-created_at')
-
-    context = {
-        'expenses': expenses,
-        'user_profile': user_profile,
-    }
-    return render(request, 'expense_list.html', context)
-
-
-@login_required
 def expense_detail(request, pk):
     expense = get_object_or_404(Expense, pk=pk)
 
@@ -1283,5 +1266,44 @@ def delete_expense_image(request):
 
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'درخواست نامعتبر'})
+
+
+@login_required
+def expense_list(request):
+    try:
+        user_profile = accuntmodel.objects.get(melicode=request.user.username)
+    except accuntmodel.DoesNotExist:
+        messages.error(request, 'پروفایل کاربری یافت نشد.')
+        return redirect('home')
+
+    expenses = Expense.objects.filter(user=user_profile).order_by('-created_at')
+
+    context = {
+        'expenses': expenses,
+        'user_profile': user_profile,
+    }
+    return render(request, 'expense_list.html', context)
+
+
+@login_required
+def delete_expense(request, pk):
+    expense = get_object_or_404(Expense, pk=pk)
+
+    try:
+        user_profile = accuntmodel.objects.get(melicode=request.user.username)
+        if expense.user != user_profile:
+            messages.error(request, 'شما دسترسی به این هزینه ندارید.')
+            return redirect('expense_list')
+    except accuntmodel.DoesNotExist:
+        messages.error(request, 'پروفایل کاربری یافت نشد.')
+        return redirect('home')
+
+    if request.method == 'POST':
+        expense_description = expense.description
+        expense.delete()
+        messages.success(request, f'هزینه "{expense_description}" با موفقیت حذف شد.')
+        return redirect('expense_list')
 
     return JsonResponse({'success': False, 'error': 'درخواست نامعتبر'})
