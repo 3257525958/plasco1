@@ -116,6 +116,7 @@ WSGI_APPLICATION = 'plasco.wsgi.application'
 
 
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
