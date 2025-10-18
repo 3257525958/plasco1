@@ -1288,6 +1288,7 @@ def expense_list(request):
 
 
 
+
 @login_required
 def delete_expense(request, pk):
     expense = get_object_or_404(Expense, pk=pk)
