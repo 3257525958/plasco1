@@ -1270,6 +1270,7 @@ def delete_expense_image(request):
     return JsonResponse({'success': False, 'error': 'درخواست نامعتبر'})
 
 
+
 @login_required
 def expense_list(request):
     try:
