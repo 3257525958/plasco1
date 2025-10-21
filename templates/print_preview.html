@@ -7,6 +7,7 @@
     <title>چاپ لیبل‌ها - فروشگاه پلاستیک و لوازم آشپرخانه موسوی</title>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&family=Tahoma&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
     <style>
         :root {
             --vertical-gap: {{ settings.vertical_gap }}mm;
@@ -32,102 +33,137 @@
         }
 
         .page-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            max-width: 210mm;
+            width: 210mm;
             margin: 0 auto;
-            padding: 0;
+            {#padding: 5mm;#}
         }
 
         .labels-container {
             display: flex;
             flex-direction: column;
-            gap: var(--vertical-gap);
+            gap: 0;
+        }
+
+        .label-row {
+            {#border: 1px solid #e0e0e0;#}
+            page-break-inside: avoid;
+            margin-bottom: 0;
+        }
+
+        .top-marker {
             width: 100%;
-            padding: 0;
+            height: 5mm; /* فاصله بین لیبلها*/
+            background-color: white;
             margin: 0;
         }
 
-        .label-card {
+        .product-name-row {
             display: flex;
-            flex-direction: column;
-            padding: 0;
-            page-break-inside: avoid;
             width: 100%;
-            box-sizing: border-box;
-            margin-bottom: var(--vertical-gap);
-            
-            {% if settings.content_alignment == 'right' %}
-                align-items: flex-end;
-                text-align: right;
-            {% elif settings.content_alignment == 'left' %}
-                align-items: flex-start;
-                text-align: left;
-            {% elif settings.content_alignment == 'space-between' %}
-                align-items: stretch;
-                text-align: center;
-            {% else %}
-                align-items: center;
-                text-align: center;
-            {% endif %}
+            {#border-bottom: 1px dashed #ccc;#}
+            {% if not settings.show_product_name %}display: none;{% endif %}
         }
 
-        .barcode-container {
+        .product-name-pair {
             display: flex;
-            flex-wrap: wrap;
             width: 100%;
-            gap: var(--inner-gap);
-            margin: var(--content-spacing) 0;
-            padding: 0;
-            
-            {% if settings.content_alignment == 'right' %}
-                justify-content: flex-end;
-            {% elif settings.content_alignment == 'left' %}
-                justify-content: flex-start;
-            {% elif settings.content_alignment == 'space-between' %}
-                justify-content: space-between;
-            {% else %}
-                justify-content: center;
-            {% endif %}
         }
 
-        .barcode-item {
-            display: flex;
-            flex-direction: column;
+        .product-name-item {
             flex: 1;
-            min-width: calc(50% - var(--inner-gap));
-            max-width: 100%;
-            padding: 0;
-            
-            {% if settings.content_alignment == 'right' %}
-                align-items: flex-end;
-            {% elif settings.content_alignment == 'left' %}
-                align-items: flex-start;
-            {% else %}
-                align-items: center;
-            {% endif %}
+            {#padding: 1mm 3mm;#}
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            {#border: 1px solid #ffcccb;#}
+        }
+
+        .product-name-item:first-child {
+            {#border-left: 2px solid #ff6b6b;#}
+            align-items: flex-start;
+            padding-left: 0;
+            justify-content: flex-start;
+        }
+
+        .product-name-item:last-child {
+            {#border-right: 2px solid #ff6b6b;#}
+            align-items: flex-end;
+            padding-right: 0;
+            justify-content: flex-end;
         }
 
         .product-name {
             font-size: calc(var(--font-size) * 1.2);
             font-weight: bold;
-            {% if not settings.show_product_name %}display: none;{% endif %}
-            margin-bottom: var(--content-spacing);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+
+        .product-name-item:first-child .product-name {
+            text-align: left;
             width: 100%;
-            padding: 0;
+            padding-left: 11mm; /* فاصله اسم کالا از وسط*/
+        }
+
+        .product-name-item:last-child .product-name {
+            text-align: right;
+            width: 100%;
+            padding-right: 11mm; /* فاصله اسم کالا از وسط*/
+        }
+
+        .barcode-row {
+            display: flex;
+            width: 100%;
+        }
+
+        .barcode-pair {
+            display: flex;
+            width: 100%;
+        }
+
+        .barcode-item {
+            flex: 1;
+            padding: 0; /* حذف padding */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            {#border: 1px solid #b3d4fc;#}
+            justify-content: flex-start; /* چسباندن به بالا */
+        }
+
+        .barcode-item:first-child {
+            {#border-left: 2px solid #4CAF50;#}
+            align-items: flex-end;
+            padding-left: 0;
+            justify-content: flex-start; /* تغییر به flex-start */
+        }
+
+        .barcode-item:last-child {
+            {#border-right: 2px solid #4CAF50;#}
+            align-items: flex-start;
+            padding-right: 0;
+            justify-content: flex-start; /* تغییر به flex-start */
         }
 
         .barcode-image-container {
             display: flex;
             height: var(--barcode-height);
-            margin-bottom: var(--content-spacing);
+            margin: 0; /* حذف margin */
             width: 100%;
             justify-content: center;
+            align-items: flex-start; /* چسباندن به بالا */
+        }
+
+        .barcode-item:first-child .barcode-image-container {
+            justify-content: flex-end;
+            width: 100%;
+        }
+
+        .barcode-item:last-child .barcode-image-container {
+            justify-content: flex-start;
+            width: 100%;
         }
 
         .barcode-image {
@@ -136,18 +172,28 @@
             display: block;
             width: auto;
             height: auto;
+            margin: 0; /* حذف margin */
         }
 
         .price {
             font-size: var(--font-size);
             font-weight: bold;
             {% if not settings.show_price %}display: none;{% endif %}
-            margin-top: var(--content-spacing);
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            line-height: 1.2;
+            margin-top: 1mm; /* فقط margin-top برای فاصله از بارکد */
+        }
+
+        .barcode-item:first-child .price {
+            text-align: right;
             width: 100%;
-            padding: 0;
+            padding-right: 1mm;
+        }
+
+        .barcode-item:last-child .price {
+            text-align: left;
+            width: 100%;
+            padding-left: 1mm;
         }
 
         .print-actions {
@@ -183,14 +229,18 @@
                 margin: 0;
             }
             
+            .page-container {
+                padding: 2mm;
+            }
+            
             .print-actions {
                 display: none;
             }
             
-            .label-card {
+            .label-row {
                 page-break-inside: avoid;
                 break-inside: avoid;
-                margin-bottom: var(--vertical-gap);
+                margin-bottom: 0;
             }
             
             @page {
@@ -204,29 +254,47 @@
     <div class="page-container">
         <div class="labels-container">
             {% for label in labels %}
-            <div class="label-card">
-                <div class="barcode-container">
-                    {% for item in label %}
-                    <div class="barcode-item">
-                        {% if settings.show_product_name %}
-                        <div class="product-name">{{ item.product_name }}</div>
-                        {% endif %}
-                        
-                        <div class="barcode-image-container">
-                            {% if item.barcode_base64 %}
-                                <img src="{{ item.barcode_base64 }}" alt="بارکد" class="barcode-image">
-                            {% else %}
-                                <div class="error">بارکد تولید نشد</div>
+            <div class="label-row">
+                <!-- خط اول: مارکر قرمز که کل عرض خط را می‌پوشاند -->
+                <div class="top-marker"></div>
+                
+                <!-- خط دوم: دو نام کالا کنار هم -->
+                <div class="product-name-row">
+                    <div class="product-name-pair">
+                        {% for item in label %}
+                        <div class="product-name-item">
+                            <div class="product-name">{{ item.product_name }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- خط سوم: دو بارکد کنار هم -->
+                <div class="barcode-row">
+                    <div class="barcode-pair">
+                        {% for item in label %}
+                        <div class="barcode-item">
+                            <div class="barcode-image-container">
+                                {% if item.barcode_base64 %}
+                                    <img src="{{ item.barcode_base64 }}" alt="بارکد" class="barcode-image">
+                                {% else %}
+                                    <div class="error">بارکد تولید نشد</div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if settings.show_price %}
+                            <div class="price">{{ item.selling_price|floatformat:"0" }} تومان</div>
                             {% endif %}
                         </div>
-                        
-                        {% if settings.show_price %}
-                        <div class="price">{{ item.selling_price|floatformat:"0" }} تومان</div>
-                        {% endif %}
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
+            
+            <!-- محدود کردن به ۵ ردیف در هر صفحه -->
+            {% if forloop.counter|divisibleby:5 and not forloop.last %}
+            <div style="page-break-after: always;"></div>
+            {% endif %}
             {% endfor %}
         </div>
     </div>
