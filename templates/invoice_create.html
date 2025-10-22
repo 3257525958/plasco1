@@ -531,6 +531,40 @@
                 min-width: 100%;
             }
         }
+        /* استایل‌های مودال پرداخت */
+.payment-step {
+    display: none;
+}
+
+.payment-step.active {
+    display: block;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    0% { background-position: 1rem 0; }
+    100% { background-position: 0 0; }
+}
+
+/* استایل‌های responsive */
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin: 10px;
+    }
+    
+    #payment-status-container {
+        padding: 10px;
+    }
+}
     </style>
 </head>
 <body>
@@ -1101,6 +1135,118 @@
                 <button type="button" class="btn btn-primary" onclick="saveCreditPayment()">
                     <i class="fas fa-save"></i> ذخیره اطلاعات نسیه
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- مودال وضعیت پرداخت -->
+<div class="modal fade" id="paymentProcessingModal" tabindex="-1" aria-labelledby="paymentProcessingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="paymentProcessingModalLabel">
+                    <i class="fas fa-credit-card me-2"></i>
+                    پرداخت از طریق کارت خوان
+                </h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <!-- وضعیت پرداخت -->
+                <div id="payment-status-container">
+                    <!-- حالت در حال پردازش -->
+                    <div id="payment-processing" class="payment-step active">
+                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                            <span class="visually-hidden">در حال پردازش...</span>
+                        </div>
+                        <h5 class="text-primary">در حال اتصال به کارت خوان</h5>
+                        <p class="text-muted">لطفاً کارت بانکی خود را در دستگاه کارت خوان قرار دهید</p>
+                        <div class="progress mb-3" style="height: 6px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <!-- حالت موفق -->
+                    <div id="payment-success" class="payment-step">
+                        <div class="text-success mb-3">
+                            <i class="fas fa-check-circle" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="text-success">پرداخت موفق</h5>
+                        <p class="text-muted">پرداخت با موفقیت انجام شد</p>
+                        <div class="alert alert-success">
+                            <i class="fas fa-receipt me-2"></i>
+                            <strong>شماره فاکتور: </strong>
+                            <span id="success-invoice-number"></span>
+                        </div>
+                    </div>
+
+                    <!-- حالت خطا -->
+                    <div id="payment-failed" class="payment-step">
+                        <div class="text-danger mb-3">
+                            <i class="fas fa-times-circle" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="text-danger">پرداخت ناموفق</h5>
+                        <p class="text-muted" id="error-message"></p>
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            لطفاً مجدداً تلاش کنید
+                        </div>
+                    </div>
+                </div>
+
+                <!-- جزئیات تراکنش -->
+                <div id="transaction-details" class="mt-4 p-3 bg-light rounded" style="display: none;">
+                    <h6 class="border-bottom pb-2">جزئیات تراکنش</h6>
+                    <div class="row text-start">
+                        <div class="col-6">
+                            <small class="text-muted">مبلغ:</small>
+                            <div id="transaction-amount" class="fw-bold"></div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">زمان:</small>
+                            <div id="transaction-time" class="fw-bold"></div>
+                        </div>
+                        <div class="col-6 mt-2">
+                            <small class="text-muted">شماره مرجع:</small>
+                            <div id="transaction-reference" class="fw-bold"></div>
+                        </div>
+                        <div class="col-6 mt-2">
+                            <small class="text-muted">کد پاسخ:</small>
+                            <div id="transaction-response" class="fw-bold"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <!-- دکمه‌های حالت موفق -->
+                <div id="success-buttons" class="d-none">
+                    <button type="button" class="btn btn-success me-2" onclick="printInvoice()">
+                        <i class="fas fa-print me-1"></i>
+                        چاپ فاکتور
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="createNewInvoice()">
+                        <i class="fas fa-plus-circle me-1"></i>
+                        فاکتور جدید
+                    </button>
+                </div>
+
+                <!-- دکمه‌های حالت خطا -->
+                <div id="failed-buttons" class="d-none">
+                    <button type="button" class="btn btn-warning me-2" onclick="retryPayment()">
+                        <i class="fas fa-redo me-1"></i>
+                        تلاش مجدد
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                </div>
+
+                <!-- دکمه حالت پردازش -->
+                <div id="processing-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="cancelPayment()">
+                        <i class="fas fa-times me-1"></i>
+                        لغو پرداخت
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -2393,6 +2539,256 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.log("❌ دکمه ذخیره نسیه یافت نشد");
     }
+});
+// متغیرهای global برای مدیریت پرداخت
+let currentPaymentProcess = null;
+let paymentInvoiceId = null;
+
+// تابع نمایش مودال پرداخت
+function showPaymentModal() {
+    // مخفی کردن تمام مراحل
+    $('.payment-step').removeClass('active');
+    
+    // نمایش مرحله پردازش
+    $('#payment-processing').addClass('active');
+    
+    // تنظیم دکمه‌ها
+    $('#success-buttons').addClass('d-none');
+    $('#failed-buttons').addClass('d-none');
+    $('#processing-buttons').removeClass('d-none');
+    
+    // مخفی کردن جزئیات تراکنش
+    $('#transaction-details').hide();
+    
+    // نمایش مودال
+    const modal = new bootstrap.Modal(document.getElementById('paymentProcessingModal'));
+    modal.show();
+    
+    // شروع پرداخت
+    startPaymentProcess();
+}
+
+// تابع شروع فرآیند پرداخت
+function startPaymentProcess() {
+    const invoiceTotal = calculateInvoiceTotal().totalAmount;
+    
+    // نمایش جزئیات تراکنش
+    $('#transaction-amount').text(invoiceTotal.toLocaleString('fa-IR') + ' تومان');
+    $('#transaction-time').text(new Date().toLocaleTimeString('fa-IR'));
+    $('#transaction-details').show();
+    
+    console.log('💰 شروع فرآیند پرداخت با مبلغ:', invoiceTotal);
+    
+    // شبیه‌سازی پرداخت (در مرحله بعد با DLL واقعی جایگزین می‌شود)
+    simulatePaymentProcess(invoiceTotal);
+}
+
+// تابع شبیه‌سازی پرداخت (موقت)
+function simulatePaymentProcess(amount) {
+    console.log('🔌 در حال اتصال به کارت خوان...');
+    
+    // شبیه‌سازی تاخیر در اتصال
+    setTimeout(() => {
+        console.log('✅ اتصال به کارت خوان برقرار شد');
+        updatePaymentStatus('در انتظار کشیدن کارت...');
+        
+        // شبیه‌سازی کشیدن کارت
+        setTimeout(() => {
+            console.log('💳 کارت کشیده شد');
+            updatePaymentStatus('در حال پردازش تراکنش...');
+            
+            // شبیه‌سازی پردازش
+            setTimeout(() => {
+                // 90% موفقیت، 10% خطا (برای تست)
+                const isSuccess = Math.random() > 0.1;
+                
+                if (isSuccess) {
+                    completePaymentSuccess(amount);
+                } else {
+                    completePaymentFailure('خطا در انجام تراکنش. لطفاً مجدداً تلاش کنید.');
+                }
+            }, 3000);
+            
+        }, 2000);
+        
+    }, 1500);
+}
+
+// تابع بروزرسانی وضعیت پرداخت
+function updatePaymentStatus(message) {
+    $('#payment-processing p.text-muted').text(message);
+}
+
+// تابع تکمیل پرداخت موفق
+function completePaymentSuccess(amount) {
+    console.log('✅ پرداخت موفق');
+    
+    // نمایش مرحله موفقیت
+    $('.payment-step').removeClass('active');
+    $('#payment-success').addClass('active');
+    
+    // تنظیم دکمه‌ها
+    $('#processing-buttons').addClass('d-none');
+    $('#success-buttons').removeClass('d-none');
+    
+    // ثبت فاکتور در دیتابیس
+    registerFinalInvoice(amount);
+}
+
+// تابع تکمیل پرداخت ناموفق
+function completePaymentFailure(errorMessage) {
+    console.log('❌ پرداخت ناموفق:', errorMessage);
+    
+    // نمایش مرحله خطا
+    $('.payment-step').removeClass('active');
+    $('#payment-failed').addClass('active');
+    
+    // تنظیم پیام خطا
+    $('#error-message').text(errorMessage);
+    
+    // تنظیم دکمه‌ها
+    $('#processing-buttons').addClass('d-none');
+    $('#failed-buttons').removeClass('d-none');
+}
+
+// تابع ثبت نهایی فاکتور پس از پرداخت موفق
+function registerFinalInvoice(amount) {
+    console.log('📝 در حال ثبت نهایی فاکتور...');
+    
+    // استفاده از تابع finalizeInvoice موجود
+    $.ajax({
+        url: "{% url 'invoice_app:finalize_invoice' %}",
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            action: 'save_only',
+            payment_method: currentPaymentMethod,
+            timestamp: new Date().getTime(),
+            paid_amount: amount
+        }),
+        headers: {'X-CSRFToken': getCookie('csrftoken')},
+        success: function(data) {
+            if (data.status === 'success') {
+                console.log('✅ فاکتور ثبت شد:', data.invoice_id);
+                paymentInvoiceId = data.invoice_id;
+                $('#success-invoice-number').text(data.invoice_number || data.invoice_id);
+                
+                // نمایش شماره مرجع (شبیه‌سازی)
+                $('#transaction-reference').text(generateReferenceNumber());
+                $('#transaction-response').text('00 - موفق');
+                
+            } else {
+                console.error('❌ خطا در ثبت فاکتور:', data.message);
+                completePaymentFailure('خطا در ثبت فاکتور: ' + data.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ خطا در ارتباط با سرور:', xhr);
+            completePaymentFailure('خطا در ارتباط با سرور');
+        }
+    });
+}
+
+// تابع تولید شماره مرجع (شبیه‌سازی)
+function generateReferenceNumber() {
+    return 'REF' + Date.now().toString().slice(-10);
+}
+
+// =============================================
+// توابع مدیریت دکمه‌ها
+// =============================================
+
+// تابع چاپ فاکتور
+function printInvoice() {
+    if (paymentInvoiceId) {
+        const printUrl = "{% url 'invoice_app:invoice_print' 0 %}".replace('0', paymentInvoiceId);
+        window.open(printUrl, '_blank');
+        
+        // بستن مودال
+        bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
+    }
+}
+
+// تابع ایجاد فاکتور جدید
+function createNewInvoice() {
+    // بستن مودال
+    bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
+    
+    // ریدایرکت به صفحه ایجاد فاکتور جدید
+    setTimeout(() => {
+        window.location.href = "{% url 'invoice_app:create_invoice' %}";
+    }, 500);
+}
+
+// تابع تلاش مجدد پرداخت
+function retryPayment() {
+    // بستن مودال فعلی
+    bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
+    
+    // نمایش مجدد مودال پرداخت
+    setTimeout(() => {
+        showPaymentModal();
+    }, 300);
+}
+
+// تابع لغو پرداخت
+function cancelPayment() {
+    console.log('❌ پرداخت توسط کاربر لغو شد');
+    
+    // بستن مودال
+    bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
+    
+    showToast('پرداخت لغو شد', 'warning');
+}
+
+// =============================================
+// یکپارچه‌سازی با سیستم موجود
+// =============================================
+
+// تغییر تابع finalizeInvoice اصلی برای پشتیبانی از پرداخت POS
+function finalizeInvoiceWithPayment(action) {
+    console.log('🔄 شروع فرآیند پرداخت...');
+    
+    // اعتبارسنجی اولیه
+    if (!validateInvoiceBeforeSubmit()) {
+        return;
+    }
+    
+    // برای پرداخت‌های غیر POS از روش قبلی استفاده کن
+    if (currentPaymentMethod !== 'pos') {
+        finalizeInvoice(action);
+        return;
+    }
+    
+    // برای پرداخت POS مودال پرداخت رو نشون بده
+    showPaymentModal();
+}
+
+// جایگزینی فراخوانی اصلی در دکمه‌ها
+$(document).ready(function() {
+    // تغییر دکمه ثبت فاکتور برای پشتیبانی از پرداخت POS
+    $('#save-invoice-btn').off('click').on('click', function(e) {
+        e.preventDefault();
+        console.log('💳 دکمه ثبت فاکتور کلیک شد - بررسی روش پرداخت:', currentPaymentMethod);
+        
+        if (currentPaymentMethod === 'pos') {
+            finalizeInvoiceWithPayment('save_only');
+        } else {
+            finalizeInvoice('save_only');
+        }
+    });
+    
+    // تغییر دکمه ثبت و چاپ فاکتور
+    $('#print-invoice-btn').off('click').on('click', function(e) {
+        e.preventDefault();
+        console.log('💳 دکمه ثبت و چاپ فاکتور کلیک شد - بررسی روش پرداخت:', currentPaymentMethod);
+        
+        if (currentPaymentMethod === 'pos') {
+            finalizeInvoiceWithPayment('print_and_save');
+        } else {
+            finalizeInvoice('print_and_save');
+        }
+    });
 });
 </script>
 </body>

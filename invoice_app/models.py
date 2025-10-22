@@ -35,6 +35,7 @@ class POSDevice(models.Model):
 
 
 
+
 class Invoicefrosh(models.Model):
     PAYMENT_METHODS = [
         ('cash', 'نقدی'),
@@ -58,6 +59,9 @@ class Invoicefrosh(models.Model):
     customer_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="نام خریدار")
     customer_phone = models.CharField(max_length=15, blank=True, null=True, verbose_name="تلفن خریدار")
     serial_number = models.CharField(max_length=20, unique=True, blank=True, null=True, verbose_name="شماره سریال")
+
+    # فیلد جدید اضافه شده
+    paid_amount = models.PositiveIntegerField(default=0, verbose_name="مبلغ پرداخت شده")
 
     class Meta:
         verbose_name = "فاکتور"
@@ -90,7 +94,6 @@ class Invoicefrosh(models.Model):
 
     def get_payment_method_display(self):
         return dict(self.PAYMENT_METHODS).get(self.payment_method, 'نامشخص')
-
 
 class InvoiceItemfrosh(models.Model):
     invoice = models.ForeignKey(Invoicefrosh, on_delete=models.CASCADE, related_name='items')
