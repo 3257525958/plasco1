@@ -5,170 +5,509 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>اتصال به دستگاه پوز S800</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .step-card { border-left: 4px solid #0d6efd; margin-bottom: 10px; }
-        .step-success { border-left-color: #198754; background-color: #d1e7dd; }
-        .step-error { border-left-color: #dc3545; background-color: #f8d7da; }
-        .step-warning { border-left-color: #ffc107; background-color: #fff3cd; }
-        .ip-badge { cursor: pointer; }
-        .ip-badge:hover { opacity: 0.8; }
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+        }
+
+        body {
+            font-family: 'Vazir', 'Tanha', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            line-height: 1.6;
+        }
+
+        .step-card {
+            border-left: 4px solid var(--secondary-color);
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.3s ease;
+        }
+
+        .step-card:hover {
+            transform: translateX(5px);
+        }
+
+        .step-success {
+            border-left-color: var(--success-color);
+            background-color: rgba(39, 174, 96, 0.1);
+        }
+
+        .step-error {
+            border-left-color: var(--danger-color);
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+
+        .step-warning {
+            border-left-color: var(--warning-color);
+            background-color: rgba(243, 156, 18, 0.1);
+        }
+
+        .step-info {
+            border-left-color: var(--secondary-color);
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .ip-badge {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: monospace;
+        }
+
+        .ip-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: bold;
+            padding: 15px 20px;
+        }
+
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 10px 15px;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+            padding: 8px 12px;
+            border-radius: 20px;
+        }
+
+        #stepsContainer {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .connection-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background-color: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
+        }
+
+        .status-offline {
+            background-color: var(--danger-color);
+        }
+
+        .status-unknown {
+            background-color: var(--warning-color);
+        }
+
+        .device-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+
+        .section-title {
+            border-right: 4px solid var(--primary-color);
+            padding-right: 15px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        /* اسکرول بار سفارشی */
+        #stepsContainer::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #stepsContainer::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        #stepsContainer::-webkit-scrollbar-thumb {
+            background: var(--secondary-color);
+            border-radius: 10px;
+        }
+
+        #stepsContainer::-webkit-scrollbar-thumb:hover {
+            background: #2980b9;
+        }
+
+        /* انیمیشن برای مراحل */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        /* رسپانسیو */
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 15px;
+            }
+
+            .btn-lg {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+
+            .display-4 {
+                font-size: 2rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-12">
-                <h1 class="text-center mb-4">🔄 تست اتصال به دستگاه پوز S800</h1>
+    <div class="container mt-4">
+        <!-- هدر -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h1 class="display-4 fw-bold text-primary">
+                    <i class="fas fa-credit-card me-2"></i>اتصال به دستگاه پوز S800
+                </h1>
+                <p class="lead text-muted">برنامه تست و مدیریت دستگاه پوز PAX S800</p>
+                <div class="d-flex justify-content-center mt-3">
+                    <span class="badge bg-success me-2"><i class="fas fa-wifi me-1"></i> LAN</span>
+                    <span class="badge bg-info me-2"><i class="fas fa-usb me-1"></i> Serial</span>
+                    <span class="badge bg-warning"><i class="fas fa-bolt me-1"></i> Real-time</span>
+                </div>
+            </div>
+        </div>
 
-                <!-- اطلاعات شبکه -->
-                <div class="card mb-4">
-                    <div class="card-header bg-success text-white">
-                        🌐 اطلاعات شبکه کامپیوتر شما
+        <!-- اطلاعات دستگاه کاربر -->
+        <div class="card border-info">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-laptop me-2"></i> اطلاعات دستگاه شما (کلاینت)</span>
+                <span class="connection-status status-online" id="clientStatus"></span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">IP دستگاه شما:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" value="{{ client_ip }}" readonly id="clientIpInput">
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('clientIpInput')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">این IP دستگاه فعلی شماست</small>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label class="form-label">نام کامپیوتر:</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" value="{{ hostname }}" readonly id="hostnameInput">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('hostnameInput')">
-                                            📋
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label class="form-label">IP عمومی:</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" value="{{ public_ip }}" readonly id="publicIpInput">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('publicIpInput')">
-                                            📋
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label class="form-label">پورت برنامه:</label>
-                                    <input type="number" class="form-control" id="port" value="1362">
-                                </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">مرورگر:</label>
+                            <input type="text" class="form-control" value="{{ client_user_agent|truncatechars:30 }}" readonly title="{{ client_user_agent }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">نوع دستگاه:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="{% if client_is_mobile %}موبایل{% else %}کامپیوتر{% endif %}" readonly>
+                                <span class="input-group-text">
+                                    {% if client_is_mobile %}
+                                    <i class="fas fa-mobile-alt"></i>
+                                    {% else %}
+                                    <i class="fas fa-desktop"></i>
+                                    {% endif %}
+                                </span>
                             </div>
                         </div>
-
-                        <!-- نمایش IPهای محلی -->
+                    </div>
+                    <div class="col-md-3">
                         <div class="mb-3">
-                            <label class="form-label">IPهای محلی (برای دستگاه پوز):</label>
-                            <div id="localIpsContainer">
-                                {% for ip in local_ips %}
-                                <span class="badge bg-primary ip-badge me-2 mb-2" onclick="selectIp('{{ ip }}')">
-                                    {{ ip }} 📋
+                            <label class="form-label fw-bold">زمان اتصال:</label>
+                            <input type="text" class="form-control" value="{% now 'H:i - Y/m/d' %}" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- جزئیات فنی (با JavaScript پر می‌شود) -->
+                <div id="clientTechnicalDetails" class="mt-3 p-3 bg-light rounded">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                        <p class="mt-2">در حال دریافت اطلاعات فنی دستگاه...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- اطلاعات سرور -->
+        <div class="card border-success">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-server me-2"></i> اطلاعات سرور</span>
+                <span class="connection-status status-online" id="serverStatus"></span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">نام سرور:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="{{ server_hostname }}" readonly id="serverHostname">
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('serverHostname')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">IP عمومی سرور:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="{{ server_public_ip }}" readonly id="serverPublicIp">
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('serverPublicIp')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">IPهای محلی سرور:</label>
+                            <div id="serverIpsContainer">
+                                {% for ip in server_local_ips %}
+                                <span class="badge bg-primary ip-badge me-2 mb-2" onclick="selectIp('{{ ip }}')" title="کلیک برای انتخاب">
+                                    <i class="fas fa-network-wired me-1"></i>{{ ip }} <i class="fas fa-mouse-pointer ms-1"></i>
                                 </span>
                                 {% empty %}
-                                <div class="alert alert-warning">
-                                    IP محلی یافت نشد!
+                                <div class="alert alert-warning py-2">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>IP محلی یافت نشد!
                                 </div>
                                 {% endfor %}
                             </div>
-                            <small class="form-text text-muted">
-                                روی هر IP کلیک کنید تا در فیلد زیر قرار گیرد
-                            </small>
+                            <small class="form-text text-muted">روی هر IP کلیک کنید تا در فیلد زیر قرار گیرد</small>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                        <!-- فیلد انتخاب IP -->
+        <!-- تنظیمات اتصال -->
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-cogs me-2"></i> تنظیمات اتصال به دستگاه پوز
+            </div>
+            <div class="card-body">
+                <!-- انتخاب نوع اتصال -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">IP انتخابی برای دستگاه پوز:</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="ipAddress" value="{{ primary_ip }}" placeholder="IP کامپیوتر شما">
-                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('ipAddress')">
-                                    📋 کپی
+                            <label class="form-label fw-bold">نوع اتصال:</label>
+                            <select class="form-select" id="connectionType">
+                                <option value="LAN"><i class="fas fa-wifi me-2"></i> LAN (شبکه)</option>
+                                <option value="SERIAL"><i class="fas fa-usb me-2"></i> SERIAL (سریال)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">عملیات:</label>
+                            <div class="d-grid gap-2 d-md-flex">
+                                <button class="btn btn-success btn-lg flex-fill me-md-2 mb-2 mb-md-0" onclick="testConnection()">
+                                    <i class="fas fa-plug me-2"></i> تست اتصال
                                 </button>
-                                <button class="btn btn-outline-info" type="button" onclick="refreshNetworkInfo()">
-                                    🔄 بروزرسانی
+                                <button class="btn btn-primary btn-lg flex-fill" onclick="makePayment()">
+                                    <i class="fas fa-credit-card me-2"></i> پرداخت 1250 تومان
                                 </button>
                             </div>
-                            <small class="form-text text-muted">
-                                این آدرس را در قسمت <strong>Server IP</strong> دستگاه پوز وارد کنید
-                            </small>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- نوع اتصال -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">نوع اتصال:</label>
-                                    <select class="form-select" id="connectionType">
-                                        <option value="LAN">LAN (شبکه)</option>
-                                        <option value="SERIAL">SERIAL (سریال)</option>
-                                    </select>
+                <!-- بخش تنظیمات LAN -->
+                <div id="lanSection">
+                    <h5 class="section-title"><i class="fas fa-wifi me-2"></i> تنظیمات LAN</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">آدرس IP دستگاه پوز:</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control font-monospace" id="ipAddress" value="{{ server_primary_ip }}" placeholder="مثال: 192.168.1.100">
+                                    <button class="btn btn-outline-info" type="button" onclick="autoDetectIP()">
+                                        <i class="fas fa-bolt me-1"></i> تشخیص خودکار
+                                    </button>
                                 </div>
-                            </div>
-                            <div class="col-md-6" id="serialSection" style="display: none;">
-                                <div class="mb-3">
-                                    <label class="form-label">پورت سریال:</label>
-                                    <input type="text" class="form-control" id="comPort" value="COM1">
-                                </div>
+                                <small class="form-text text-muted">IP دستگاه پوز در شبکه</small>
                             </div>
                         </div>
-
-                        <div class="alert alert-warning">
-                            <strong>⚠️ راهنمای تنظیم دستگاه پوز:</strong>
-                            <ul class="mb-0 mt-2">
-                                <li>IP انتخابی بالا را در قسمت <strong>Server IP</strong> دستگاه پوز وارد کنید</li>
-                                <li>پورت <strong>1362</strong> را در قسمت <strong>Server Port</strong> وارد کنید</li>
-                                <li>مطمئن شوید کامپیوتر و دستگاه پوز در یک شبکه هستند</li>
-                                <li>فایروال باید اجازه ارتباط روی پورت 1362 را بدهد</li>
-                            </ul>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">پورت:</label>
+                                <input type="number" class="form-control" id="port" value="1362">
+                                <small class="form-text text-muted">پورت دستگاه پوز (معمولاً 1362)</small>
+                            </div>
                         </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>اتصال LAN:</strong> دستگاه پوز و کامپیوتر باید در یک شبکه باشند. مطمئن شوید فایروال اجازه ارتباط روی پورت 1362 را می‌دهد.
+                    </div>
+                </div>
+
+                <!-- بخش تنظیمات Serial -->
+                <div id="serialSection" style="display: none;">
+                    <h5 class="section-title"><i class="fas fa-usb me-2"></i> تنظیمات Serial</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">پورت سریال:</label>
+                                <select class="form-select" id="comPort">
+                                    <option value="COM1">COM1</option>
+                                    <option value="COM2">COM2</option>
+                                    <option value="COM3">COM3</option>
+                                    <option value="COM4">COM4</option>
+                                    <option value="COM5">COM5</option>
+                                    <option value="/dev/ttyUSB0">/dev/ttyUSB0 (لینوکس)</option>
+                                    <option value="/dev/ttyS0">/dev/ttyS0 (لینوکس)</option>
+                                </select>
+                                <small class="form-text text-muted">پورت سریال کامپیوتر</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">سرعت (Baud Rate):</label>
+                                <select class="form-select" id="baudRate">
+                                    <option value="9600">9600</option>
+                                    <option value="19200">19200</option>
+                                    <option value="38400">38400</option>
+                                    <option value="57600">57600</option>
+                                    <option value="115200" selected>115200</option>
+                                </select>
+                                <small class="form-text text-muted">سرعت ارتباط سریال</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>اتصال Serial:</strong> نیاز به کابل سریال یا تبدیل USB-to-Serial دارد. در ویندوز از Device Manager برای پیدا کردن پورت صحیح استفاده کنید.
                     </div>
                 </div>
 
                 <!-- نمایش تنظیمات فعلی -->
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
-                        ⚙️ تنظیمات فعلی اتصال
-                    </div>
-                    <div class="card-body">
-                        <div id="currentSettings" class="alert alert-light">
-                            در حال بارگذاری...
-                        </div>
+                <div class="mt-4 p-3 bg-light rounded">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-sliders-h me-2"></i> تنظیمات فعلی:</h6>
+                    <div id="currentSettings" class="fw-bold text-dark">
+                        در حال بارگذاری...
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- دکمه‌های اقدام -->
-                <div class="card mb-4">
-                    <div class="card-body text-center">
-                        <button class="btn btn-success btn-lg me-3" onclick="testConnection()">
-                            🔍 تست اتصال
-                        </button>
-                        <button class="btn btn-primary btn-lg" onclick="makePayment()">
-                            💳 پرداخت 1250 تومان
+        <!-- نمایش مراحل و نتیجه -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card border-secondary">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-list-ol me-2"></i> مراحل اجرا</span>
+                        <button class="btn btn-sm btn-light" onclick="clearSteps()">
+                            <i class="fas fa-trash me-1"></i> پاک کردن
                         </button>
                     </div>
-                </div>
-
-                <!-- نمایش مراحل -->
-                <div class="card">
-                    <div class="card-header bg-secondary text-white">
-                        📋 مراحل اجرا
-                    </div>
-                    <div class="card-body">
+                    <div class="card-body p-0">
                         <div id="stepsContainer">
-                            <div class="alert alert-info">
-                                لطفا یکی از عملیات‌های بالا را انتخاب کنید...
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-play-circle fa-2x mb-3"></i>
+                                <p>لطفا یکی از عملیات‌های بالا را انتخاب کنید...</p>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- نتیجه نهایی -->
-                <div id="finalResult" class="mt-4" style="display: none;"></div>
+            <div class="col-md-4">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="fas fa-clipboard-check me-2"></i> نتیجه نهایی
+                    </div>
+                    <div class="card-body">
+                        <div id="finalResult" class="text-center py-4">
+                            <i class="fas fa-flag-checkered fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">هنوز عملیاتی انجام نشده است</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- راهنمای سریع -->
+                <div class="card border-info mt-4">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-question-circle me-2"></i> راهنمای سریع
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="fas fa-wifi text-success me-2"></i>
+                                <span>برای LAN: IP پوز و کامپیوتر در یک شبکه باشند</span>
+                            </li>
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="fas fa-usb text-primary me-2"></i>
+                                <span>برای Serial: کابل سریال یا USB-to-Serial نیاز است</span>
+                            </li>
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="fas fa-shield-alt text-warning me-2"></i>
+                                <span>فایروال باید پورت 1362 را اجازه دهد</span>
+                            </li>
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="fas fa-bolt text-danger me-2"></i>
+                                <span>ابتدا تست اتصال، سپس پرداخت</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- فوتر -->
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <hr>
+                <p class="text-muted">
+                    <i class="fas fa-code me-1"></i> توسعه داده شده برای دستگاه پوز PAX S800
+                    <span class="mx-2">•</span>
+                    <i class="fas fa-clock me-1"></i> آخرین بروزرسانی: {% now "Y/m/d" %}
+                </p>
             </div>
         </div>
     </div>
 
+    <!-- اسکریپت‌ها -->
     <script>
+        // ==================== متغیرهای全局 ====================
+        let connectionSteps = [];
+
+        // ==================== توابع اصلی ====================
+
         // تابع برای انتخاب IP
         function selectIp(ip) {
             document.getElementById('ipAddress').value = ip;
@@ -181,11 +520,14 @@
             const element = document.getElementById(elementId);
             element.select();
             element.setSelectionRange(0, 99999);
-            document.execCommand('copy');
 
-            // نمایش اعلان
-            const originalText = element.value;
-            showStep(`📋 "${originalText}" کپی شد`, 'success');
+            try {
+                document.execCommand('copy');
+                const originalText = element.value;
+                showStep(`📋 "${originalText}" کپی شد`, 'success');
+            } catch (err) {
+                showStep('❌ خطا در کپی کردن متن', 'error');
+            }
         }
 
         // تابع برای به‌روزرسانی نمایش تنظیمات فعلی
@@ -194,10 +536,13 @@
             const ip = document.getElementById('ipAddress').value;
             const port = document.getElementById('port').value;
             const comPort = document.getElementById('comPort').value;
+            const baudRate = document.getElementById('baudRate').value;
 
-            let settingsText = `نوع اتصال: <strong>${connectionType}</strong> | IP: <strong>${ip}</strong> | پورت: <strong>${port}</strong>`;
-            if (connectionType === 'SERIAL') {
-                settingsText += ` | پورت سریال: <strong>${comPort}</strong>`;
+            let settingsText = '';
+            if (connectionType === 'LAN') {
+                settingsText = `<span class="text-primary"><i class="fas fa-wifi me-1"></i> LAN</span> | IP: <strong>${ip}</strong> | پورت: <strong>${port}</strong>`;
+            } else {
+                settingsText = `<span class="text-info"><i class="fas fa-usb me-1"></i> SERIAL</span> | پورت: <strong>${comPort}</strong> | سرعت: <strong>${baudRate}</strong>`;
             }
 
             document.getElementById('currentSettings').innerHTML = settingsText;
@@ -212,19 +557,20 @@
                 .then(data => {
                     if (data.success) {
                         // بروزرسانی لیست IPهای محلی
-                        const container = document.getElementById('localIpsContainer');
+                        const container = document.getElementById('serverIpsContainer');
                         container.innerHTML = '';
 
                         data.local_ips.forEach(ip => {
                             const badge = document.createElement('span');
                             badge.className = 'badge bg-primary ip-badge me-2 mb-2';
-                            badge.textContent = ip + ' 📋';
+                            badge.innerHTML = `<i class="fas fa-network-wired me-1"></i>${ip} <i class="fas fa-mouse-pointer ms-1"></i>`;
                             badge.onclick = () => selectIp(ip);
+                            badge.title = 'کلیک برای انتخاب';
                             container.appendChild(badge);
                         });
 
                         // بروزرسانی IP عمومی
-                        document.getElementById('publicIpInput').value = data.public_ip;
+                        document.getElementById('serverPublicIp').value = data.public_ip;
 
                         // اگر IP انتخابی قدیمی است، آن را به روز کنیم
                         const currentIp = document.getElementById('ipAddress').value;
@@ -243,57 +589,110 @@
                 });
         }
 
+        // تشخیص خودکار IP
+        function autoDetectIP() {
+            showStep('🔍 در حال تشخیص خودکار IP...', 'warning');
+
+            // سعی می‌کنیم از WebRTC برای تشخیص IP محلی استفاده کنیم
+            getClientLocalIP().then(localIp => {
+                if (localIp !== 'نامشخص') {
+                    document.getElementById('ipAddress').value = localIp;
+                    updateCurrentSettings();
+                    showStep(`✅ IP ${localIp} به صورت خودکار تشخیص داده شد`, 'success');
+                } else {
+                    // اگر WebRTC کار نکرد، از IPهای سرور استفاده می‌کنیم
+                    const serverIps = [{% for ip in server_local_ips %}'{{ ip }}',{% endfor %}];
+                    if (serverIps.length > 0) {
+                        document.getElementById('ipAddress').value = serverIps[0];
+                        updateCurrentSettings();
+                        showStep(`✅ IP ${serverIps[0]} انتخاب شد`, 'success');
+                    } else {
+                        showStep('❌ امکان تشخیص خودکار IP وجود ندارد', 'error');
+                    }
+                }
+            });
+        }
+
         // تغییر نمایش فرم بر اساس نوع اتصال
         document.getElementById('connectionType').addEventListener('change', function() {
+            const connectionType = this.value;
+            const lanSection = document.getElementById('lanSection');
             const serialSection = document.getElementById('serialSection');
-            if (this.value === 'SERIAL') {
-                serialSection.style.display = 'block';
-            } else {
+
+            if (connectionType === 'LAN') {
+                lanSection.style.display = 'block';
                 serialSection.style.display = 'none';
+                showStep('🔗 حالت اتصال: LAN (شبکه) انتخاب شد', 'info');
+            } else if (connectionType === 'SERIAL') {
+                lanSection.style.display = 'none';
+                serialSection.style.display = 'block';
+                showStep('🔌 حالت اتصال: SERIAL (سریال) انتخاب شد', 'info');
             }
+
             updateCurrentSettings();
         });
 
         // به‌روزرسانی تنظیمات هنگام تغییر مقادیر
         document.getElementById('ipAddress').addEventListener('input', updateCurrentSettings);
         document.getElementById('port').addEventListener('input', updateCurrentSettings);
-        document.getElementById('comPort').addEventListener('input', updateCurrentSettings);
+        document.getElementById('comPort').addEventListener('change', updateCurrentSettings);
+        document.getElementById('baudRate').addEventListener('change', updateCurrentSettings);
 
-        // بارگذاری اولیه
-        document.addEventListener('DOMContentLoaded', function() {
-            updateCurrentSettings();
-
-            // نمایش اطلاعات اولیه
-            showStep(`💻 نام کامپیوتر: {{ hostname }}`, 'info');
-            showStep(`🌐 IP عمومی: {{ public_ip }}`, 'info');
-            showStep(`🏠 IPهای محلی: {{ local_ips|join:', ' }}`, 'info');
-        });
+        // ==================== توابع ارتباط با سرور ====================
 
         // تابع برای جمع‌آوری تنظیمات از فرم
         function getConnectionConfig() {
-            return {
-                connection_type: document.getElementById('connectionType').value,
-                ip: document.getElementById('ipAddress').value,
-                port: parseInt(document.getElementById('port').value),
-                com_port: document.getElementById('comPort').value
+            const connectionType = document.getElementById('connectionType').value;
+
+            const config = {
+                connection_type: connectionType
             };
+
+            if (connectionType === 'LAN') {
+                config.ip = document.getElementById('ipAddress').value;
+                config.port = parseInt(document.getElementById('port').value);
+            } else if (connectionType === 'SERIAL') {
+                config.com_port = document.getElementById('comPort').value;
+                config.baud_rate = parseInt(document.getElementById('baudRate').value);
+            }
+
+            return config;
         }
 
+        // تست اتصال
         function testConnection() {
             const config = getConnectionConfig();
 
             // اعتبارسنجی
-            if (!config.ip) {
-                alert('لطفا آدرس IP را وارد کنید');
+            if (config.connection_type === 'LAN' && !config.ip) {
+                showStep('❌ لطفا آدرس IP را وارد کنید', 'error');
                 return;
             }
 
-            if (!config.port) {
-                alert('لطفا پورت را وارد کنید');
+            if (config.connection_type === 'LAN' && !config.port) {
+                showStep('❌ لطفا پورت را وارد کنید', 'error');
                 return;
             }
 
-            showStep(`⏳ در حال تست ارتباط با ${config.ip}:${config.port}...`, 'warning');
+            // پاک کردن مراحل قبلی
+            document.getElementById('stepsContainer').innerHTML = '';
+            document.getElementById('finalResult').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">در حال تست...</span>
+                    </div>
+                    <p class="mt-2">در حال تست اتصال...</p>
+                </div>
+            `;
+
+            let target = '';
+            if (config.connection_type === 'LAN') {
+                target = `${config.ip}:${config.port}`;
+            } else {
+                target = config.com_port;
+            }
+
+            showStep(`⏳ در حال تست ارتباط با ${target}...`, 'warning');
 
             fetch('/pos/test-connection/', {
                 method: 'POST',
@@ -308,37 +707,69 @@
                 if (data.success) {
                     showStep(`✅ ${data.message}`, 'success');
                     showStep(`📡 آدرس استفاده شده: ${data.ip_used}:${data.port_used}`, 'success');
-                    showFinalResult('✅ ' + data.message, 'success');
+                    showFinalResult(`
+                        <div class="alert alert-success">
+                            <h4><i class="fas fa-check-circle me-2"></i> اتصال موفق</h4>
+                            <p class="mb-0">${data.message}</p>
+                            <hr>
+                            <small>نوع اتصال: ${data.connection_type} | آدرس: ${data.ip_used}:${data.port_used}</small>
+                        </div>
+                    `, 'success');
                 } else {
                     showStep(data.message, 'error');
-                    showFinalResult('❌ ' + data.message, 'error');
+                    showFinalResult(`
+                        <div class="alert alert-danger">
+                            <h4><i class="fas fa-times-circle me-2"></i> اتصال ناموفق</h4>
+                            <p class="mb-0">${data.message}</p>
+                        </div>
+                    `, 'error');
                 }
             })
             .catch(error => {
                 showStep('❌ خطا در ارتباط با سرور: ' + error, 'error');
-                showFinalResult('❌ خطا در ارتباط با سرور', 'error');
+                showFinalResult(`
+                    <div class="alert alert-danger">
+                        <h4><i class="fas fa-exclamation-triangle me-2"></i> خطای ارتباط</h4>
+                        <p class="mb-0">خطا در ارتباط با سرور: ${error}</p>
+                    </div>
+                `, 'error');
             });
         }
 
+        // انجام پرداخت
         function makePayment() {
             const config = getConnectionConfig();
 
             // اعتبارسنجی
-            if (!config.ip) {
-                alert('لطفا آدرس IP را وارد کنید');
+            if (config.connection_type === 'LAN' && !config.ip) {
+                showStep('❌ لطفا آدرس IP را وارد کنید', 'error');
                 return;
             }
 
-            if (!config.port) {
-                alert('لطفا پورت را وارد کنید');
+            if (config.connection_type === 'LAN' && !config.port) {
+                showStep('❌ لطفا پورت را وارد کنید', 'error');
                 return;
             }
 
             // پاک کردن مراحل قبلی
             document.getElementById('stepsContainer').innerHTML = '';
-            document.getElementById('finalResult').style.display = 'none';
+            document.getElementById('finalResult').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">در حال پردازش...</span>
+                    </div>
+                    <p class="mt-2">در حال انجام تراکنش...</p>
+                </div>
+            `;
 
-            showStep(`🚀 شروع فرآیند پرداخت 1250 تومانی به آدرس ${config.ip}:${config.port}...`, 'warning');
+            let target = '';
+            if (config.connection_type === 'LAN') {
+                target = `${config.ip}:${config.port}`;
+            } else {
+                target = config.com_port;
+            }
+
+            showStep(`🚀 شروع فرآیند پرداخت 1250 تومانی به ${target}...`, 'warning');
 
             fetch('/pos/make-payment/', {
                 method: 'POST',
@@ -354,7 +785,8 @@
                 if (data.steps) {
                     data.steps.forEach(step => {
                         const stepType = step.includes('❌') ? 'error' :
-                                       step.includes('✅') ? 'success' : 'warning';
+                                       step.includes('✅') ? 'success' :
+                                       step.includes('🚀') ? 'warning' : 'info';
                         showStep(step, stepType);
                     });
                 }
@@ -362,36 +794,202 @@
                 // نمایش نتیجه نهایی
                 if (data.success) {
                     showStep(`📡 آدرس استفاده شده: ${data.ip_used}`, 'success');
-                    showFinalResult('🎉 ' + data.message, 'success');
+                    showFinalResult(`
+                        <div class="alert alert-success">
+                            <h4><i class="fas fa-check-circle me-2"></i> پرداخت موفق</h4>
+                            <p class="mb-0">${data.message}</p>
+                            <hr>
+                            <small>شناسه تراکنش: ${data.transaction_id}</small>
+                        </div>
+                    `, 'success');
                 } else {
-                    showFinalResult('❌ ' + data.message, 'error');
+                    showFinalResult(`
+                        <div class="alert alert-danger">
+                            <h4><i class="fas fa-times-circle me-2"></i> پرداخت ناموفق</h4>
+                            <p class="mb-0">${data.message}</p>
+                        </div>
+                    `, 'error');
                 }
             })
             .catch(error => {
                 showStep('❌ خطا در ارتباط با سرور: ' + error, 'error');
-                showFinalResult('❌ خطا در ارتباط با سرور', 'error');
+                showFinalResult(`
+                    <div class="alert alert-danger">
+                        <h4><i class="fas fa-exclamation-triangle me-2"></i> خطای ارتباط</h4>
+                        <p class="mb-0">خطا در ارتباط با سرور: ${error}</p>
+                    </div>
+                `, 'error');
             });
         }
 
+        // ==================== توابع نمایش ====================
+
+        // نمایش یک مرحله
         function showStep(message, type) {
             const stepsContainer = document.getElementById('stepsContainer');
+
+            // اگر پیام خالی است، پیام پیش‌فرض را پاک کن
+            if (stepsContainer.children.length === 1 && stepsContainer.children[0].classList.contains('text-center')) {
+                stepsContainer.innerHTML = '';
+            }
+
             const stepDiv = document.createElement('div');
-            stepDiv.className = `step-card p-3 ${type === 'success' ? 'step-success' : type === 'error' ? 'step-error' : 'step-warning'}`;
+            stepDiv.className = `step-card p-3 fade-in ${type === 'success' ? 'step-success' : type === 'error' ? 'step-error' : type === 'warning' ? 'step-warning' : 'step-info'}`;
             stepDiv.textContent = message;
             stepsContainer.appendChild(stepDiv);
             stepsContainer.scrollTop = stepsContainer.scrollHeight;
+
+            // ذخیره مرحله برای تاریخچه
+            connectionSteps.push({
+                message: message,
+                type: type,
+                timestamp: new Date().toLocaleTimeString('fa-IR')
+            });
         }
 
-        function showFinalResult(message, type) {
+        // نمایش نتیجه نهایی
+        function showFinalResult(html, type) {
             const finalResult = document.getElementById('finalResult');
-            finalResult.innerHTML = `
-                <div class="alert alert-${type === 'success' ? 'success' : 'danger'}">
-                    <h4>${message}</h4>
+            finalResult.innerHTML = html;
+        }
+
+        // پاک کردن مراحل
+        function clearSteps() {
+            document.getElementById('stepsContainer').innerHTML = `
+                <div class="p-4 text-center text-muted">
+                    <i class="fas fa-play-circle fa-2x mb-3"></i>
+                    <p>لطفا یکی از عملیات‌های بالا را انتخاب کنید...</p>
                 </div>
             `;
-            finalResult.style.display = 'block';
+            document.getElementById('finalResult').innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-flag-checkered fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">هنوز عملیاتی انجام نشده است</p>
+                </div>
+            `;
+            connectionSteps = [];
         }
 
+        // ==================== توابع کمکی ====================
+
+        // دریافت اطلاعات فنی دستگاه
+        function getDetailedClientInfo() {
+            const clientInfo = {
+                screen: {
+                    width: screen.width,
+                    height: screen.height,
+                    colorDepth: screen.colorDepth,
+                    pixelDepth: screen.pixelDepth
+                },
+                browser: {
+                    language: navigator.language,
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    cookieEnabled: navigator.cookieEnabled,
+                    javaEnabled: navigator.javaEnabled ? navigator.javaEnabled() : false,
+                    pdfEnabled: navigator.pdfViewerEnabled || false
+                },
+                connection: {
+                    effectiveType: navigator.connection ? navigator.connection.effectiveType : 'نامشخص',
+                    downlink: navigator.connection ? navigator.connection.downlink : 'نامشخص',
+                    rtt: navigator.connection ? navigator.connection.rtt : 'نامشخص'
+                },
+                location: {
+                    href: window.location.href,
+                    hostname: window.location.hostname,
+                    protocol: window.location.protocol,
+                    port: window.location.port
+                },
+                time: {
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    offset: new Date().getTimezoneOffset()
+                }
+            };
+
+            return clientInfo;
+        }
+
+        // نمایش اطلاعات فنی دستگاه
+        function showDetailedClientInfo() {
+            const info = getDetailedClientInfo();
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            const detailsHtml = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <strong><i class="fas fa-desktop me-2"></i>صفحه نمایش:</strong>
+                            ${info.screen.width} × ${info.screen.height} پیکسل
+                        </div>
+                        <div class="mb-2">
+                            <strong><i class="fas fa-globe me-2"></i>زبان:</strong>
+                            ${info.browser.language}
+                        </div>
+                        <div class="mb-2">
+                            <strong><i class="fas fa-microchip me-2"></i>پلتفرم:</strong>
+                            ${info.browser.platform}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <strong><i class="fas fa-wifi me-2"></i>اتصال:</strong>
+                            ${info.connection.effectiveType} (${info.connection.downlink} Mbps)
+                        </div>
+                        <div class="mb-2">
+                            <strong><i class="fas fa-cookie me-2"></i>کوکی:</strong>
+                            ${info.browser.cookieEnabled ? '<span class="text-success">فعال</span>' : '<span class="text-danger">غیرفعال</span>'}
+                        </div>
+                        <div class="mb-2">
+                            <strong><i class="fas fa-mobile-alt me-2"></i>نوع:</strong>
+                            ${isMobile ? '<span class="text-info">موبایل</span>' : '<span class="text-primary">دسکتاپ</span>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // اضافه کردن به صفحه
+            const clientDetails = document.getElementById('clientTechnicalDetails');
+            if (clientDetails) {
+                clientDetails.innerHTML = detailsHtml;
+            }
+        }
+
+        // تشخیص IP محلی با WebRTC
+        function getClientLocalIP() {
+            return new Promise((resolve) => {
+                // اگر مرورگر از WebRTC پشتیبانی نمی‌کند
+                if (!window.RTCPeerConnection) {
+                    resolve('نامشخص');
+                    return;
+                }
+
+                const pc = new RTCPeerConnection({ iceServers: [] });
+                pc.createDataChannel('');
+                pc.createOffer().then(offer => pc.setLocalDescription(offer));
+
+                pc.onicecandidate = (ice) => {
+                    if (!ice.candidate) {
+                        resolve('نامشخص');
+                        return;
+                    }
+
+                    const candidate = ice.candidate.candidate;
+                    const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/;
+                    const match = ipRegex.exec(candidate);
+
+                    if (match) {
+                        resolve(match[1]);
+                    } else {
+                        resolve('نامشخص');
+                    }
+                };
+
+                // اگر پس از 3 ثانیه IP پیدا نشد
+                setTimeout(() => resolve('نامشخص'), 3000);
+            });
+        }
+
+        // دریافت CSRF Token
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -406,6 +1004,33 @@
             }
             return cookieValue;
         }
+
+        // ==================== اجرای خودکار هنگام بارگذاری ====================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // نمایش اطلاعات فنی دستگاه
+            showDetailedClientInfo();
+
+            // به‌روزرسانی تنظیمات فعلی
+            updateCurrentSettings();
+
+            // نمایش اطلاعات اولیه
+            showStep(`💻 نام کامپیوتر: {{ server_hostname }}`, 'info');
+            showStep(`🌐 IP عمومی سرور: {{ server_public_ip }}`, 'info');
+            showStep(`🏠 IPهای محلی سرور: {{ server_local_ips|join:', ' }}`, 'info');
+            showStep(`📱 دستگاه شما: {{ client_ip }} ({% if client_is_mobile %}موبایل{% else %}کامپیوتر{% endif %})`, 'info');
+
+            // تنظیم وضعیت اتصال
+            document.getElementById('clientStatus').className = 'connection-status status-online';
+            document.getElementById('serverStatus').className = 'connection-status status-online';
+
+            // تلاش برای دریافت IP محلی کلاینت
+            getClientLocalIP().then(localIp => {
+                if (localIp !== 'نامشخص') {
+                    showStep(`🔍 IP محلی دستگاه شما: ${localIp}`, 'info');
+                }
+            });
+        });
     </script>
 </body>
 </html>

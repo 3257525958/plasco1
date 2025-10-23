@@ -346,20 +346,76 @@ class POSManager:
 
 # ==================== ویوهای اصلی ====================
 
+# pos_payment/views.py
+def get_client_info(request):
+    """دریافت اطلاعات کلاینت (دستگاه متصل شده)"""
+    try:
+        # دریافت IP کلاینت
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            client_ip = x_forwarded_for.split(',')[0]
+        else:
+            client_ip = request.META.get('REMOTE_ADDR')
+
+        # اطلاعات اضافی
+        user_agent = request.META.get('HTTP_USER_AGENT', 'نامشخص')
+        host = request.get_host()
+
+        return {
+            'client_ip': client_ip,
+            'user_agent': user_agent,
+            'host': host,
+            'is_mobile': any(device in user_agent.lower() for device in ['mobile', 'android', 'iphone']),
+            'timestamp': timezone.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            'client_ip': 'نامشخص',
+            'user_agent': 'نامشخص',
+            'host': 'نامشخص',
+            'is_mobile': False,
+            'timestamp': timezone.now().isoformat()
+        }
+
+
 def pos_dashboard(request):
-    """صفحه اصلی مدیریت پوز"""
-    network_info = get_network_info()
+    """صفحه اصلی با اطلاعات سرور و کلاینت"""
+    server_network_info = get_network_info()
+    client_info = get_client_info(request)
 
     context = {
-        'local_ips': network_info['local_ips'],
-        'public_ip': network_info['public_ip'],
-        'hostname': network_info['hostname'],
-        'primary_ip': network_info['primary_ip'],
-        'timestamp': network_info['timestamp']
+        # اطلاعات سرور
+        'server_local_ips': server_network_info['local_ips'],
+        'server_public_ip': server_network_info['public_ip'],
+        'server_hostname': server_network_info['hostname'],
+        'server_primary_ip': server_network_info['primary_ip'],
+
+        # اطلاعات کلاینت
+        'client_ip': client_info['client_ip'],
+        'client_user_agent': client_info['user_agent'],
+        'client_is_mobile': client_info['is_mobile'],
+        'client_host': client_info['host'],
+
+        'timestamp': server_network_info['timestamp']
     }
 
     return render(request, 'pos_payment/dashboard.html', context)
 
+
+@csrf_exempt
+def get_client_network_info(request):
+    """API برای دریافت اطلاعات شبکه کلاینت"""
+    if request.method == 'GET':
+        client_info = get_client_info(request)
+        server_info = get_network_info()
+
+        return JsonResponse({
+            'success': True,
+            'client': client_info,
+            'server': server_info
+        })
+
+    return JsonResponse({'success': False, 'message': 'Method not allowed'})
 
 @csrf_exempt
 def get_network_info_api(request):
@@ -591,3 +647,7 @@ def handler500(request):
         'success': False,
         'message': 'خطای داخلی سرور'
     }, status=500)
+
+
+
+
