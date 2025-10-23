@@ -1,7 +1,6 @@
 # pos_payment/models.py
 from django.db import models
 
-
 class POSTransaction(models.Model):
     STATUS_CHOICES = [
         ('pending', 'در انتظار'),

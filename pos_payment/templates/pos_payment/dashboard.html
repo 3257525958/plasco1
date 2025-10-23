@@ -28,6 +28,7 @@
             margin-bottom: 10px;
             border-radius: 0 8px 8px 0;
             transition: all 0.3s ease;
+            padding: 12px 15px;
         }
 
         .step-card:hover {
@@ -127,16 +128,19 @@
             background-color: var(--warning-color);
         }
 
-        .device-icon {
-            font-size: 1.5rem;
-            margin-right: 10px;
-        }
-
         .section-title {
             border-right: 4px solid var(--primary-color);
             padding-right: 15px;
             margin-bottom: 20px;
             color: var(--primary-color);
+        }
+
+        .ip-format-example {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
         }
 
         /* اسکرول بار سفارشی */
@@ -193,11 +197,84 @@
                 <h1 class="display-4 fw-bold text-primary">
                     <i class="fas fa-credit-card me-2"></i>اتصال به دستگاه پوز S800
                 </h1>
-                <p class="lead text-muted">برنامه تست و مدیریت دستگاه پوز PAX S800</p>
+                <p class="lead text-muted">برنامه تست و مدیریت دستگاه پوز PAX S800 - پشتیبانی از فرمت IP 12 رقمی</p>
                 <div class="d-flex justify-content-center mt-3">
                     <span class="badge bg-success me-2"><i class="fas fa-wifi me-1"></i> LAN</span>
                     <span class="badge bg-info me-2"><i class="fas fa-usb me-1"></i> Serial</span>
-                    <span class="badge bg-warning"><i class="fas fa-bolt me-1"></i> Real-time</span>
+                    <span class="badge bg-warning me-2"><i class="fas fa-bolt me-1"></i> Real-time</span>
+                    <span class="badge bg-danger"><i class="fas fa-microchip me-1"></i> IP 12 رقمی</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- اطلاعات مهم برای کاربر -->
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <i class="fas fa-info-circle me-2"></i> اطلاعات مهم - این IP را به دستگاه پوز بدهید! (فرمت 12 رقمی)
+            </div>
+            <div class="card-body">
+                {% if client_is_local %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>هشدار مهم:</strong>
+                    شما از آدرس لوکال (<span class="ip-format-example">{{ client_ip }}</span>) متصل شده‌اید.
+                    برای اتصال پوز باید از IP واقعی شبکه استفاده کنید!
+                    <br>
+                    <small class="mt-1">
+                        🔧 راه حل: برنامه را با دستور
+                        <code>python manage.py runserver 0.0.0.0:8000</code>
+                        اجرا کنید و از آدرس
+                        <code>http://<span class="ip-format-example">{{ server_primary_ip }}</span>:8000/pos/</code>
+                        وارد شوید.
+                    </small>
+                </div>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>آماده برای اتصال:</strong>
+                    IP زیر را در تنظیمات دستگاه پوز وارد کنید (فرمت 12 رقمی).
+                </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-success">IP دستگاه شما (برای پوز):</label>
+                            <div class="input-group input-group-lg">
+                                <input type="text" class="form-control font-monospace fw-bold fs-5"
+                                       value="{{ client_ip_12_digit }}" readonly id="clientIpInput">
+                                <button class="btn btn-success" type="button" onclick="copyToClipboard('clientIpInput')">
+                                    <i class="fas fa-copy me-1"></i> کپی
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">
+                                این IP را در تنظیمات دستگاه پوز وارد کنید (فرمت: ۱۲ رقمی با نقطه)
+                                {% if client_ip != client_ip_12_digit %}
+                                <br>
+                                <span class="text-info">
+                                    <i class="fas fa-sync-alt me-1"></i>
+                                    تبدیل شده از: <span class="ip-format-example">{{ client_ip }}</span>
+                                </span>
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">راهنمای سریع:</label>
+                            <div class="alert alert-info">
+                                <small>
+                                    <strong>مراحل کار:</strong><br>
+                                    1. این IP را در پوز وارد کنید<br>
+                                    2. IP پوز (<span class="ip-format-example">192.168.018.094</span>) را در فیلد زیر وارد کنید<br>
+                                    3. دکمه "تست اتصال" را بزنید<br>
+                                    4. اگر موفق بود، "پرداخت تست" را بزنید
+                                    <hr class="my-2">
+                                    <strong class="text-danger">فرمت IP مورد نیاز:</strong> 12 رقمی با نقطه
+                                </small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -212,14 +289,21 @@
                 <div class="row">
                     <div class="col-md-3">
                         <div class="mb-3">
-                            <label class="form-label fw-bold">IP دستگاه شما:</label>
+                            <label class="form-label fw-bold">IP دستگاه شما (معمولی):</label>
                             <div class="input-group">
-                                <input type="text" class="form-control font-monospace" value="{{ client_ip }}" readonly id="clientIpInput">
-                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('clientIpInput')">
+                                <input type="text" class="form-control font-monospace" value="{{ client_ip }}" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">IP دستگاه شما (12 رقمی):</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" value="{{ client_ip_12_digit }}" readonly id="clientIp12Digit">
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('clientIp12Digit')">
                                     <i class="fas fa-copy"></i>
                                 </button>
                             </div>
-                            <small class="form-text text-muted">این IP دستگاه فعلی شماست</small>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -242,22 +326,6 @@
                                 </span>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">زمان اتصال:</label>
-                            <input type="text" class="form-control" value="{% now 'H:i - Y/m/d' %}" readonly>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- جزئیات فنی (با JavaScript پر می‌شود) -->
-                <div id="clientTechnicalDetails" class="mt-3 p-3 bg-light rounded">
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">در حال بارگذاری...</span>
-                        </div>
-                        <p class="mt-2">در حال دریافت اطلاعات فنی دستگاه...</p>
                     </div>
                 </div>
             </div>
@@ -286,7 +354,7 @@
                         <div class="mb-3">
                             <label class="form-label fw-bold">IP عمومی سرور:</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" value="{{ server_public_ip }}" readonly id="serverPublicIp">
+                                <input type="text" class="form-control" value="{{ server_public_ip_12_digit }}" readonly id="serverPublicIp">
                                 <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('serverPublicIp')">
                                     <i class="fas fa-copy"></i>
                                 </button>
@@ -295,9 +363,9 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label fw-bold">IPهای محلی سرور:</label>
+                            <label class="form-label fw-bold">IPهای محلی سرور (فرمت 12 رقمی):</label>
                             <div id="serverIpsContainer">
-                                {% for ip in server_local_ips %}
+                                {% for ip in server_local_ips_12_digit %}
                                 <span class="badge bg-primary ip-badge me-2 mb-2" onclick="selectIp('{{ ip }}')" title="کلیک برای انتخاب">
                                     <i class="fas fa-network-wired me-1"></i>{{ ip }} <i class="fas fa-mouse-pointer ms-1"></i>
                                 </span>
@@ -307,7 +375,17 @@
                                 </div>
                                 {% endfor %}
                             </div>
-                            <small class="form-text text-muted">روی هر IP کلیک کنید تا در فیلد زیر قرار گیرد</small>
+                            <small class="form-text text-muted">روی هر IP کلیک کنید تا در فیلد IP پوز قرار گیرد (فرمت 12 رقمی)</small>
+                            {% if server_local_ips != server_local_ips_12_digit %}
+                            <div class="mt-1">
+                                <small class="text-muted">
+                                    IPهای اصلی:
+                                    {% for ip in server_local_ips %}
+                                    <span class="ip-format-example">{{ ip }}</span>{% if not forloop.last %}، {% endif %}
+                                    {% endfor %}
+                                </small>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -326,7 +404,7 @@
                         <div class="mb-3">
                             <label class="form-label fw-bold">نوع اتصال:</label>
                             <select class="form-select" id="connectionType">
-                                <option value="LAN"><i class="fas fa-wifi me-2"></i> LAN (شبکه)</option>
+                                <option value="LAN" selected><i class="fas fa-wifi me-2"></i> LAN (شبکه)</option>
                                 <option value="SERIAL"><i class="fas fa-usb me-2"></i> SERIAL (سریال)</option>
                             </select>
                         </div>
@@ -352,14 +430,21 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">آدرس IP دستگاه پوز:</label>
+                                <label class="form-label fw-bold">آدرس IP دستگاه پوز (فرمت 12 رقمی):</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control font-monospace" id="ipAddress" value="{{ server_primary_ip }}" placeholder="مثال: 192.168.1.100">
+                                    <input type="text" class="form-control font-monospace" id="ipAddress" value="192.168.018.094"
+                                           placeholder="مثال: 192.168.001.001" pattern="\d{3}\.\d{3}\.\d{3}\.\d{3}">
                                     <button class="btn btn-outline-info" type="button" onclick="autoDetectIP()">
                                         <i class="fas fa-bolt me-1"></i> تشخیص خودکار
                                     </button>
                                 </div>
-                                <small class="form-text text-muted">IP دستگاه پوز در شبکه</small>
+                                <small class="form-text text-muted">
+                                    IP دستگاه پوز در شبکه (فرمت 12 رقمی - پیش‌فرض: 192.168.018.094)
+                                </small>
+                                <div class="form-text text-info">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    فرمت مورد نیاز: ۱۲ رقمی با نقطه (مثال: <span class="ip-format-example">192.168.001.001</span>)
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -482,7 +567,34 @@
                                 <i class="fas fa-bolt text-danger me-2"></i>
                                 <span>ابتدا تست اتصال، سپس پرداخت</span>
                             </li>
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="fas fa-microchip text-info me-2"></i>
+                                <span>فرمت IP: 12 رقمی با نقطه (مثال: 192.168.001.001)</span>
+                            </li>
                         </ul>
+                    </div>
+                </div>
+
+                <!-- تبدیل IP -->
+                <div class="card border-dark mt-4">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fas fa-exchange-alt me-2"></i> تبدیل فرمت IP
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">IP معمولی:</label>
+                            <input type="text" class="form-control font-monospace mb-2" id="normalIpInput" placeholder="192.168.1.1">
+                            <button class="btn btn-outline-dark btn-sm w-100" onclick="convertTo12Digit()">
+                                <i class="fas fa-arrow-down me-1"></i> تبدیل به 12 رقمی
+                            </button>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">IP 12 رقمی:</label>
+                            <input type="text" class="form-control font-monospace mb-2" id="digit12IpInput" placeholder="192.168.001.001">
+                            <button class="btn btn-outline-dark btn-sm w-100" onclick="convertToNormal()">
+                                <i class="fas fa-arrow-up me-1"></i> تبدیل به معمولی
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -496,6 +608,8 @@
                     <i class="fas fa-code me-1"></i> توسعه داده شده برای دستگاه پوز PAX S800
                     <span class="mx-2">•</span>
                     <i class="fas fa-clock me-1"></i> آخرین بروزرسانی: {% now "Y/m/d" %}
+                    <span class="mx-2">•</span>
+                    <i class="fas fa-microchip me-1"></i> پشتیبانی از فرمت IP 12 رقمی
                 </p>
             </div>
         </div>
@@ -506,13 +620,72 @@
         // ==================== متغیرهای全局 ====================
         let connectionSteps = [];
 
+        // ==================== توابع مدیریت IP ====================
+
+        // تابع برای اعتبارسنجی فرمت IP 12 رقمی
+        function validateIPFormat(ip) {
+            const ipPattern = /^\d{3}\.\d{3}\.\d{3}\.\d{3}$/;
+            return ipPattern.test(ip);
+        }
+
+        // تابع برای تبدیل IP معمولی به فرمت 12 رقمی
+        function convertTo12DigitFormat(ip) {
+            if (validateIPFormat(ip)) {
+                return ip; // قبلاً فرمت صحیح دارد
+            }
+
+            try {
+                const parts = ip.split('.');
+                if (parts.length === 4) {
+                    return parts.map(part => part.padStart(3, '0')).join('.');
+                }
+            } catch (e) {
+                console.error('Error converting IP format:', e);
+            }
+            return ip;
+        }
+
+        // تابع برای تبدیل IP از فرمت 12 رقمی به معمولی
+        function convertFrom12DigitFormat(ip_12_digit) {
+            try {
+                if (validateIPFormat(ip_12_digit)) {
+                    const parts = ip_12_digit.split('.');
+                    const normalizedParts = parts.map(part => String(parseInt(part, 10)));
+                    return normalizedParts.join('.');
+                }
+                return ip_12_digit;
+            } catch (e) {
+                return ip_12_digit;
+            }
+        }
+
+        // تابع برای تبدیل IP معمولی به 12 رقمی (از طریق UI)
+        function convertTo12Digit() {
+            const normalIp = document.getElementById('normalIpInput').value;
+            if (normalIp) {
+                const converted = convertTo12DigitFormat(normalIp);
+                document.getElementById('digit12IpInput').value = converted;
+                showStep(`🔀 تبدیل IP: ${normalIp} → ${converted}`, 'info');
+            }
+        }
+
+        // تابع برای تبدیل IP از 12 رقمی به معمولی (از طریق UI)
+        function convertToNormal() {
+            const digit12Ip = document.getElementById('digit12IpInput').value;
+            if (digit12Ip) {
+                const converted = convertFrom12DigitFormat(digit12Ip);
+                document.getElementById('normalIpInput').value = converted;
+                showStep(`🔀 تبدیل IP: ${digit12Ip} → ${converted}`, 'info');
+            }
+        }
+
         // ==================== توابع اصلی ====================
 
         // تابع برای انتخاب IP
         function selectIp(ip) {
             document.getElementById('ipAddress').value = ip;
             updateCurrentSettings();
-            showStep(`✅ IP ${ip} انتخاب شد`, 'success');
+            showStep(`✅ IP ${ip} انتخاب شد (فرمت 12 رقمی)`, 'success');
         }
 
         // تابع برای کپی به کلیپ‌بورد
@@ -540,77 +713,36 @@
 
             let settingsText = '';
             if (connectionType === 'LAN') {
-                settingsText = `<span class="text-primary"><i class="fas fa-wifi me-1"></i> LAN</span> | IP: <strong>${ip}</strong> | پورت: <strong>${port}</strong>`;
+                settingsText = `
+                    <span class="text-primary"><i class="fas fa-wifi me-1"></i> LAN</span> |
+                    IP پوز: <strong class="font-monospace">${ip}</strong> |
+                    پورت: <strong>${port}</strong>
+                    ${!validateIPFormat(ip) ? '<span class="badge bg-danger ms-2">فرمت نامعتبر</span>' : ''}
+                `;
             } else {
-                settingsText = `<span class="text-info"><i class="fas fa-usb me-1"></i> SERIAL</span> | پورت: <strong>${comPort}</strong> | سرعت: <strong>${baudRate}</strong>`;
+                settingsText = `
+                    <span class="text-info"><i class="fas fa-usb me-1"></i> SERIAL</span> |
+                    پورت: <strong>${comPort}</strong> |
+                    سرعت: <strong>${baudRate}</strong>
+                `;
             }
 
             document.getElementById('currentSettings').innerHTML = settingsText;
-        }
-
-        // تابع برای بروزرسانی اطلاعات شبکه
-        function refreshNetworkInfo() {
-            showStep('🔄 در حال بروزرسانی اطلاعات شبکه...', 'warning');
-
-            fetch('/pos/get-network-info/')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // بروزرسانی لیست IPهای محلی
-                        const container = document.getElementById('serverIpsContainer');
-                        container.innerHTML = '';
-
-                        data.local_ips.forEach(ip => {
-                            const badge = document.createElement('span');
-                            badge.className = 'badge bg-primary ip-badge me-2 mb-2';
-                            badge.innerHTML = `<i class="fas fa-network-wired me-1"></i>${ip} <i class="fas fa-mouse-pointer ms-1"></i>`;
-                            badge.onclick = () => selectIp(ip);
-                            badge.title = 'کلیک برای انتخاب';
-                            container.appendChild(badge);
-                        });
-
-                        // بروزرسانی IP عمومی
-                        document.getElementById('serverPublicIp').value = data.public_ip;
-
-                        // اگر IP انتخابی قدیمی است، آن را به روز کنیم
-                        const currentIp = document.getElementById('ipAddress').value;
-                        if (!data.local_ips.includes(currentIp) && data.local_ips.length > 0) {
-                            document.getElementById('ipAddress').value = data.primary_ip;
-                        }
-
-                        updateCurrentSettings();
-                        showStep('✅ اطلاعات شبکه بروزرسانی شد', 'success');
-                    } else {
-                        showStep('❌ خطا در بروزرسانی اطلاعات شبکه', 'error');
-                    }
-                })
-                .catch(error => {
-                    showStep('❌ خطا در بروزرسانی اطلاعات شبکه: ' + error, 'error');
-                });
         }
 
         // تشخیص خودکار IP
         function autoDetectIP() {
             showStep('🔍 در حال تشخیص خودکار IP...', 'warning');
 
-            // سعی می‌کنیم از WebRTC برای تشخیص IP محلی استفاده کنیم
-            getClientLocalIP().then(localIp => {
-                if (localIp !== 'نامشخص') {
-                    document.getElementById('ipAddress').value = localIp;
-                    updateCurrentSettings();
-                    showStep(`✅ IP ${localIp} به صورت خودکار تشخیص داده شد`, 'success');
-                } else {
-                    // اگر WebRTC کار نکرد، از IPهای سرور استفاده می‌کنیم
-                    const serverIps = [{% for ip in server_local_ips %}'{{ ip }}',{% endfor %}];
-                    if (serverIps.length > 0) {
-                        document.getElementById('ipAddress').value = serverIps[0];
-                        updateCurrentSettings();
-                        showStep(`✅ IP ${serverIps[0]} انتخاب شد`, 'success');
-                    } else {
-                        showStep('❌ امکان تشخیص خودکار IP وجود ندارد', 'error');
-                    }
-                }
-            });
+            // از IPهای سرور استفاده می‌کنیم (فرمت 12 رقمی)
+            const serverIps = [{% for ip in server_local_ips_12_digit %}'{{ ip }}',{% endfor %}];
+            if (serverIps.length > 0) {
+                document.getElementById('ipAddress').value = serverIps[0];
+                updateCurrentSettings();
+                showStep(`✅ IP ${serverIps[0]} انتخاب شد (فرمت 12 رقمی)`, 'success');
+            } else {
+                showStep('❌ امکان تشخیص خودکار IP وجود ندارد', 'error');
+            }
         }
 
         // تغییر نمایش فرم بر اساس نوع اتصال
@@ -665,13 +797,21 @@
 
             // اعتبارسنجی
             if (config.connection_type === 'LAN' && !config.ip) {
-                showStep('❌ لطفا آدرس IP را وارد کنید', 'error');
+                showStep('❌ لطفا آدرس IP دستگاه پوز را وارد کنید', 'error');
                 return;
             }
 
             if (config.connection_type === 'LAN' && !config.port) {
                 showStep('❌ لطفا پورت را وارد کنید', 'error');
                 return;
+            }
+
+            // اعتبارسنجی فرمت IP
+            if (config.connection_type === 'LAN' && config.ip) {
+                if (!validateIPFormat(config.ip)) {
+                    showStep('❌ فرمت IP نامعتبر است! باید به صورت 12 رقمی باشد (مثال: 192.168.001.001)', 'error');
+                    return;
+                }
             }
 
             // پاک کردن مراحل قبلی
@@ -693,8 +833,9 @@
             }
 
             showStep(`⏳ در حال تست ارتباط با ${target}...`, 'warning');
+            showStep(`🔍 بررسی فرمت IP: ${config.ip} (فرمت 12 رقمی)`, 'info');
 
-            fetch('/pos/test-connection/', {
+            fetch('/pos/api/test-connection/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -742,13 +883,21 @@
 
             // اعتبارسنجی
             if (config.connection_type === 'LAN' && !config.ip) {
-                showStep('❌ لطفا آدرس IP را وارد کنید', 'error');
+                showStep('❌ لطفا آدرس IP دستگاه پوز را وارد کنید', 'error');
                 return;
             }
 
             if (config.connection_type === 'LAN' && !config.port) {
                 showStep('❌ لطفا پورت را وارد کنید', 'error');
                 return;
+            }
+
+            // اعتبارسنجی فرمت IP
+            if (config.connection_type === 'LAN' && config.ip) {
+                if (!validateIPFormat(config.ip)) {
+                    showStep('❌ فرمت IP نامعتبر است! باید به صورت 12 رقمی باشد (مثال: 192.168.001.001)', 'error');
+                    return;
+                }
             }
 
             // پاک کردن مراحل قبلی
@@ -770,8 +919,9 @@
             }
 
             showStep(`🚀 شروع فرآیند پرداخت 1250 تومانی به ${target}...`, 'warning');
+            showStep(`🔍 بررسی فرمت IP: ${config.ip} (فرمت 12 رقمی)`, 'info');
 
-            fetch('/pos/make-payment/', {
+            fetch('/pos/api/make-payment/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -793,7 +943,6 @@
 
                 // نمایش نتیجه نهایی
                 if (data.success) {
-                    showStep(`📡 آدرس استفاده شده: ${data.ip_used}`, 'success');
                     showFinalResult(`
                         <div class="alert alert-success">
                             <h4><i class="fas fa-check-circle me-2"></i> پرداخت موفق</h4>
@@ -870,125 +1019,6 @@
             connectionSteps = [];
         }
 
-        // ==================== توابع کمکی ====================
-
-        // دریافت اطلاعات فنی دستگاه
-        function getDetailedClientInfo() {
-            const clientInfo = {
-                screen: {
-                    width: screen.width,
-                    height: screen.height,
-                    colorDepth: screen.colorDepth,
-                    pixelDepth: screen.pixelDepth
-                },
-                browser: {
-                    language: navigator.language,
-                    userAgent: navigator.userAgent,
-                    platform: navigator.platform,
-                    cookieEnabled: navigator.cookieEnabled,
-                    javaEnabled: navigator.javaEnabled ? navigator.javaEnabled() : false,
-                    pdfEnabled: navigator.pdfViewerEnabled || false
-                },
-                connection: {
-                    effectiveType: navigator.connection ? navigator.connection.effectiveType : 'نامشخص',
-                    downlink: navigator.connection ? navigator.connection.downlink : 'نامشخص',
-                    rtt: navigator.connection ? navigator.connection.rtt : 'نامشخص'
-                },
-                location: {
-                    href: window.location.href,
-                    hostname: window.location.hostname,
-                    protocol: window.location.protocol,
-                    port: window.location.port
-                },
-                time: {
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    offset: new Date().getTimezoneOffset()
-                }
-            };
-
-            return clientInfo;
-        }
-
-        // نمایش اطلاعات فنی دستگاه
-        function showDetailedClientInfo() {
-            const info = getDetailedClientInfo();
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-            const detailsHtml = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-2">
-                            <strong><i class="fas fa-desktop me-2"></i>صفحه نمایش:</strong>
-                            ${info.screen.width} × ${info.screen.height} پیکسل
-                        </div>
-                        <div class="mb-2">
-                            <strong><i class="fas fa-globe me-2"></i>زبان:</strong>
-                            ${info.browser.language}
-                        </div>
-                        <div class="mb-2">
-                            <strong><i class="fas fa-microchip me-2"></i>پلتفرم:</strong>
-                            ${info.browser.platform}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-2">
-                            <strong><i class="fas fa-wifi me-2"></i>اتصال:</strong>
-                            ${info.connection.effectiveType} (${info.connection.downlink} Mbps)
-                        </div>
-                        <div class="mb-2">
-                            <strong><i class="fas fa-cookie me-2"></i>کوکی:</strong>
-                            ${info.browser.cookieEnabled ? '<span class="text-success">فعال</span>' : '<span class="text-danger">غیرفعال</span>'}
-                        </div>
-                        <div class="mb-2">
-                            <strong><i class="fas fa-mobile-alt me-2"></i>نوع:</strong>
-                            ${isMobile ? '<span class="text-info">موبایل</span>' : '<span class="text-primary">دسکتاپ</span>'}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            // اضافه کردن به صفحه
-            const clientDetails = document.getElementById('clientTechnicalDetails');
-            if (clientDetails) {
-                clientDetails.innerHTML = detailsHtml;
-            }
-        }
-
-        // تشخیص IP محلی با WebRTC
-        function getClientLocalIP() {
-            return new Promise((resolve) => {
-                // اگر مرورگر از WebRTC پشتیبانی نمی‌کند
-                if (!window.RTCPeerConnection) {
-                    resolve('نامشخص');
-                    return;
-                }
-
-                const pc = new RTCPeerConnection({ iceServers: [] });
-                pc.createDataChannel('');
-                pc.createOffer().then(offer => pc.setLocalDescription(offer));
-
-                pc.onicecandidate = (ice) => {
-                    if (!ice.candidate) {
-                        resolve('نامشخص');
-                        return;
-                    }
-
-                    const candidate = ice.candidate.candidate;
-                    const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/;
-                    const match = ipRegex.exec(candidate);
-
-                    if (match) {
-                        resolve(match[1]);
-                    } else {
-                        resolve('نامشخص');
-                    }
-                };
-
-                // اگر پس از 3 ثانیه IP پیدا نشد
-                setTimeout(() => resolve('نامشخص'), 3000);
-            });
-        }
-
         // دریافت CSRF Token
         function getCookie(name) {
             let cookieValue = null;
@@ -1008,28 +1038,30 @@
         // ==================== اجرای خودکار هنگام بارگذاری ====================
 
         document.addEventListener('DOMContentLoaded', function() {
-            // نمایش اطلاعات فنی دستگاه
-            showDetailedClientInfo();
-
             // به‌روزرسانی تنظیمات فعلی
             updateCurrentSettings();
 
             // نمایش اطلاعات اولیه
             showStep(`💻 نام کامپیوتر: {{ server_hostname }}`, 'info');
-            showStep(`🌐 IP عمومی سرور: {{ server_public_ip }}`, 'info');
-            showStep(`🏠 IPهای محلی سرور: {{ server_local_ips|join:', ' }}`, 'info');
-            showStep(`📱 دستگاه شما: {{ client_ip }} ({% if client_is_mobile %}موبایل{% else %}کامپیوتر{% endif %})`, 'info');
+            showStep(`🌐 IP عمومی سرور: {{ server_public_ip_12_digit }}`, 'info');
+            showStep(`🏠 IPهای محلی سرور: {{ server_local_ips_12_digit|join:', ' }}`, 'info');
+            showStep(`📱 دستگاه شما: {{ client_ip_12_digit }} ({% if client_is_mobile %}موبایل{% else %}کامپیوتر{% endif %})`, 'info');
+            showStep(`🔧 فرمت IP مورد استفاده: 12 رقمی (مثال: 192.168.001.001)`, 'info');
 
             // تنظیم وضعیت اتصال
             document.getElementById('clientStatus').className = 'connection-status status-online';
             document.getElementById('serverStatus').className = 'connection-status status-online';
 
-            // تلاش برای دریافت IP محلی کلاینت
-            getClientLocalIP().then(localIp => {
-                if (localIp !== 'نامشخص') {
-                    showStep(`🔍 IP محلی دستگاه شما: ${localIp}`, 'info');
-                }
-            });
+            // هشدار اگر از لوکال وصل شده
+            {% if client_is_local %}
+            showStep('⚠️ هشدار: شما از آدرس لوکال وصل شده‌اید. برای اتصال پوز باید از IP واقعی شبکه استفاده کنید!', 'error');
+            {% endif %}
+
+            // اعتبارسنجی اولیه IP
+            const ipInput = document.getElementById('ipAddress');
+            if (ipInput && !validateIPFormat(ipInput.value)) {
+                showStep('⚠️ توجه: IP پیش‌فرض دستگاه پوز روی فرمت 12 رقمی تنظیم شده است', 'warning');
+            }
         });
     </script>
 </body>

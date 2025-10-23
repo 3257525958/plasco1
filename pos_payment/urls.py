@@ -6,13 +6,14 @@ app_name = 'pos_payment'
 
 urlpatterns = [
     # صفحه اصلی
+    path('', views.pos_dashboard, name='dashboard'),
     path('pos/', views.pos_dashboard, name='dashboard'),
 
     # API‌ها
-    path('get-network-info/', views.get_network_info_api, name='get_network_info'),
-    path('test-connection/', views.test_connection, name='test_connection'),
-    path('make-payment/', views.make_payment, name='make_payment'),
-    path('clear-transactions/', views.clear_transactions, name='clear_transactions'),
+    path('api/network-info/', views.get_network_info_api, name='get_network_info'),
+    path('api/test-connection/', views.test_connection, name='test_connection'),
+    path('api/make-payment/', views.make_payment, name='make_payment'),
+    path('api/clear-transactions/', views.clear_transactions, name='clear_transactions'),
 
     # صفحات
     path('history/', views.transaction_history, name='history'),

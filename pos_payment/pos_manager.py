@@ -1,3 +1,4 @@
+
 # pos_payment/pos_manager.py
 import socket
 import serial
