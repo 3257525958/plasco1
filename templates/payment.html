@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اتصال به دستگاه پوز - پرداخت نوین</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tahoma', 'Arial', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2980b9, #3498db);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .result {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>اتصال به دستگاه پوز</h1>
+            <p>پرداخت نوین - نسخه تحت وب</p>
+        </div>
+        
+        <form id="paymentForm">
+            <div class="form-group">
+                <label for="amount">مبلغ پرداختی (ریال):</label>
+                <input type="number" id="amount" name="amount" required 
+                       placeholder="مثال: 100000" value="10000">
+            </div>
+            
+            <div class="form-group">
+                <label for="prcode">کد پرداخت:</label>
+                <input type="text" id="prcode" name="prcode" 
+                       placeholder="000000" value="000000">
+            </div>
+            
+            <div class="button-group">
+                <button type="button" class="btn-primary" onclick="sendPayment()">
+                    ارسال به دستگاه پوز
+                </button>
+                <button type="button" class="btn-secondary" onclick="testConnection()">
+                    تست ارتباط
+                </button>
+            </div>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>در حال ارسال به دستگاه پوز...</p>
+        </div>
+        
+        <div class="result" id="result"></div>
+        
+        <div class="debug-info">
+            <strong>اطلاعات ارتباط:</strong><br>
+            • آدرس دستگاه: 87.107.134.151:4080<br>
+            • پروتکل: TCP<br>
+            • فرمت داده: TLV
+        </div>
+    </div>
+
+    <script>
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result ' + type;
+            resultDiv.innerHTML = message;
+        }
+        
+        async function sendPayment() {
+            const amount = document.getElementById('amount').value;
+            const prcode = document.getElementById('prcode').value;
+            
+            if (!amount) {
+                alert('لطفا مبلغ را وارد کنید');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                const response = await fetch('{% url "pos_payment:send_payment" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount: amount,
+                        prcode: prcode
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    let message = `<strong>✅ ${data.message}</strong>`;
+                    if (data.parsed_response) {
+                        message += `<br><strong>وضعیت:</strong> ${data.parsed_response.message}`;
+                    }
+                    if (data.raw_response) {
+                        message += `<br><strong>پاسخ خام:</strong> ${data.raw_response}`;
+                    }
+                    showResult(message, 'success');
+                } else {
+                    showResult(`<strong>❌ خطا:</strong> ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`<strong>❌ خطای شبکه:</strong> ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function testConnection() {
+            showLoading(true);
+            
+            try {
+                const response = await fetch('{% url "pos_payment:test_connection" %}');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showResult(`<strong>✅ ${data.message}</strong>`, 'success');
+                } else {
+                    showResult(`<strong>❌ ${data.message}</strong>`, 'error');
+                }
+            } catch (error) {
+                showResult(`<strong>❌ خطای شبکه:</strong> ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // تست خودکار ارتباط هنگام بارگذاری صفحه
+        window.addEventListener('load', function() {
+            testConnection();
+        });
+    </script>
+</body>
+</html>
