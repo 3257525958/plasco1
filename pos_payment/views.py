@@ -6,14 +6,15 @@ import time
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 
+# ==================== توابع کمکی ====================
 def is_valid_ip(ip):
     """بررسی معتبر بودن آدرس IP"""
     pattern = r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$'
     if not re.match(pattern, ip):
         return False
-
     parts = ip.split('.')
     for part in parts:
         if not 0 <= int(part) <= 255:
@@ -22,535 +23,415 @@ def is_valid_ip(ip):
 
 
 def normalize_ip(ip):
-    """حذف صفرهای ابتدایی از آدرس IP"""
+    """نرمال کردن آدرس IP"""
     parts = ip.split('.')
     normalized_parts = [str(int(part)) for part in parts]
     return '.'.join(normalized_parts)
 
 
+# ==================== ویوهای اصلی ====================
 def pos_payment_page(request):
+    """صفحه اصلی"""
     return render(request, 'pos_payment.html')
 
 
 @csrf_exempt
+@require_http_methods(["POST"])
 def check_connection(request):
     """بررسی اتصال به دستگاه پوز"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            ip = data.get('ip', '').strip()
-            port = int(data.get('port', 1362))
+    try:
+        data = json.loads(request.body)
+        ip = data.get('ip', '').strip()
+        port = int(data.get('port', 1362))
 
-            # اعتبارسنجی IP
-            if not ip:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'آدرس IP نمی‌تواند خالی باشد'
-                })
+        if not ip:
+            return JsonResponse({'status': 'error', 'message': 'آدرس IP نمی‌تواند خالی باشد'})
 
-            # نرمال کردن IP (حذف صفرهای ابتدایی)
-            try:
-                ip = normalize_ip(ip)
-            except:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'فرمت آدرس IP نامعتبر است'
-                })
+        ip = normalize_ip(ip)
+        if not is_valid_ip(ip):
+            return JsonResponse({'status': 'error', 'message': 'آدرس IP معتبر نیست'})
 
-            # بررسی معتبر بودن IP
-            if not is_valid_ip(ip):
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'آدرس IP معتبر نیست. فرمت صحیح: 192.168.1.100'
-                })
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        result = sock.connect_ex((ip, port))
+        sock.close()
 
-            # ایجاد سوکت و تست اتصال
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(5)
-
-            try:
-                result = sock.connect_ex((ip, port))
-
-                if result == 0:
-                    return JsonResponse({
-                        'status': 'success',
-                        'message': f'اتصال با دستگاه پوز در {ip}:{port} برقرار شد'
-                    })
-                else:
-                    error_messages = {
-                        10061: "اتصال رد شد - پورت ممکن است بسته باشد",
-                        10060: "اتصال timeout - دستگاه پاسخ نمی‌دهد",
-                        11001: "آدرس IP یافت نشد - دستگاه در شبکه موجود نیست",
-                        11002: "نام هاست یافت نشد",
-                        11003: "خطای غیرمنتظره در اتصال"
-                    }
-                    message = error_messages.get(result, f"خطای اتصال: کد {result}")
-                    return JsonResponse({
-                        'status': 'error',
-                        'message': f'{message} (آدرس: {ip}:{port})'
-                    })
-
-            except socket.timeout:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': f'اتصال timeout - دستگاه در {ip}:{port} پاسخ نمی‌دهد'
-                })
-            except ConnectionRefusedError:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': f'اتصال رد شد - پورت {port} روی دستگاه {ip} بسته است'
-                })
-            finally:
-                sock.close()
-
-        except ValueError as e:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'مقدار پورت نامعتبر است: {str(e)}'
-            })
-        except Exception as e:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'خطا در بررسی اتصال: {str(e)}'
-            })
-
-    return JsonResponse({
-        'status': 'error',
-        'message': 'فقط درخواست POST پذیرفته می‌شود'
-    })
-
-
-@csrf_exempt
-def send_transaction(request):
-    """ارسال تراکنش به دستگاه پوز"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            ip = data.get('ip', '').strip()
-            port = int(data.get('port', 1362))
-            amount = data.get('amount')
-
-            if not ip:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'آدرس IP نمی‌تواند خالی باشد'
-                })
-
-            # نرمال کردن IP
-            try:
-                ip = normalize_ip(ip)
-            except:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'فرمت آدرس IP نامعتبر است'
-                })
-
-            if not is_valid_ip(ip):
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'آدرس IP معتبر نیست'
-                })
-
-            if not amount:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'مبلغ نمی‌تواند خالی باشد'
-                })
-
-            # ساخت پیام تراکنش
-            message = build_sale_request(amount)
-
-            # ارسال به دستگاه پوز
-            response = send_to_pos(ip, port, message)
-
+        if result == 0:
             return JsonResponse({
                 'status': 'success',
-                'message': 'تراکنش ارسال شد',
-                'response': response
+                'message': f'اتصال با دستگاه پوز در {ip}:{port} برقرار شد'
             })
-
-        except Exception as e:
+        else:
             return JsonResponse({
                 'status': 'error',
-                'message': f'خطا در ارسال تراکنش: {str(e)}'
+                'message': f'اتصال با دستگاه پوز در {ip}:{port} برقرار نشد - کد خطا: {result}'
             })
 
-    return JsonResponse({
-        'status': 'error',
-        'message': 'فقط درخواست POST پذیرفته می‌شود'
-    })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'خطا در بررسی اتصال: {str(e)}'
+        })
 
 
-def build_sale_request(amount, currency='364', pr_code='000000'):
-    """ساخت پیام درخواست خرید بر اساس مستندات TLV"""
+# ==================== توابع ساخت پیام ====================
+def build_sale_request(amount):
+    """ساخت پیام با فرمت 12 رقمی استاندارد"""
+    print(f"🔨 ساخت پیام برای مبلغ: {amount}")
 
-    # تبدیل مبلغ به فرمت مورد نیاز (12 رقم)
-    amount_str = str(amount).zfill(12)
+    # تبدیل به 12 رقم با صفرهای ابتدایی
+    amount_12_digit = str(amount).zfill(12)
+    print(f"💰 مبلغ 12 رقمی: {amount_12_digit}")
 
-    # ساخت تگ‌ها بر اساس مستندات
-    tags = []
+    # استفاده از فرمت 12 رقمی استاندارد
+    message = f"0047RQ034PR006000000AM012{amount_12_digit}CU003364PD0011"
 
-    # تگ RQ - نوع پیام درخواست
-    rq_value = '034'
-    tags.append('RQ' + str(len(rq_value)).zfill(2) + rq_value)
-
-    # تگ PR - کد پردازش
-    pr_value = pr_code
-    tags.append('PR' + str(len(pr_value)).zfill(2) + pr_value)
-
-    # تگ AM - مبلغ
-    am_value = amount_str
-    tags.append('AM' + str(len(am_value)).zfill(2) + am_value)
-
-    # تگ CU - واحد پول
-    cu_value = currency
-    tags.append('CU' + str(len(cu_value)).zfill(2) + cu_value)
-
-    # تگ PD - اطلاعات اضافی
-    pd_value = '11'
-    tags.append('PD' + str(len(pd_value)).zfill(2) + pd_value)
-
-    # ساخت بدنه پیام
-    message_body = ''.join(tags)
-
-    # محاسبه طول کل و اضافه کردن به ابتدای پیام
-    total_length = len(message_body)
-    message = str(total_length).zfill(4) + message_body
-
-    print(f"پیام ساخته شده: {message}")
-    print(f"طول پیام: {total_length}")
+    print(f"📦 پیام نهایی: {message}")
+    print(f"📏 طول: {len(message)}")
+    print(f"🔢 HEX: {message.encode('ascii').hex()}")
 
     return message
 
 
-def send_to_pos(ip, port, message):
-    """ارسال پیام به دستگاه پوز و دریافت پاسخ"""
+# ==================== ارسال تراکنش ====================
+@csrf_exempt
+@require_http_methods(["POST"])
+def send_transaction(request):
+    """ارسال تراکنش با فرمت 12 رقمی"""
     try:
-        # ایجاد اتصال سوکت
+        data = json.loads(request.body)
+        ip = data.get('ip', '').strip()
+        port = int(data.get('port', 1362))
+        amount = data.get('amount', '1000')
+
+        print(f"💰 ارسال تراکنش برای مبلغ: {amount}")
+
+        if not ip:
+            return JsonResponse({'status': 'error', 'message': 'آدرس IP نمی‌تواند خالی باشد'})
+
+        ip = normalize_ip(ip)
+        if not is_valid_ip(ip):
+            return JsonResponse({'status': 'error', 'message': 'آدرس IP معتبر نیست'})
+
+        # ساخت پیام با فرمت 12 رقمی
+        message = build_sale_request(amount)
+
+        print(f"📤 ارسال پیام به دستگاه...")
+
+        # ارسال به دستگاه
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(60)  # افزایش timeout به 60 ثانیه
+        sock.settimeout(30)
         sock.connect((ip, port))
-
-        print(f"ارسال پیام به {ip}:{port}")
-        print(f"پیام ارسالی: {message}")
-        print(f"پیام HEX: {message.encode('ascii').hex()}")
-
-        # ارسال پیام
         bytes_sent = sock.send(message.encode('ascii'))
-        print(f"تعداد بایت‌های ارسال شده: {bytes_sent}")
 
-        # منتظر پاسخ بمانیم
-        time.sleep(2)  # منتظر 2 ثانیه برای پردازش دستگاه
+        print(f"✅ {bytes_sent} بایت ارسال شد")
+        time.sleep(3)
 
-        # دریافت پاسخ
         response = b""
-        sock.settimeout(10)  # timeout برای دریافت پاسخ
-
         try:
-            while True:
-                chunk = sock.recv(1024)
-                if not chunk:
-                    break
-                response += chunk
-                # اگر پاسخ کامل دریافت شده، خارج شو
-                if len(chunk) < 1024:
-                    break
+            response = sock.recv(1024)
+            if response:
+                print(f"📥 پاسخ دریافت شد: {len(response)} بایت")
+                print(f"📋 محتوای پاسخ: {response.decode('ascii', errors='ignore')}")
         except socket.timeout:
-            print("Timeout در دریافت پاسخ")
-
-        response_text = response.decode('ascii', errors='ignore')
-        print(f"پاسخ دریافتی: {response_text}")
-        print(f"پاسخ HEX: {response.hex()}")
-        print(f"طول پاسخ: {len(response)} بایت")
+            print("⏰ timeout در دریافت پاسخ")
 
         sock.close()
 
-        if not response_text:
-            return "دستگاه پوز پاسخی ارسال نکرد"
+        response_text = response.decode('ascii', errors='ignore') if response else ""
 
-        # تجزیه پاسخ
-        return parse_pos_response(response_text)
+        return JsonResponse({
+            'status': 'success',
+            'message': f'تراکنش {amount} ریال ارسال شد',
+            'on_pos': 'مبلغ باید روی پوز نمایش داده شود',
+            'debug': {
+                'message_sent': message,
+                'response': response_text,
+                'bytes_sent': bytes_sent,
+                'note': 'استفاده از فرمت 12 رقمی استاندارد'
+            }
+        })
 
-    except socket.timeout:
-        return "خطا: timeout - دستگاه پاسخ نداد"
-    except ConnectionRefusedError:
-        return "خطا: Connection refused - پورت باز نیست"
-    except BrokenPipeError:
-        return "خطا: Broken pipe - اتصال قطع شد"
     except Exception as e:
-        return f"خطا در ارتباط با دستگاه پوز: {str(e)}"
+        print(f"❌ خطا: {e}")
+        return JsonResponse({
+            'status': 'error',
+            'message': f'خطا در ارسال تراکنش: {str(e)}'
+        })
 
 
-def parse_pos_response(response):
-    """تجزیه و تحلیل پاسخ دستگاه پوز"""
-    if not response:
-        return 'پاسخ دریافت نشد'
-
-    parsed_response = {}
-
+@csrf_exempt
+@require_http_methods(["POST"])
+def send_large_amount(request):
+    """ارسال مستقیم مبالغ بزرگ"""
     try:
-        # طول کل (4 رقم اول)
-        if len(response) >= 4:
-            length = response[:4]
-            parsed_response['length'] = length
+        data = json.loads(request.body)
+        ip = data.get('ip', '').strip()
+        port = int(data.get('port', 1362))
+        amount = data.get('amount', '1000000000')
 
-            # بقیه پیام
-            rest = response[4:]
+        print(f"🚀 ارسال مبلغ بزرگ: {amount} ریال")
 
-            # تجزیه تگ‌ها
-            pos = 0
-            while pos < len(rest):
-                if pos + 4 <= len(rest):
-                    tag = rest[pos:pos + 2]
-                    length_str = rest[pos + 2:pos + 4]
+        if not ip:
+            return JsonResponse({'status': 'error', 'message': 'آدرس IP نمی‌تواند خالی باشد'})
 
-                    try:
-                        value_length = int(length_str)
-                        if pos + 4 + value_length <= len(rest):
-                            value = rest[pos + 4:pos + 4 + value_length]
-                            parsed_response[tag] = value
-                            pos += 4 + value_length
-                        else:
-                            break
-                    except:
-                        break
-                else:
-                    break
-        else:
-            return f"پاسخ کوتاه است: {response}"
+        ip = normalize_ip(ip)
+        if not is_valid_ip(ip):
+            return JsonResponse({'status': 'error', 'message': 'آدرس IP معتبر نیست'})
+
+        # ساخت پیام با فرمت 12 رقمی
+        message = build_sale_request(amount)
+
+        print(f"📤 ارسال پیام به دستگاه...")
+
+        # ارسال به دستگاه
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(30)
+        sock.connect((ip, port))
+        bytes_sent = sock.send(message.encode('ascii'))
+
+        print(f"✅ {bytes_sent} بایت ارسال شد")
+        time.sleep(3)
+
+        response = b""
+        try:
+            response = sock.recv(1024)
+            if response:
+                print(f"📥 پاسخ دریافت شد: {len(response)} بایت")
+        except socket.timeout:
+            print("⏰ timeout در دریافت پاسخ")
+
+        sock.close()
+
+        response_text = response.decode('ascii', errors='ignore') if response else ""
+
+        # فرمت کردن مبلغ برای نمایش
+        formatted_amount = f"{int(amount):,}"
+
+        return JsonResponse({
+            'status': 'success',
+            'message': f'تراکنش {formatted_amount} ریال ارسال شد',
+            'on_pos': f'عدد {formatted_amount} باید روی پوز نمایش داده شود',
+            'debug': {
+                'message_sent': message,
+                'response': response_text,
+                'bytes_sent': bytes_sent
+            }
+        })
 
     except Exception as e:
-        return f'خطا در تجزیه پاسخ: {str(e)} - پاسخ اصلی: {response}'
+        print(f"❌ خطا: {e}")
+        return JsonResponse({
+            'status': 'error',
+            'message': f'خطا در ارسال تراکنش: {str(e)}'
+        })
 
-    return parsed_response
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def send_200_billion(request):
+    """ارسال مستقیم 200 میلیارد ریال"""
+    try:
+        data = json.loads(request.body)
+        ip = data.get('ip', '').strip()
+        port = int(data.get('port', 1362))
+
+        print("💎 ارسال 200 میلیارد ریال")
+
+        if not ip:
+            return JsonResponse({'status': 'error', 'message': 'آدرس IP نمی‌تواند خالی باشد'})
+
+        ip = normalize_ip(ip)
+        if not is_valid_ip(ip):
+            return JsonResponse({'status': 'error', 'message': 'آدرس IP معتبر نیست'})
+
+        amount = "200000000000"  # 200 میلیارد ریال
+        message = build_sale_request(amount)
+
+        print(f"📤 ارسال پیام به دستگاه...")
+
+        # ارسال به دستگاه
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(30)
+        sock.connect((ip, port))
+        bytes_sent = sock.send(message.encode('ascii'))
+
+        print(f"✅ {bytes_sent} بایت ارسال شد")
+        time.sleep(3)
+
+        response = b""
+        try:
+            response = sock.recv(1024)
+            if response:
+                print(f"📥 پاسخ دریافت شد: {len(response)} بایت")
+        except socket.timeout:
+            print("⏰ timeout در دریافت پاسخ")
+
+        sock.close()
+
+        response_text = response.decode('ascii', errors='ignore') if response else ""
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'تراکنش 200,000,000,000 ریال ارسال شد',
+            'on_pos': 'عدد 200,000,000,000 باید روی پوز نمایش داده شود',
+            'debug': {
+                'message_sent': message,
+                'response': response_text,
+                'bytes_sent': bytes_sent
+            }
+        })
+
+    except Exception as e:
+        print(f"❌ خطا: {e}")
+        return JsonResponse({
+            'status': 'error',
+            'message': f'خطا در ارسال تراکنش: {str(e)}'
+        })
 
 
-# ویو تست برای دیباگ
+# ==================== تست‌های مختلف ====================
 @csrf_exempt
 def test_api(request):
-    """تست ساده برای بررسی کارکرد API"""
+    """تست ساده API"""
     return JsonResponse({
         'status': 'success',
         'message': 'API درست کار می‌کند!',
-        'debug': 'این یک پاسخ تستی است'
+        'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
     })
 
 
-# ویو جدید برای تست پیام ساده
 @csrf_exempt
-def test_simple_message(request):
-    """ارسال پیام ساده برای تست"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            ip = data.get('ip', '').strip()
-            port = int(data.get('port', 1362))
-
-            # پیام تست ساده
-            test_message = "TEST"
-            response = send_to_pos(ip, port, test_message)
-
-            return JsonResponse({
-                'status': 'success',
-                'message': 'پیام تست ارسال شد',
-                'response': response
-            })
-
-        except Exception as e:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'خطا در ارسال پیام تست: {str(e)}'
-            })
-
-    return JsonResponse({
-        'status': 'error',
-        'message': 'فقط درخواست POST پذیرفته می‌شود'
-    })
-
-
-# pos_payment/views.py - اضافه کردن این ویو جدید
-@csrf_exempt
+@require_http_methods(["POST"])
 def test_protocols(request):
-    """تست پروتکل‌های مختلف ارتباطی"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            ip = data.get('ip', '').strip()
-            port = int(data.get('port', 1362))
+    """تست پروتکل‌های مختلف"""
+    try:
+        data = json.loads(request.body)
+        ip = data.get('ip', '').strip()
+        port = int(data.get('port', 1362))
 
-            if not ip:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'آدرس IP نمی‌تواند خالی باشد'
-                })
+        results = []
 
-            # نرمال کردن IP
+        # تست‌های ساده
+        test_messages = [
+            ("TEST", "پیام ساده TEST"),
+            ("ECHO", "پیام ECHO"),
+            ("0039RQ034PR006000000AM0041000CU003364PD0011", "TLV خرید 1000 ریال"),
+            ("0047RQ034PR006000000AM012200000000000CU003364PD0011", "TLV خرید 200 میلیارد ریال")
+        ]
+
+        for message, description in test_messages:
             try:
-                ip = normalize_ip(ip)
-            except:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'فرمت آدرس IP نامعتبر است'
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(10)
+                sock.connect((ip, port))
+                sock.send(message.encode('ascii'))
+                time.sleep(2)
+                response = sock.recv(1024)
+                sock.close()
+
+                results.append({
+                    "protocol": description,
+                    "result": f"✅ موفق - پاسخ: {response.decode('ascii', errors='ignore')[:50] if response else 'بدون پاسخ'}"
+                })
+            except Exception as e:
+                results.append({
+                    "protocol": description,
+                    "result": f"❌ خطا: {str(e)}"
                 })
 
-            if not is_valid_ip(ip):
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'آدرس IP معتبر نیست'
+        return JsonResponse({
+            'status': 'success',
+            'message': 'تست پروتکل‌ها کامل شد',
+            'results': results
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'خطا در تست پروتکل‌ها: {str(e)}'
+        })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def test_amounts(request):
+    """تست مبالغ مختلف"""
+    try:
+        data = json.loads(request.body)
+        ip = data.get('ip', '').strip()
+        port = int(data.get('port', 1362))
+
+        print("🧪 تست مبالغ مختلف")
+
+        if not ip:
+            return JsonResponse({'status': 'error', 'message': 'آدرس IP نمی‌تواند خالی باشد'})
+
+        ip = normalize_ip(ip)
+        if not is_valid_ip(ip):
+            return JsonResponse({'status': 'error', 'message': 'آدرس IP معتبر نیست'})
+
+        # تست مبالغ مختلف
+        test_amounts = [
+            ("1000", "1,000 ریال"),
+            ("10000", "10,000 ریال"),
+            ("100000", "100,000 ریال"),
+            ("1000000", "1,000,000 ریال"),
+            ("10000000", "10,000,000 ریال"),
+            ("100000000", "100,000,000 ریال"),
+            ("1000000000", "1,000,000,000 ریال"),
+            ("200000000000", "200,000,000,000 ریال")
+        ]
+
+        results = []
+
+        for amount, description in test_amounts:
+            try:
+                message = build_sale_request(amount)
+
+                print(f"🧪 تست {description}")
+
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(30)
+                sock.connect((ip, port))
+                bytes_sent = sock.send(message.encode('ascii'))
+                time.sleep(3)
+
+                response = b""
+                try:
+                    response = sock.recv(1024)
+                except socket.timeout:
+                    pass
+
+                sock.close()
+
+                results.append({
+                    'amount': description,
+                    'status': 'success',
+                    'bytes_sent': bytes_sent,
+                    'response_length': len(response)
                 })
 
-            results = []
+                print(f"✅ {description}: ارسال موفق")
 
-            # تست 1: پیام ساده
-            print("🧪 تست 1: پیام ساده 'TEST'")
-            result1 = send_test_message(ip, port, "TEST")
-            results.append({"protocol": "ساده TEST", "result": result1})
+            except Exception as e:
+                results.append({
+                    'amount': description,
+                    'status': 'error',
+                    'bytes_sent': 0,
+                    'response': f'خطا: {str(e)}'
+                })
+                print(f"❌ {description}: {e}")
 
-            # تست 2: پیام ECHO
-            print("🧪 تست 2: پیام 'ECHO'")
-            result2 = send_test_message(ip, port, "ECHO")
-            results.append({"protocol": "ECHO", "result": result2})
-
-            # تست 3: پیام INIT
-            print("🧪 تست 3: پیام 'INIT'")
-            result3 = send_test_message(ip, port, "INIT")
-            results.append({"protocol": "INIT", "result": result3})
-
-            # تست 4: پیام TLV ساده
-            print("🧪 تست 4: پیام TLV ساده")
-            simple_tlv = "0020RQ034PR006000000AM0041000CU003364"
-            result4 = send_test_message(ip, port, simple_tlv)
-            results.append({"protocol": "TLV ساده", "result": result4})
-
-            # تست 5: پیام با فرمت binary
-            print("🧪 تست 5: پیام binary")
-            result5 = send_binary_message(ip, port)
-            results.append({"protocol": "Binary", "result": result5})
-
-            # تست 6: پیام با STX/ETX
-            print("🧪 تست 6: پیام با STX/ETX")
-            result6 = send_stx_etx_message(ip, port)
-            results.append({"protocol": "STX/ETX", "result": result6})
-
-            return JsonResponse({
-                'status': 'success',
-                'message': 'تست پروتکل‌ها کامل شد',
-                'results': results
-            })
-
-        except Exception as e:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'خطا در تست پروتکل‌ها: {str(e)}'
-            })
-
-    return JsonResponse({
-        'status': 'error',
-        'message': 'فقط درخواست POST پذیرفته می‌شود'
-    })
-
-
-def send_test_message(ip, port, message):
-    """ارسال پیام تست"""
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(10)
-        sock.connect((ip, port))
-
-        print(f"📤 ارسال پیام: {message}")
-        bytes_sent = sock.send(message.encode('ascii'))
-        print(f"✅ {bytes_sent} بایت ارسال شد")
-
-        # دریافت پاسخ
-        time.sleep(2)
-        sock.settimeout(5)
-
-        try:
-            response = sock.recv(1024)
-            if response:
-                response_text = response.decode('ascii', errors='ignore')
-                print(f"📥 پاسخ دریافت شد: {response_text}")
-                sock.close()
-                return f"پاسخ: {response_text}"
-            else:
-                sock.close()
-                return "پاسخ خالی"
-        except socket.timeout:
-            sock.close()
-            return "Timeout - پاسخی دریافت نشد"
+        return JsonResponse({
+            'status': 'success',
+            'message': 'تست مبالغ مختلف کامل شد',
+            'results': results
+        })
 
     except Exception as e:
-        return f"خطا: {str(e)}"
-
-
-def send_binary_message(ip, port):
-    """ارسال پیام binary"""
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(10)
-        sock.connect((ip, port))
-
-        # پیام binary ساده
-        binary_message = b'\x02\x00\x26\x00\x00\x00\x00\x01\x07\x01\x00\x00\x00\x00\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03'
-
-        print(f"📤 ارسال پیام binary: {binary_message.hex()}")
-        bytes_sent = sock.send(binary_message)
-        print(f"✅ {bytes_sent} بایت ارسال شد")
-
-        # دریافت پاسخ
-        time.sleep(2)
-        sock.settimeout(5)
-
-        try:
-            response = sock.recv(1024)
-            if response:
-                response_hex = response.hex()
-                print(f"📥 پاسخ binary دریافت شد: {response_hex}")
-                sock.close()
-                return f"پاسخ HEX: {response_hex}"
-            else:
-                sock.close()
-                return "پاسخ خالی"
-        except socket.timeout:
-            sock.close()
-            return "Timeout - پاسخی دریافت نشد"
-
-    except Exception as e:
-        return f"خطا: {str(e)}"
-
-
-def send_stx_etx_message(ip, port):
-    """ارسال پیام با STX/ETX"""
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(10)
-        sock.connect((ip, port))
-
-        # پیام با STX (0x02) و ETX (0x03)
-        message_body = "RQ034PR006000000AM0041000CU003364"
-        stx_etx_message = b'\x02' + message_body.encode('ascii') + b'\x03'
-
-        print(f"📤 ارسال پیام STX/ETX: {stx_etx_message.hex()}")
-        bytes_sent = sock.send(stx_etx_message)
-        print(f"✅ {bytes_sent} بایت ارسال شد")
-
-        # دریافت پاسخ
-        time.sleep(2)
-        sock.settimeout(5)
-
-        try:
-            response = sock.recv(1024)
-            if response:
-                response_hex = response.hex()
-                print(f"📥 پاسخ STX/ETX دریافت شد: {response_hex}")
-                sock.close()
-                return f"پاسخ HEX: {response_hex}"
-            else:
-                sock.close()
-                return "پاسخ خالی"
-        except socket.timeout:
-            sock.close()
-            return "Timeout - پاسخی دریافت نشد"
-
-    except Exception as e:
-        return f"خطا: {str(e)}"
+        print(f"❌ خطا در تست مبالغ: {e}")
+        return JsonResponse({
+            'status': 'error',
+            'message': f'خطا در تست مبالغ: {str(e)}'
+        })
