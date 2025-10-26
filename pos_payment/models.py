@@ -1,3 +1,4 @@
+
 # pos_payment/models.py
 from django.db import models
 

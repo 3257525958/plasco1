@@ -1,3 +1,4 @@
+
 # pos_payment/views.py
 import socket
 import json
@@ -435,3 +436,4 @@ def test_amounts(request):
             'status': 'error',
             'message': f'خطا در تست مبالغ: {str(e)}'
         })
+    
