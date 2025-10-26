@@ -1,0 +1,812 @@
+<!-- templates/pos_payment.html -->
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اتصال به دستگاه پوز</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: Tahoma, Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0,123,255,0.3);
+        }
+        
+        .error-input {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 5px rgba(220, 53, 69, 0.3) !important;
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .ip-examples {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            flex: 1;
+            min-width: 150px;
+            padding: 14px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .btn-test {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-test:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-send {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-send:hover {
+            background-color: #1e7e34;
+        }
+        
+        .btn-simple {
+            background-color: #ffc107;
+            color: black;
+        }
+        
+        .btn-simple:hover {
+            background-color: #e0a800;
+        }
+        
+        .btn-protocol {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .btn-protocol:hover {
+            background-color: #138496;
+        }
+        
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 5px;
+            display: none;
+            font-size: 14px;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            color: #007bff;
+            font-size: 16px;
+        }
+        
+        .loading:after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
+            40% { color: #007bff; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
+            60% { text-shadow: .25em 0 0 #007bff, .5em 0 0 rgba(0,0,0,0); }
+            80%, 100% { text-shadow: .25em 0 0 #007bff, .5em 0 0 #007bff; }
+        }
+        
+        .debug-info {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 12px;
+            border-left: 4px solid #007bff;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .debug-info strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        #debugInfo {
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+        
+        .test-links {
+            margin-top: 20px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .test-links a {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 5px 10px;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .test-links a:hover {
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-connected {
+            background-color: #28a745;
+        }
+        
+        .status-disconnected {
+            background-color: #dc3545;
+        }
+        
+        .status-unknown {
+            background-color: #ffc107;
+        }
+        
+        .connection-status {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .connected {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .disconnected {
+            color: #721c24;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .protocol-results {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        
+        .protocol-result-item {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .protocol-result-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖨️ اتصال به دستگاه پوز</h1>
+        
+        <div class="connection-status disconnected" id="connectionStatus">
+            <span class="status-indicator status-unknown"></span>
+            وضعیت اتصال: نامشخص
+        </div>
+        
+        <div class="form-group">
+            <label for="ip">🌐 آدرس IP مودم:</label>
+            <input type="text" id="ip" placeholder="مثال: 192.168.1.100" value="192.168.1.157">
+            <div class="help-text">فرمت صحیح: XXX.XXX.XXX.XXX (بدون صفرهای ابتدایی)</div>
+            <div class="ip-examples">
+                <strong>مثال‌های معتبر:</strong><br>
+                192.168.1.157 ✅<br>
+                192.168.001.157 ❌ (صفرهای ابتدایی مجاز نیستند)
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="port">🔌 پورت:</label>
+            <input type="number" id="port" placeholder="پورت پیش فرض: 1362" value="1362">
+        </div>
+        
+        <div class="form-group">
+            <label for="amount">💰 مبلغ (تومان):</label>
+            <input type="number" id="amount" placeholder="مبلغ را وارد کنید" value="2000">
+        </div>
+        
+        <div class="button-group">
+            <button class="btn-test" onclick="testConnection()">🔍 بررسی اتصال</button>
+            <button class="btn-send" onclick="sendTransaction()">📤 ارسال تراکنش</button>
+            <button class="btn-simple" onclick="testSimpleMessage()">🧪 تست پیام ساده</button>
+            <button class="btn-protocol" onclick="testProtocols()">🔬 تست پروتکل‌ها</button>
+        </div>
+        
+        <div class="loading" id="loading">در حال پردازش</div>
+        
+        <div class="result" id="result"></div>
+        
+        <div class="debug-info">
+            <strong>🐛 اطلاعات دیباگ:</strong>
+            <div id="debugInfo">صفحه بارگذاری شد. آماده تست...</div>
+        </div>
+        
+        <div class="test-links">
+            <a href="#" onclick="testDirectAPI()">تست مستقیم API</a>
+            <a href="#" onclick="clearDebug()">پاک کردن لاگ</a>
+            <a href="#" onclick="fillExampleIP()">پر کردن IP مثال</a>
+            <a href="#" onclick="checkServerStatus()">بررسی وضعیت سرور</a>
+            <a href="#" onclick="testProtocols()">تست پروتکل‌های مختلف</a>
+        </div>
+    </div>
+
+    <script>
+        // آدرس پایه - با توجه به تنظیمات URLs پروژه
+        const BASE_URL = '/pos-payment/';
+        
+        // وضعیت اتصال
+        let connectionStatus = 'unknown';
+        
+        function validateIP(ip) {
+            const pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+            if (!pattern.test(ip)) {
+                return false;
+            }
+            
+            const parts = ip.split('.');
+            for (let part of parts) {
+                if (part.length > 1 && part.startsWith('0')) {
+                    return false; // صفرهای ابتدایی مجاز نیستند
+                }
+                const num = parseInt(part);
+                if (num < 0 || num > 255) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        function normalizeIP(ip) {
+            const parts = ip.split('.');
+            return parts.map(part => parseInt(part).toString()).join('.');
+        }
+        
+        function updateConnectionStatus(status, message = '') {
+            const statusDiv = document.getElementById('connectionStatus');
+            const indicator = statusDiv.querySelector('.status-indicator');
+            
+            connectionStatus = status;
+            
+            if (status === 'connected') {
+                statusDiv.className = 'connection-status connected';
+                indicator.className = 'status-indicator status-connected';
+                statusDiv.innerHTML = '<span class="status-indicator status-connected"></span> وضعیت اتصال: متصل - ' + message;
+            } else if (status === 'disconnected') {
+                statusDiv.className = 'connection-status disconnected';
+                indicator.className = 'status-indicator status-disconnected';
+                statusDiv.innerHTML = '<span class="status-indicator status-disconnected"></span> وضعیت اتصال: قطع - ' + message;
+            } else {
+                statusDiv.className = 'connection-status';
+                indicator.className = 'status-indicator status-unknown';
+                statusDiv.innerHTML = '<span class="status-indicator status-unknown"></span> وضعیت اتصال: نامشخص';
+            }
+        }
+        
+        function showMessage(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result ' + type;
+            resultDiv.innerHTML = message;
+            resultDiv.style.display = 'block';
+            console.log(type + ': ' + message);
+            updateDebugInfo(type.toUpperCase() + ': ' + message);
+            
+            // به روزرسانی وضعیت اتصال بر اساس نتیجه
+            if (type === 'success' && message.includes('اتصال')) {
+                updateConnectionStatus('connected', 'اتصال با دستگاه برقرار است');
+            } else if (type === 'error' && message.includes('اتصال')) {
+                updateConnectionStatus('disconnected', 'اتصال با دستگاه قطع است');
+            }
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        function updateDebugInfo(info) {
+            const debugDiv = document.getElementById('debugInfo');
+            const timestamp = new Date().toLocaleTimeString();
+            debugDiv.innerHTML = `[${timestamp}] ${info}\n` + debugDiv.innerHTML;
+        }
+        
+        function clearDebug() {
+            document.getElementById('debugInfo').innerHTML = 'لاگ پاک شد...';
+        }
+        
+        function fillExampleIP() {
+            document.getElementById('ip').value = '192.168.1.157';
+            updateDebugInfo('IP مثال پر شد: 192.168.1.157');
+        }
+        
+        function highlightError(inputId, isValid) {
+            const input = document.getElementById(inputId);
+            if (isValid) {
+                input.classList.remove('error-input');
+            } else {
+                input.classList.add('error-input');
+            }
+        }
+        
+        async function testConnection() {
+            let ip = document.getElementById('ip').value.trim();
+            const port = document.getElementById('port').value;
+            
+            // اعتبارسنجی IP
+            if (!ip) {
+                showMessage('لطفا آدرس IP را وارد کنید', 'error');
+                highlightError('ip', false);
+                return;
+            }
+            
+            // نرمال کردن IP
+            try {
+                ip = normalizeIP(ip);
+                document.getElementById('ip').value = ip; // نمایش IP نرمال شده
+            } catch (e) {
+                showMessage('فرمت آدرس IP نامعتبر است', 'error');
+                highlightError('ip', false);
+                return;
+            }
+            
+            if (!validateIP(ip)) {
+                showMessage('آدرس IP معتبر نیست. لطفا بدون صفرهای ابتدایی وارد کنید (مثال: 192.168.1.157)', 'error');
+                highlightError('ip', false);
+                return;
+            }
+            
+            highlightError('ip', true);
+            showLoading(true);
+            updateDebugInfo('شروع تست اتصال...');
+            
+            try {
+                updateDebugInfo(`ارسال درخواست به: ${ip}:${port}`);
+                
+                const response = await fetch(BASE_URL + 'check-connection/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ip: ip,
+                        port: port
+                    })
+                });
+                
+                updateDebugInfo(`پاسخ دریافت شد - وضعیت: ${response.status}`);
+                
+                // بررسی وضعیت HTTP
+                if (!response.ok) {
+                    throw new Error(`خطای HTTP: ${response.status} ${response.statusText}`);
+                }
+                
+                // دریافت متن پاسخ
+                const responseText = await response.text();
+                updateDebugInfo(`متن پاسخ: ${responseText.substring(0, 200)}`);
+                
+                // تجزیه JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (jsonError) {
+                    throw new Error(`پاسخ JSON معتبر نیست: ${responseText.substring(0, 100)}`);
+                }
+                
+                // نمایش نتیجه
+                if (data.status === 'success') {
+                    showMessage('✅ ' + data.message, 'success');
+                } else {
+                    showMessage('❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('خطا در fetch:', error);
+                showMessage('❌ ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function sendTransaction() {
+            let ip = document.getElementById('ip').value.trim();
+            const port = document.getElementById('port').value;
+            const amount = document.getElementById('amount').value;
+            
+            // اعتبارسنجی
+            if (!ip) {
+                showMessage('لطفا آدرس IP را وارد کنید', 'error');
+                highlightError('ip', false);
+                return;
+            }
+            
+            if (!amount) {
+                showMessage('لطفا مبلغ را وارد کنید', 'error');
+                return;
+            }
+            
+            // نرمال کردن IP
+            try {
+                ip = normalizeIP(ip);
+                document.getElementById('ip').value = ip;
+            } catch (e) {
+                showMessage('فرمت آدرس IP نامعتبر است', 'error');
+                highlightError('ip', false);
+                return;
+            }
+            
+            if (!validateIP(ip)) {
+                showMessage('آدرس IP معتبر نیست', 'error');
+                highlightError('ip', false);
+                return;
+            }
+            
+            highlightError('ip', true);
+            showLoading(true);
+            updateDebugInfo('شروع ارسال تراکنش...');
+            
+            try {
+                updateDebugInfo(`ارسال تراکنش به: ${ip}:${port} - مبلغ: ${amount}`);
+                
+                const response = await fetch(BASE_URL + 'send-transaction/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ip: ip,
+                        port: port,
+                        amount: amount
+                    })
+                });
+                
+                updateDebugInfo(`پاسخ تراکنش دریافت شد - وضعیت: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`خطای HTTP: ${response.status} ${response.statusText}`);
+                }
+                
+                const responseText = await response.text();
+                updateDebugInfo(`پاسخ تراکنش: ${responseText.substring(0, 200)}`);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (jsonError) {
+                    throw new Error(`پاسخ JSON معتبر نیست: ${responseText.substring(0, 100)}`);
+                }
+                
+                if (data.status === 'success') {
+                    let message = '✅ ' + data.message + '<br>';
+                    if (data.response) {
+                        message += '📋 پاسخ دستگاه: ' + JSON.stringify(data.response);
+                    }
+                    showMessage(message, 'success');
+                } else {
+                    showMessage('❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('خطا در ارسال تراکنش:', error);
+                showMessage('❌ ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function testSimpleMessage() {
+            let ip = document.getElementById('ip').value.trim();
+            const port = document.getElementById('port').value;
+            
+            if (!ip) {
+                showMessage('لطفا آدرس IP را وارد کنید', 'error');
+                return;
+            }
+            
+            // نرمال کردن IP
+            try {
+                ip = normalizeIP(ip);
+                document.getElementById('ip').value = ip;
+            } catch (e) {
+                showMessage('فرمت آدرس IP نامعتبر است', 'error');
+                return;
+            }
+            
+            if (!validateIP(ip)) {
+                showMessage('آدرس IP معتبر نیست', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            updateDebugInfo('شروع ارسال پیام تست ساده...');
+            
+            try {
+                updateDebugInfo(`ارسال پیام تست به: ${ip}:${port}`);
+                
+                const response = await fetch(BASE_URL + 'test-simple-message/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ip: ip,
+                        port: port
+                    })
+                });
+                
+                updateDebugInfo(`پاسخ تست دریافت شد - وضعیت: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`خطای HTTP: ${response.status} ${response.statusText}`);
+                }
+                
+                const responseText = await response.text();
+                updateDebugInfo(`پاسخ تست: ${responseText.substring(0, 200)}`);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (jsonError) {
+                    throw new Error(`پاسخ JSON معتبر نیست: ${responseText.substring(0, 100)}`);
+                }
+                
+                if (data.status === 'success') {
+                    let message = '✅ ' + data.message + '<br>';
+                    if (data.response) {
+                        message += '📋 پاسخ دستگاه: ' + data.response;
+                    }
+                    showMessage(message, 'success');
+                } else {
+                    showMessage('❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('خطا در ارسال پیام تست:', error);
+                showMessage('❌ ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function testProtocols() {
+            let ip = document.getElementById('ip').value.trim();
+            const port = document.getElementById('port').value;
+            
+            if (!ip) {
+                showMessage('لطفا آدرس IP را وارد کنید', 'error');
+                return;
+            }
+            
+            // نرمال کردن IP
+            try {
+                ip = normalizeIP(ip);
+                document.getElementById('ip').value = ip;
+            } catch (e) {
+                showMessage('فرمت آدرس IP نامعتبر است', 'error');
+                return;
+            }
+            
+            if (!validateIP(ip)) {
+                showMessage('آدرس IP معتبر نیست', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            updateDebugInfo('شروع تست پروتکل‌های مختلف...');
+            
+            try {
+                updateDebugInfo(`ارسال درخواست تست پروتکل‌ها به: ${ip}:${port}`);
+                
+                const response = await fetch(BASE_URL + 'test-protocols/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ip: ip,
+                        port: port
+                    })
+                });
+                
+                updateDebugInfo(`پاسخ تست پروتکل‌ها دریافت شد - وضعیت: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`خطای HTTP: ${response.status} ${response.statusText}`);
+                }
+                
+                const responseText = await response.text();
+                updateDebugInfo(`پاسخ تست پروتکل‌ها: ${responseText.substring(0, 500)}`);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (jsonError) {
+                    throw new Error(`پاسخ JSON معتبر نیست: ${responseText.substring(0, 100)}`);
+                }
+                
+                if (data.status === 'success') {
+                    let message = '✅ ' + data.message + '<br><br>';
+                    if (data.results) {
+                        message += '<div class="protocol-results">';
+                        data.results.forEach(result => {
+                            message += `<div class="protocol-result-item"><strong>${result.protocol}:</strong> ${result.result}</div>`;
+                        });
+                        message += '</div>';
+                    }
+                    showMessage(message, 'success');
+                } else {
+                    showMessage('❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('خطا در تست پروتکل‌ها:', error);
+                showMessage('❌ ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function testDirectAPI() {
+            updateDebugInfo('تست مستقیم API...');
+            try {
+                const response = await fetch(BASE_URL + 'test-api/');
+                const data = await response.json();
+                showMessage('✅ تست API موفق: ' + data.message, 'success');
+            } catch (error) {
+                showMessage('❌ تست API ناموفق: ' + error.message, 'error');
+            }
+        }
+        
+        async function checkServerStatus() {
+            updateDebugInfo('بررسی وضعیت سرور...');
+            try {
+                const response = await fetch('/');
+                if (response.ok) {
+                    showMessage('✅ سرور Django در حال اجراست', 'success');
+                } else {
+                    showMessage('❌ سرور پاسخ نمی‌دهد', 'error');
+                }
+            } catch (error) {
+                showMessage('❌ خطا در ارتباط با سرور: ' + error.message, 'error');
+            }
+        }
+        
+        // اعتبارسنجی real-time برای IP
+        document.getElementById('ip').addEventListener('input', function(e) {
+            const ip = e.target.value.trim();
+            if (ip) {
+                const isValid = validateIP(ip);
+                highlightError('ip', isValid);
+            } else {
+                highlightError('ip', true);
+            }
+        });
+        
+        // راهنمای اولیه
+        window.addEventListener('load', function() {
+            updateDebugInfo('صفحه بارگذاری شد. برای شروع دکمه "بررسی اتصال" را بزنید.');
+            updateDebugInfo('BASE_URL: ' + BASE_URL);
+            // اعتبارسنجی اولیه IP
+            const ip = document.getElementById('ip').value.trim();
+            if (ip) {
+                highlightError('ip', validateIP(ip));
+            }
+        });
+    </script>
+</body>
+</html>

@@ -207,87 +207,72 @@
             • فرمت داده: TLV
         </div>
     </div>
+<!-- فقط بخش JavaScript را عوض کنید -->
+<script>
+    async function testConnection() {
+        showLoading(true);
+        
+        try {
+            const response = await fetch('{% url "pos_payment:test_connection" %}');
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                let message = `<strong>✅ ${data.message}</strong>`;
+                if (data.is_real_device) {
+                    message += `<br>📟 این واقعاً دستگاه پوز است`;
+                } else {
+                    message += `<br>⚠️ ممکن است دستگاه پوز نباشد`;
+                }
+                showResult(message, 'success');
+            } else if (data.status === 'warning') {
+                showResult(`<strong>⚠️ ${data.message}</strong>`, 'info');
+            } else {
+                showResult(`<strong>❌ ${data.message}</strong>`, 'error');
+            }
+        } catch (error) {
+            showResult(`<strong>❌ خطای شبکه: ${error.message}</strong>`, 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
 
-    <script>
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-        }
+    async function findDevice() {
+        showLoading(true);
         
-        function showResult(message, type) {
-            const resultDiv = document.getElementById('result');
-            resultDiv.style.display = 'block';
-            resultDiv.className = 'result ' + type;
-            resultDiv.innerHTML = message;
-        }
-        
-        async function sendPayment() {
-            const amount = document.getElementById('amount').value;
-            const prcode = document.getElementById('prcode').value;
+        try {
+            const response = await fetch('{% url "pos_payment:find_device" %}');
+            const data = await response.json();
             
-            if (!amount) {
-                alert('لطفا مبلغ را وارد کنید');
-                return;
-            }
-            
-            showLoading(true);
-            
-            try {
-                const response = await fetch('{% url "pos_payment:send_payment" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        amount: amount,
-                        prcode: prcode
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    let message = `<strong>✅ ${data.message}</strong>`;
-                    if (data.parsed_response) {
-                        message += `<br><strong>وضعیت:</strong> ${data.parsed_response.message}`;
-                    }
-                    if (data.raw_response) {
-                        message += `<br><strong>پاسخ خام:</strong> ${data.raw_response}`;
-                    }
-                    showResult(message, 'success');
-                } else {
-                    showResult(`<strong>❌ خطا:</strong> ${data.message}`, 'error');
+            if (data.status === 'success') {
+                let message = `<strong>🔍 ${data.message}</strong>`;
+                if (data.devices && data.devices.length > 0) {
+                    message += `<br>📋 دستگاه‌های پیدا شده:`;
+                    data.devices.forEach(device => {
+                        message += `<br>• ${device}:4080`;
+                    });
                 }
-            } catch (error) {
-                showResult(`<strong>❌ خطای شبکه:</strong> ${error.message}`, 'error');
-            } finally {
-                showLoading(false);
+                showResult(message, 'success');
+            } else {
+                showResult(`<strong>❌ ${data.message}</strong>`, 'error');
             }
+        } catch (error) {
+            showResult(`<strong>❌ خطای شبکه: ${error.message}</strong>`, 'error');
+        } finally {
+            showLoading(false);
         }
-        
-        async function testConnection() {
-            showLoading(true);
-            
-            try {
-                const response = await fetch('{% url "pos_payment:test_connection" %}');
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    showResult(`<strong>✅ ${data.message}</strong>`, 'success');
-                } else {
-                    showResult(`<strong>❌ ${data.message}</strong>`, 'error');
-                }
-            } catch (error) {
-                showResult(`<strong>❌ خطای شبکه:</strong> ${error.message}`, 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-        
-        // تست خودکار ارتباط هنگام بارگذاری صفحه
-        window.addEventListener('load', function() {
-            testConnection();
-        });
-        
-    </script>
+    }
+
+    // اضافه کردن دکمه جستجو به HTML
+    document.addEventListener('DOMContentLoaded', function() {
+        const buttonGroup = document.querySelector('.button-group');
+        const findButton = document.createElement('button');
+        findButton.type = 'button';
+        findButton.className = 'btn-secondary';
+        findButton.textContent = 'جستجوی دستگاه';
+        findButton.onclick = findDevice;
+        buttonGroup.appendChild(findButton);
+    });
+</script>
+
 </body>
 </html>
