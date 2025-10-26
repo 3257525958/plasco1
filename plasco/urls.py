@@ -14,7 +14,7 @@ urlpatterns = [
     path('account/', include('account_app.urls')),
     path('invoice/', include('invoice_app.urls')),
     path('it/', include('it_app.urls')),
-    path('pos/', include('pos_payment.urls')),
+    path('pos-payment/', include('pos_payment.urls')),
 
 ]
 USE_X_FORWARDED_HOST = True
