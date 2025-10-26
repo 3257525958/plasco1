@@ -9,6 +9,7 @@ import hashlib
 import jdatetime
 from django.db import models, connection
 from decimal import Decimal
+import random
 
 class InventoryCount(models.Model):  # حذف class تکراری
     product_name = models.CharField(max_length=100, verbose_name="نام کالا")
@@ -44,20 +45,25 @@ class InventoryCount(models.Model):  # حذف class تکراری
         # except (TypeError, ValueError, InvalidOperation):
         #     self.profit_percentage = Decimal('30.00')
 
+    def generate_unique_numeric_barcode(self):
+        """تولید بارکد عددی ۱۲ رقمی یکتا"""
+        while True:
+            # تولید عدد ۱۲ رقمی
+            barcode = ''.join([str(random.randint(0, 9)) for _ in range(12)])
+
+            # بررسی یکتا بودن
+            if not InventoryCount.objects.filter(barcode_data=barcode).exists():
+                return barcode
+
     def save(self, *args, **kwargs):
-        # اعتبارسنجی قبل از ذخیره
         self.clean()
 
-        # تنظیم تاریخ امروز به صورت خودکار
         if not self.count_date:
             jalali_date = jdatetime.datetime.now().strftime('%Y/%m/%d')
             self.count_date = jalali_date
 
-        # تولید خودکار بارکد اگر وجود نداشته باشد
         if not self.barcode_data:
-            hash_object = hashlib.md5(self.product_name.encode())
-            hex_dig = hash_object.hexdigest()
-            self.barcode_data = hex_dig[:12]
+            self.barcode_data = self.generate_unique_numeric_barcode()
 
         print(f"✅ شروع محاسبه قیمت برای کالا: {self.product_name}")
 
