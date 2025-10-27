@@ -34,8 +34,6 @@ class InventoryCount(models.Model):  # حذف class تکراری
         verbose_name_plural = "شمارش های انبار"
         ordering = ['-created_at']
 
-
-
     def clean(self):
         """
         اعتبارسنجی خودکار قبل از ذخیره‌سازی
