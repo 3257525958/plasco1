@@ -34,16 +34,17 @@ class InventoryCount(models.Model):  # حذف class تکراری
         verbose_name_plural = "شمارش های انبار"
         ordering = ['-created_at']
 
+
     def clean(self):
         """
         اعتبارسنجی خودکار قبل از ذخیره‌سازی
         """
-        # try:
-        #     profit_value = Decimal(str(self.profit_percentage))
-        #     if profit_value < Decimal('0.00') or profit_value > Decimal('10000.00'):
-        #         self.profit_percentage = Decimal('30.00')
-        # except (TypeError, ValueError, InvalidOperation):
-        #     self.profit_percentage = Decimal('30.00')
+        try:
+            profit_value = Decimal(str(self.profit_percentage))
+            if profit_value < Decimal('0.00') or profit_value > Decimal('10000.00'):
+                self.profit_percentage = Decimal('30.00')
+        except (TypeError, ValueError, InvalidOperation):
+            self.profit_percentage = Decimal('30.00')
 
     def generate_unique_numeric_barcode(self):
         """تولید بارکد عددی ۱۲ رقمی یکتا"""
