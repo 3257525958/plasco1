@@ -35,6 +35,7 @@ class InventoryCount(models.Model):  # حذف class تکراری
         ordering = ['-created_at']
 
 
+
     def clean(self):
         """
         اعتبارسنجی خودکار قبل از ذخیره‌سازی
@@ -199,6 +200,7 @@ class FinancialDocumentItem(models.Model):
     class Meta:
         verbose_name = "آیتم سند مالی"
         verbose_name_plural = "آیتم‌های سند مالی"
+
 
 
 
