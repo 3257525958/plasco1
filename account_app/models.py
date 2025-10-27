@@ -26,7 +26,7 @@ class InventoryCount(models.Model):  # حذف class تکراری
         max_digits=5,
         decimal_places=2,
         verbose_name="درصد سود",
-        default=Decimal('100.00'),
+        default=Decimal('30.00'),
     )
 
     class Meta:
