@@ -499,34 +499,34 @@
             .container {
                 padding: 10px;
             }
-            
+
             .btn {
                 padding: 8px 15px;
                 font-size: 0.85rem;
             }
-            
+
             .invoice-table {
                 font-size: 0.8rem;
             }
-            
+
             .invoice-table th,
             .invoice-table td {
                 padding: 8px 5px;
             }
-            
+
             .section-card {
                 padding: 12px;
             }
-            
+
             .payment-method-btn {
                 padding: 12px;
                 font-size: 0.85rem;
             }
-            
+
             .action-buttons {
                 flex-direction: column;
             }
-            
+
             .action-buttons .btn {
                 min-width: 100%;
             }
@@ -560,7 +560,7 @@
     .modal-dialog {
         margin: 10px;
     }
-    
+
     #payment-status-container {
         padding: 10px;
     }
@@ -591,7 +591,7 @@
         {% else %}
         <!-- صفحه اصلی فاکتور -->
         <div class="branch-info">
-            <i class="fas fa-store"></i> شعبه: {{ branch.name }} | 
+            <i class="fas fa-store"></i> شعبه: {{ branch.name }} |
             <i class="fas fa-user"></i> کاربر: {{ user.get_full_name|default:user.username }}
         </div>
 
@@ -610,7 +610,7 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- نمایش دستگاه پیش‌فرض -->
             {% if default_pos %}
             <div class="alert alert-info mt-2">
@@ -728,15 +728,15 @@
                         <tr id="item-{{ item.product_id }}">
                             <td>{{ item.product_name }}</td>
                             <td>
-                                <input type="number" class="form-control form-control-sm quantity-input" 
-                                       value="{{ item.quantity }}" min="1" 
-                                       data-product-id="{{ item.product_id }}" 
+                                <input type="number" class="form-control form-control-sm quantity-input"
+                                       value="{{ item.quantity }}" min="1"
+                                       data-product-id="{{ item.product_id }}"
                                        style="width: 80px; display: inline-block;">
                             </td>
                             <td>{{ item.price|floatformat:"0" }} تومان</td>
                             <td>
-                                <input type="number" class="form-control form-control-sm discount-input" 
-                                       value="{{ item.discount|default:0 }}" min="0" 
+                                <input type="number" class="form-control form-control-sm discount-input"
+                                       value="{{ item.discount|default:0 }}" min="0"
                                        data-product-id="{{ item.product_id }}"
                                        style="width: 100px; display: inline-block;">
                             </td>
@@ -774,7 +774,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label for="total-discount">تخفیف کل فاکتور (تومان):</label>
-                        <input type="number" id="total-discount" class="form-control discount-input" 
+                        <input type="number" id="total-discount" class="form-control discount-input"
                                value="{{ discount }}" min="0" style="max-width: 200px;">
                     </div>
                     <div class="summary-item summary-total">
@@ -875,18 +875,18 @@
                                         {% endif %}
                                         <br>
                                         <small class="text-muted">
-                                            <i class="fas fa-credit-card"></i> شماره کارت: {{ device.card_number }} | 
+                                            <i class="fas fa-credit-card"></i> شماره کارت: {{ device.card_number }} |
                                             <i class="fas fa-user"></i> صاحب حساب: {{ device.account_holder }}
                                         </small>
                                     </div>
                                     <div>
                                         {% if not device.is_default %}
-                                        <button class="btn btn-sm btn-outline-success me-1 set-default-btn" 
+                                        <button class="btn btn-sm btn-outline-success me-1 set-default-btn"
                                                 data-device-id="{{ device.id }}" title="تنظیم پیش‌فرض">
                                             <i class="fas fa-star"></i>
                                         </button>
                                         {% endif %}
-                                        <button class="btn btn-sm btn-outline-danger delete-device-btn" 
+                                        <button class="btn btn-sm btn-outline-danger delete-device-btn"
                                                 data-device-id="{{ device.id }}" title="حذف دستگاه">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -928,7 +928,7 @@
                     <i class="fas fa-info-circle"></i>
                     <strong>مبلغ کل فاکتور: <span id="check-invoice-total">0</span> تومان</strong>
                 </div>
-                
+
                 <form id="check-payment-form">
                     <div class="row">
                         <div class="col-md-6">
@@ -983,7 +983,7 @@
                             <input type="text" name="check_date" class="form-control" id="check-date" readonly required>
                         </div>
                     </div>
-                    
+
                     <!-- بخش مبلغ باقیمانده -->
                     <div class="border-top pt-3 mt-3">
                         <h6><i class="fas fa-calculator"></i> محاسبه مبلغ باقیمانده</h6>
@@ -1004,7 +1004,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- انتخاب دستگاه پوز برای باقیمانده -->
                         <div id="remaining-pos-section" style="display: none;">
                             <div class="form-group">
@@ -1042,7 +1042,7 @@
                     <i class="fas fa-info-circle"></i>
                     <strong>مبلغ کل فاکتور: <span id="credit-invoice-total">0</span> تومان</strong>
                 </div>
-                
+
                 <form id="credit-payment-form">
                     <div class="row">
                         <div class="col-md-6">
@@ -1076,7 +1076,7 @@
                         <label>آدرس</label>
                         <textarea name="address" class="form-control" rows="2"></textarea>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -1094,7 +1094,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- بخش مبلغ باقیمانده -->
                     <div class="border-top pt-3 mt-3">
                         <h6><i class="fas fa-calculator"></i> محاسبه مبلغ باقیمانده</h6>
@@ -1115,7 +1115,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- انتخاب دستگاه پوز برای باقیمانده -->
                         <div id="credit-remaining-pos-section" style="display: none;">
                             <div class="form-group">
@@ -1273,7 +1273,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
     <script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
-    
+
     <script>
 // =============================================
 // متغیرهای全局 و تنظیمات اولیه
@@ -1318,9 +1318,9 @@ function showToast(message, type = 'info') {
             </div>
         </div>
     `);
-    
+
     $('#toast-container').append(toast);
-    
+
     setTimeout(() => {
         toast.fadeOut(300, function() {
             $(this).remove();
@@ -1389,7 +1389,7 @@ function calculateInvoiceTotal() {
             const quantity = parseInt($(this).find('.quantity-input').val()) || 0;
             const price = parseFloat($(this).find('.quantity-input').data('price')) || 0;
             const discount = parseInt($(this).find('.discount-input').val()) || 0;
-            
+
             totalItems += quantity;
             totalWithoutDiscount += quantity * price;
             itemsDiscount += discount;
@@ -1410,13 +1410,13 @@ function calculateInvoiceTotal() {
 function updateItemRowTotal(productId) {
     const row = $(`#item-${productId}`);
     if (row.length === 0) return;
-    
+
     const quantityInput = row.find('.quantity-input');
     const quantity = parseInt(quantityInput.val()) || 0;
     const price = parseFloat(quantityInput.data('price')) || 0;
     const discount = parseInt(row.find('.discount-input').val()) || 0;
     const total = (quantity * price) - discount;
-    
+
     row.find('td').eq(4).text(total.toLocaleString('fa-IR') + ' تومان');
     calculateInvoiceTotal();
 }
@@ -1427,28 +1427,28 @@ function updateItemRowTotal(productId) {
 function setupBarcodeScanner() {
     $('#product-search').on('keydown', function(e) {
         const currentTime = new Date().getTime();
-        
+
         if (e.key === 'Enter' || e.keyCode === 13) {
             e.preventDefault();
-            
+
             if (barcodeBuffer.length >= 6) {
                 processBarcodeScan(barcodeBuffer);
             }
-            
+
             barcodeBuffer = "";
             $(this).val('');
             return;
         }
-        
+
         if (e.key.length === 1 && e.key !== ' ' && e.key !== 'Enter') {
             if (currentTime - lastBarcodeTime < BARCODE_DELAY) {
                 barcodeBuffer += e.key;
             } else {
                 barcodeBuffer = e.key;
             }
-            
+
             lastBarcodeTime = currentTime;
-            
+
             clearTimeout(barcodeTimeout);
             barcodeTimeout = setTimeout(function() {
                 if (barcodeBuffer.length >= 8 && /^\d+$/.test(barcodeBuffer)) {
@@ -1459,13 +1459,13 @@ function setupBarcodeScanner() {
             }, BARCODE_DELAY + 50);
         }
     });
-    
+
     $('#product-search').on('input', function(e) {
         const value = $(this).val().trim();
-        
+
         if (value.length >= 8 && /^\d+$/.test(value)) {
             clearTimeout(barcodeTimeout);
-            
+
             barcodeTimeout = setTimeout(() => {
                 processBarcodeScan(value);
                 $(this).val('');
@@ -1476,7 +1476,7 @@ function setupBarcodeScanner() {
 
 function processBarcodeScan(barcode) {
     showToast('در حال جستجوی کالا...', 'info');
-    
+
     $.ajax({
         url: "{% url 'invoice_app:invoice_search_product' %}",
         method: 'POST',
@@ -1488,13 +1488,13 @@ function processBarcodeScan(barcode) {
                 showToast('خطا در جستجو: ' + data.error, 'error');
                 return;
             }
-            
+
             if (!data.results || data.results.length === 0) {
                 showToast('کالایی با این بارکد یافت نشد', 'warning');
                 $('#product-search').val('').focus();
                 return;
             }
-            
+
             if (data.results.length === 1) {
                 const product = data.results[0];
                 if (product.quantity <= 0) {
@@ -1537,12 +1537,12 @@ function searchProduct(query) {
 function displaySearchResults(results) {
     const container = $('#search-results');
     container.empty();
-    
+
     results.forEach((product) => {
-        const stockStatus = product.quantity <= 0 ? 
-            '<span class="badge bg-danger">موجودی صفر</span>' : 
+        const stockStatus = product.quantity <= 0 ?
+            '<span class="badge bg-danger">موجودی صفر</span>' :
             `<span class="badge bg-success">موجودی: ${product.quantity}</span>`;
-        
+
         const item = $(`
             <div class="search-result-item" data-product-id="${product.id}">
                 <div class="d-flex justify-content-between align-items-center">
@@ -1555,10 +1555,10 @@ function displaySearchResults(results) {
                 ${product.barcode ? `<div class="small text-muted">بارکد: ${product.barcode}</div>` : ''}
             </div>
         `);
-        
+
         container.append(item);
     });
-    
+
     container.show();
 }
 
@@ -1627,30 +1627,30 @@ function forceAddToInvoice(productId, quantity = 1) {
 function updateInvoiceTable(items) {
     const tbody = $('#invoice-items-list');
     tbody.empty();
-    
+
     if (items.length === 0) {
         tbody.append('<tr><td colspan="6" class="text-center text-muted py-3">هیچ کالایی در فاکتور وجود ندارد</td></tr>');
         calculateInvoiceTotal();
         return;
     }
-    
+
     items.forEach(item => {
         const totalAmount = (item.quantity * item.price) - (item.discount || 0);
-        
+
         const row = `
             <tr id="item-${item.product_id}">
                 <td>${item.product_name}</td>
                 <td>
-                    <input type="number" class="form-control form-control-sm quantity-input" 
-                           value="${item.quantity}" min="1" 
-                           data-product-id="${item.product_id}" 
+                    <input type="number" class="form-control form-control-sm quantity-input"
+                           value="${item.quantity}" min="1"
+                           data-product-id="${item.product_id}"
                            data-price="${item.price}"
                            style="width: 80px; display: inline-block;">
                 </td>
                 <td>${item.price.toLocaleString('fa-IR')} تومان</td>
                 <td>
-                    <input type="number" class="form-control form-control-sm discount-input" 
-                           value="${item.discount || 0}" min="0" 
+                    <input type="number" class="form-control form-control-sm discount-input"
+                           value="${item.discount || 0}" min="0"
                            data-product-id="${item.product_id}"
                            style="width: 100px; display: inline-block;">
                 </td>
@@ -1670,7 +1670,7 @@ function updateInvoiceTable(items) {
 
 function removeItem(productId) {
     if (!confirm('آیا از حذف این کالا اطمینان دارید؟')) return;
-    
+
     $.ajax({
         url: "{% url 'invoice_app:invoice_remove_item' %}",
         method: 'POST',
@@ -1748,12 +1748,12 @@ function savePaymentMethod(method) {
 
 function saveSelectedPosDevice() {
     const deviceId = $('#pos-device').val();
-    
+
     if (!deviceId) {
         showToast('لطفا یک دستگاه پوز انتخاب کنید', 'error');
         return false;
     }
-    
+
     $.ajax({
         url: "{% url 'invoice_app:save_pos_device' %}",
         method: 'POST',
@@ -1769,14 +1769,14 @@ function saveSelectedPosDevice() {
             showToast('خطا در ذخیره دستگاه پوز', 'error');
         }
     });
-    
+
     return true;
 }
 
 function saveCustomerInfo() {
     const name = $('#customer-name').val();
     const phone = $('#customer-phone').val();
-    
+
     $.ajax({
         url: "{% url 'invoice_app:save_customer_info' %}",
         method: 'POST',
@@ -1796,7 +1796,7 @@ function saveCustomerInfo() {
 
 function saveDiscount() {
     const discount = parseInt($('#total-discount').val()) || 0;
-    
+
     $.ajax({
         url: "{% url 'invoice_app:save_discount' %}",
         method: 'POST',
@@ -1882,7 +1882,7 @@ function addPosDevice() {
 
 function deletePosDevice(deviceId) {
     const deviceName = $(`[data-device-id="${deviceId}"]`).closest('.card').find('strong').text();
-    
+
     if (confirm(`آیا از حذف دستگاه "${deviceName}" اطمینان دارید؟`)) {
         $.ajax({
             url: "{% url 'invoice_app:manage_pos_devices' %}",
@@ -1906,7 +1906,7 @@ function deletePosDevice(deviceId) {
 
 function setDefaultPosDevice(deviceId) {
     const deviceName = $(`[data-device-id="${deviceId}"]`).closest('.card').find('strong').text();
-    
+
     if (confirm(`آیا می‌خواهید دستگاه "${deviceName}" را به عنوان پیش‌فرض تنظیم کنید؟`)) {
         $.ajax({
             url: "{% url 'invoice_app:manage_pos_devices' %}",
@@ -1945,9 +1945,9 @@ function updateCreditRemainingAmount() {
     const invoiceTotal = calculateInvoiceTotal().totalAmount;
     const creditAmount = parseInt($('#credit-amount').val()) || 0;
     const remainingAmount = Math.max(0, invoiceTotal - creditAmount);
-    
+
     $('#credit-remaining-amount').val(remainingAmount);
-    
+
     // نمایش/پنهان کردن بخش دستگاه پوز
     const remainingMethod = $('#credit-remaining-payment-method').val();
     $('#credit-remaining-pos-section').toggle(remainingMethod === 'pos');
@@ -1970,7 +1970,7 @@ function saveCreditPayment() {
 
     console.log("🟢 در حال ذخیره اطلاعات نسیه...", formData);
 
-    if (!formData.customer_name || !formData.customer_family || !formData.phone || 
+    if (!formData.customer_name || !formData.customer_family || !formData.phone ||
         !formData.national_id || !formData.due_date) {
         showToast('لطفا تمام فیلدهای ضروری را پر کنید', 'error');
         return;
@@ -1987,7 +1987,7 @@ function saveCreditPayment() {
             if (data.status === 'success') {
                 showToast('اطلاعات نسیه با موفقیت ذخیره شد', 'success');
                 $('#creditPaymentModal').modal('hide');
-                
+
                 // 🔴 این بخش حیاتی را اضافه کنید:
                 console.log("🟢 در حال ثبت نهایی فاکتور...");
                 setTimeout(() => {
@@ -1998,7 +1998,7 @@ function saveCreditPayment() {
                         showToast('خطا در ثبت فاکتور', 'error');
                     }
                 }, 1000);
-                
+
             } else {
                 showToast('خطا در ذخیره اطلاعات نسیه: ' + data.message, 'error');
             }
@@ -2015,31 +2015,31 @@ function saveCreditPayment() {
 // =============================================
 function validateInvoiceBeforeSubmit() {
     const items = $('#invoice-items-list tr');
-    const hasRealItems = items.length > 0 && 
+    const hasRealItems = items.length > 0 &&
                         !(items.length === 1 && items.find('td').hasClass('text-muted'));
-    
+
     if (!hasRealItems) {
         showToast('فاکتور باید حداقل یک آیتم داشته باشد', 'error');
         return false;
     }
-    
+
     if (!currentPaymentMethod) {
         currentPaymentMethod = 'pos';
         savePaymentMethod('pos');
     }
-    
+
     if (currentPaymentMethod === 'pos' && !$('#pos-device').val()) {
         showToast('لطفا یک دستگاه پوز انتخاب کنید', 'error');
         return false;
     }
-    
+
     return true;
 }
 
 function cancelInvoice() {
     if (confirm('آیا از انصراف اطمینان دارید؟ تمام تغییرات از بین خواهد رفت.')) {
         showToast('در حال لغو فاکتور...', 'info');
-        
+
         // استفاده از redirect مستقیم به جای AJAX
         window.location.href = "{% url 'invoice_app:invoice_cancel' %}";
     }
@@ -2049,22 +2049,22 @@ function finalizeInvoice(action) {
     if (!validateInvoiceBeforeSubmit()) {
         return;
     }
-    
+
     if (currentPaymentMethod === 'pos' && !saveSelectedPosDevice()) {
         return;
     }
-    
-    const message = action === 'print_and_save' 
+
+    const message = action === 'print_and_save'
         ? 'آیا از ثبت و چاپ فاکتور اطمینان دارید؟'
         : 'آیا از ثبت فاکتور اطمینان دارید؟';
-    
+
     if (!confirm(message)) {
         return;
     }
-    
+
     $('.btn-success, .btn-secondary').prop('disabled', true);
     showToast('در حال ثبت فاکتور... لطفا منتظر بمانید', 'info');
-    
+
     $.ajax({
         url: "{% url 'invoice_app:finalize_invoice' %}",
         method: 'POST',
@@ -2078,11 +2078,11 @@ function finalizeInvoice(action) {
         success: function(data) {
             if (data.status === 'success') {
                 showToast('فاکتور با موفقیت ثبت شد', 'success');
-                
+
                 if (action === 'print_and_save') {
                     const printUrl = "{% url 'invoice_app:invoice_print' 0 %}".replace('0', data.invoice_id);
                     window.open(printUrl, '_blank');
-                    
+
                     setTimeout(() => {
                         const successUrl = "{% url 'invoice_app:invoice_success' 0 %}".replace('0', data.invoice_id);
                         window.location.href = successUrl;
@@ -2115,12 +2115,12 @@ function setupEventListeners() {
     $('#product-search').on('input', function() {
         clearTimeout(searchTimeout);
         const query = $(this).val().trim();
-        
+
         if (query.length < 2) {
             $('#search-results').hide().empty();
             return;
         }
-        
+
         searchTimeout = setTimeout(() => searchProduct(query), 300);
     });
 
@@ -2128,7 +2128,7 @@ function setupEventListeners() {
     $(document).on('click', '.search-result-item', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        
+
         const productId = $(this).data('product-id');
         addToInvoice(productId);
         $('#product-search').val('');
@@ -2139,13 +2139,13 @@ function setupEventListeners() {
     $(document).on('change', '.quantity-input', function() {
         const productId = $(this).data('product-id');
         const newQuantity = parseInt($(this).val());
-        
+
         if (newQuantity < 1) {
             $(this).val(1);
             showToast('تعداد نمی‌تواند کمتر از ۱ باشد', 'warning');
             return;
         }
-        
+
         updateItemRowTotal(productId);
         updateItemQuantity(productId, newQuantity);
     });
@@ -2154,7 +2154,7 @@ function setupEventListeners() {
     $(document).on('input', '.quantity-input', function() {
         const productId = $(this).data('product-id');
         const newQuantity = parseInt($(this).val()) || 0;
-        
+
         if (newQuantity >= 1) {
             updateItemRowTotal(productId);
         }
@@ -2164,13 +2164,13 @@ function setupEventListeners() {
     $(document).on('change', '.discount-input', function() {
         const productId = $(this).data('product-id');
         const discount = parseInt($(this).val()) || 0;
-        
+
         if (discount < 0) {
             $(this).val(0);
             showToast('تخفیف نمی‌تواند منفی باشد', 'warning');
             return;
         }
-        
+
         updateItemRowTotal(productId);
         updateItemDiscount(productId, discount);
     });
@@ -2179,7 +2179,7 @@ function setupEventListeners() {
     $(document).on('input', '.discount-input', function() {
         const productId = $(this).data('product-id');
         const discount = parseInt($(this).val()) || 0;
-        
+
         if (discount >= 0) {
             updateItemRowTotal(productId);
         }
@@ -2198,7 +2198,7 @@ function setupEventListeners() {
     $('#customer-name, #customer-phone').on('blur', saveCustomerInfo);
 
     // انتخاب روش پرداخت
-    
+
     // تغییر دستگاه POS
     $('#pos-device').on('change', saveSelectedPosDevice);
 
@@ -2222,34 +2222,34 @@ function setupEventListeners() {
     });
 
     $('#addDeviceButton').on('click', addPosDevice);
-    
+
         // در بخش setupEventListeners اضافه کنید:
     $('#credit-amount').on('input', updateCreditRemainingAmount);
     $('#credit-remaining-payment-method').on('change', updateCreditRemainingAmount);
-    
+
     // هنگام باز کردن مودال نسیه
     $('#creditPaymentModal').on('show.bs.modal', function() {
         updateCreditModalInvoiceTotal();
     });
-    
+
     // در بخش انتخاب روش پرداخت، قسمت نسیه را اصلاح کنید:
         $('.payment-method-btn').click(function() {
         const method = $(this).data('method');
         currentPaymentMethod = method;
-        
+
         $('.payment-method-btn').removeClass('active');
         $(this).addClass('active');
-        
+
         $('#pos-devices-section').toggle(method === 'pos');
-        
+
         if (method === 'check') {
             $('#checkPaymentModal').modal('show');
         } else if (method === 'credit') {
             $('#creditPaymentModal').modal('show');
         }
-        
+
         savePaymentMethod(method);
-        
+
         if (method === 'pos') {
             setTimeout(saveSelectedPosDevice, 100);
         }
@@ -2261,21 +2261,21 @@ function setupEventListeners() {
 
 function setupButtonListeners() {
     console.log("🟢 تنظیم event listeners برای دکمه‌ها");
-    
+
     // دکمه ثبت فاکتور
     $('#save-invoice-btn').off('click').on('click', function(e) {
         e.preventDefault();
         console.log("🟢 دکمه 'ثبت فاکتور' کلیک شد");
         finalizeInvoice('save_only');
     });
-    
+
     // دکمه ثبت و چاپ فاکتور
     $('#print-invoice-btn').off('click').on('click', function(e) {
         e.preventDefault();
         console.log("🟢 دکمه 'ثبت و چاپ فاکتور' کلیک شد");
         finalizeInvoice('print_and_save');
     });
-    
+
     // دکمه انصراف
     $('#cancel-invoice-btn').off('click').on('click', function(e) {
         e.preventDefault();
@@ -2290,10 +2290,10 @@ function setupButtonListeners() {
 
 $(document).ready(function() {
     console.log("🚀 صفحه کاملاً بارگذاری شد");
-    
+
     // تنظیم event listeners برای دکمه‌ها
     setupButtonListeners();
-    
+
     // تنظیم روش پرداخت پیش‌فرض
     if (!currentPaymentMethod || currentPaymentMethod === 'None') {
         currentPaymentMethod = 'pos';
@@ -2301,18 +2301,18 @@ $(document).ready(function() {
         $('#pos-devices-section').show();
         savePaymentMethod('pos');
     }
-    
+
     // بقیه تنظیمات...
     initializeDatePickers();
     setupBarcodeScanner();
     setupEventListeners();
-    
+
     setTimeout(function() {
         $('#product-search').focus();
     }, 500);
-    
+
     calculateInvoiceTotal();
-    
+
     // تست: چک کردن وجود دکمه‌ها
     console.log("دکمه ثبت فاکتور وجود دارد:", $('#save-invoice-btn').length > 0);
     console.log("دکمه انصراف وجود دارد:", $('#cancel-invoice-btn').length > 0);
@@ -2329,9 +2329,9 @@ function updateRemainingAmount() {
     const invoiceTotal = calculateInvoiceTotal().totalAmount;
     const checkAmount = parseInt($('#check-amount').val()) || 0;
     const remainingAmount = Math.max(0, invoiceTotal - checkAmount);
-    
+
     $('#remaining-amount').val(remainingAmount);
-    
+
     // نمایش/پنهان کردن بخش دستگاه پوز
     const remainingMethod = $('#remaining-payment-method').val();
     $('#remaining-pos-section').toggle(remainingMethod === 'pos');
@@ -2381,7 +2381,7 @@ function saveCheckPayment() {
                 if (data.status === 'success') {
                     showToast('اطلاعات چک با موفقیت ذخیره شد', 'success');
                     $('#checkPaymentModal').modal('hide');
-                    
+
                     // ثبت نهایی فاکتور
                     setTimeout(() => {
                         finalizeInvoice('save_only');
@@ -2444,9 +2444,9 @@ console.log("🟢 JavaScript در حال اجرا است");
 // تابع saveCreditPayment را مطمئن شوید اینگونه تعریف شده است:
 function saveCreditPayment() {
     console.log("✅ تابع saveCreditPayment فراخوانی شد!");
-    
+
     const creditAmount = parseInt($('#credit-amount').val()) || 0;  // 🔴 مقدار از فیلد گرفته شود
-    
+
     const formData = {
         'customer_name': document.querySelector('#creditPaymentModal input[name="customer_name"]').value,
         'customer_family': document.querySelector('#creditPaymentModal input[name="customer_family"]').value,
@@ -2464,7 +2464,7 @@ function saveCreditPayment() {
     console.log("📋 داده‌های فرم:", formData);
 
     // بررسی فیلدهای ضروری
-    if (!formData.customer_name || !formData.customer_family || !formData.phone || 
+    if (!formData.customer_name || !formData.customer_family || !formData.phone ||
         !formData.national_id || !formData.due_date) {
         alert('لطفا تمام فیلدهای ضروری را پر کنید');
         return;
@@ -2487,7 +2487,7 @@ function saveCreditPayment() {
             // بستن مودال
             var modal = bootstrap.Modal.getInstance(document.getElementById('creditPaymentModal'));
             modal.hide();
-            
+
             // ثبت نهایی فاکتور
             setTimeout(() => {
                 console.log("🟢 در حال ثبت نهایی فاکتور...");
@@ -2510,9 +2510,9 @@ function updateCreditRemainingAmount() {
     const invoiceTotal = calculateInvoiceTotal().totalAmount;
     const creditAmount = parseInt($('#credit-amount').val()) || 0;
     const remainingAmount = Math.max(0, invoiceTotal - creditAmount);
-    
+
     $('#credit-remaining-amount').val(remainingAmount);
-    
+
     // نمایش/پنهان کردن بخش دستگاه پوز
     const remainingMethod = $('#credit-remaining-payment-method').val();
     $('#credit-remaining-pos-section').toggle(remainingMethod === 'pos');
@@ -2550,22 +2550,22 @@ let paymentInvoiceId = null;
 function showPaymentModal() {
     // مخفی کردن تمام مراحل
     $('.payment-step').removeClass('active');
-    
+
     // نمایش مرحله پردازش
     $('#payment-processing').addClass('active');
-    
+
     // تنظیم دکمه‌ها
     $('#success-buttons').addClass('d-none');
     $('#failed-buttons').addClass('d-none');
     $('#processing-buttons').removeClass('d-none');
-    
+
     // مخفی کردن جزئیات تراکنش
     $('#transaction-details').hide();
-    
+
     // نمایش مودال
     const modal = new bootstrap.Modal(document.getElementById('paymentProcessingModal'));
     modal.show();
-    
+
     // شروع پرداخت
     startPaymentProcess();
 }
@@ -2573,14 +2573,14 @@ function showPaymentModal() {
 // تابع شروع فرآیند پرداخت
 function startPaymentProcess() {
     const invoiceTotal = calculateInvoiceTotal().totalAmount;
-    
+
     // نمایش جزئیات تراکنش
     $('#transaction-amount').text(invoiceTotal.toLocaleString('fa-IR') + ' تومان');
     $('#transaction-time').text(new Date().toLocaleTimeString('fa-IR'));
     $('#transaction-details').show();
-    
+
     console.log('💰 شروع فرآیند پرداخت با مبلغ:', invoiceTotal);
-    
+
     // شبیه‌سازی پرداخت (در مرحله بعد با DLL واقعی جایگزین می‌شود)
     simulatePaymentProcess(invoiceTotal);
 }
@@ -2588,31 +2588,31 @@ function startPaymentProcess() {
 // تابع شبیه‌سازی پرداخت (موقت)
 function simulatePaymentProcess(amount) {
     console.log('🔌 در حال اتصال به کارت خوان...');
-    
+
     // شبیه‌سازی تاخیر در اتصال
     setTimeout(() => {
         console.log('✅ اتصال به کارت خوان برقرار شد');
         updatePaymentStatus('در انتظار کشیدن کارت...');
-        
+
         // شبیه‌سازی کشیدن کارت
         setTimeout(() => {
             console.log('💳 کارت کشیده شد');
             updatePaymentStatus('در حال پردازش تراکنش...');
-            
+
             // شبیه‌سازی پردازش
             setTimeout(() => {
                 // 90% موفقیت، 10% خطا (برای تست)
                 const isSuccess = Math.random() > 0.1;
-                
+
                 if (isSuccess) {
                     completePaymentSuccess(amount);
                 } else {
                     completePaymentFailure('خطا در انجام تراکنش. لطفاً مجدداً تلاش کنید.');
                 }
             }, 3000);
-            
+
         }, 2000);
-        
+
     }, 1500);
 }
 
@@ -2624,15 +2624,15 @@ function updatePaymentStatus(message) {
 // تابع تکمیل پرداخت موفق
 function completePaymentSuccess(amount) {
     console.log('✅ پرداخت موفق');
-    
+
     // نمایش مرحله موفقیت
     $('.payment-step').removeClass('active');
     $('#payment-success').addClass('active');
-    
+
     // تنظیم دکمه‌ها
     $('#processing-buttons').addClass('d-none');
     $('#success-buttons').removeClass('d-none');
-    
+
     // ثبت فاکتور در دیتابیس
     registerFinalInvoice(amount);
 }
@@ -2640,14 +2640,14 @@ function completePaymentSuccess(amount) {
 // تابع تکمیل پرداخت ناموفق
 function completePaymentFailure(errorMessage) {
     console.log('❌ پرداخت ناموفق:', errorMessage);
-    
+
     // نمایش مرحله خطا
     $('.payment-step').removeClass('active');
     $('#payment-failed').addClass('active');
-    
+
     // تنظیم پیام خطا
     $('#error-message').text(errorMessage);
-    
+
     // تنظیم دکمه‌ها
     $('#processing-buttons').addClass('d-none');
     $('#failed-buttons').removeClass('d-none');
@@ -2656,7 +2656,7 @@ function completePaymentFailure(errorMessage) {
 // تابع ثبت نهایی فاکتور پس از پرداخت موفق
 function registerFinalInvoice(amount) {
     console.log('📝 در حال ثبت نهایی فاکتور...');
-    
+
     // استفاده از تابع finalizeInvoice موجود
     $.ajax({
         url: "{% url 'invoice_app:finalize_invoice' %}",
@@ -2674,11 +2674,11 @@ function registerFinalInvoice(amount) {
                 console.log('✅ فاکتور ثبت شد:', data.invoice_id);
                 paymentInvoiceId = data.invoice_id;
                 $('#success-invoice-number').text(data.invoice_number || data.invoice_id);
-                
+
                 // نمایش شماره مرجع (شبیه‌سازی)
                 $('#transaction-reference').text(generateReferenceNumber());
                 $('#transaction-response').text('00 - موفق');
-                
+
             } else {
                 console.error('❌ خطا در ثبت فاکتور:', data.message);
                 completePaymentFailure('خطا در ثبت فاکتور: ' + data.message);
@@ -2705,7 +2705,7 @@ function printInvoice() {
     if (paymentInvoiceId) {
         const printUrl = "{% url 'invoice_app:invoice_print' 0 %}".replace('0', paymentInvoiceId);
         window.open(printUrl, '_blank');
-        
+
         // بستن مودال
         bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
     }
@@ -2715,7 +2715,7 @@ function printInvoice() {
 function createNewInvoice() {
     // بستن مودال
     bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
-    
+
     // ریدایرکت به صفحه ایجاد فاکتور جدید
     setTimeout(() => {
         window.location.href = "{% url 'invoice_app:create_invoice' %}";
@@ -2726,7 +2726,7 @@ function createNewInvoice() {
 function retryPayment() {
     // بستن مودال فعلی
     bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
-    
+
     // نمایش مجدد مودال پرداخت
     setTimeout(() => {
         showPaymentModal();
@@ -2736,10 +2736,10 @@ function retryPayment() {
 // تابع لغو پرداخت
 function cancelPayment() {
     console.log('❌ پرداخت توسط کاربر لغو شد');
-    
+
     // بستن مودال
     bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
-    
+
     showToast('پرداخت لغو شد', 'warning');
 }
 
@@ -2750,18 +2750,18 @@ function cancelPayment() {
 // تغییر تابع finalizeInvoice اصلی برای پشتیبانی از پرداخت POS
 function finalizeInvoiceWithPayment(action) {
     console.log('🔄 شروع فرآیند پرداخت...');
-    
+
     // اعتبارسنجی اولیه
     if (!validateInvoiceBeforeSubmit()) {
         return;
     }
-    
+
     // برای پرداخت‌های غیر POS از روش قبلی استفاده کن
     if (currentPaymentMethod !== 'pos') {
         finalizeInvoice(action);
         return;
     }
-    
+
     // برای پرداخت POS مودال پرداخت رو نشون بده
     showPaymentModal();
 }
@@ -2772,19 +2772,19 @@ $(document).ready(function() {
     $('#save-invoice-btn').off('click').on('click', function(e) {
         e.preventDefault();
         console.log('💳 دکمه ثبت فاکتور کلیک شد - بررسی روش پرداخت:', currentPaymentMethod);
-        
+
         if (currentPaymentMethod === 'pos') {
             finalizeInvoiceWithPayment('save_only');
         } else {
             finalizeInvoice('save_only');
         }
     });
-    
+
     // تغییر دکمه ثبت و چاپ فاکتور
     $('#print-invoice-btn').off('click').on('click', function(e) {
         e.preventDefault();
         console.log('💳 دکمه ثبت و چاپ فاکتور کلیک شد - بررسی روش پرداخت:', currentPaymentMethod);
-        
+
         if (currentPaymentMethod === 'pos') {
             finalizeInvoiceWithPayment('print_and_save');
         } else {
@@ -2800,9 +2800,9 @@ $(document).ready(function() {
 
 function processPosPayment(amount, posDeviceId) {
     console.log('💰 شروع فرآیند پرداخت POS:', { amount, posDeviceId });
-    
+
     showPaymentModal();
-    
+
     // ارسال درخواست پرداخت به سرور
     $.ajax({
         url: "{% url 'invoice_app:process_pos_payment' %}",
@@ -2832,18 +2832,18 @@ function processPosPayment(amount, posDeviceId) {
 function showPaymentModal() {
     // مخفی کردن تمام مراحل
     $('.payment-step').removeClass('active');
-    
+
     // نمایش مرحله پردازش
     $('#payment-processing').addClass('active');
-    
+
     // تنظیم دکمه‌ها
     $('#success-buttons').addClass('d-none');
     $('#failed-buttons').addClass('d-none');
     $('#processing-buttons').removeClass('d-none');
-    
+
     // مخفی کردن جزئیات تراکنش
     $('#transaction-details').hide();
-    
+
     // نمایش مودال
     const modal = new bootstrap.Modal(document.getElementById('paymentProcessingModal'));
     modal.show();
@@ -2851,34 +2851,34 @@ function showPaymentModal() {
 
 function completePaymentSuccess(amount, responseData) {
     console.log('✅ پرداخت موفق');
-    
+
     // نمایش مرحله موفقیت
     $('.payment-step').removeClass('active');
     $('#payment-success').addClass('active');
-    
+
     // تنظیم دکمه‌ها
     $('#processing-buttons').addClass('d-none');
     $('#success-buttons').removeClass('d-none');
-    
+
     // نمایش جزئیات
     $('#transaction-amount').text(amount.toLocaleString('fa-IR') + ' تومان');
     $('#transaction-time').text(new Date().toLocaleTimeString('fa-IR'));
     $('#transaction-details').show();
-    
+
     // ثبت نهایی فاکتور
     registerFinalInvoice(amount, 'pos');
 }
 
 function completePaymentFailure(errorMessage) {
     console.log('❌ پرداخت ناموفق:', errorMessage);
-    
+
     // نمایش مرحله خطا
     $('.payment-step').removeClass('active');
     $('#payment-failed').addClass('active');
-    
+
     // تنظیم پیام خطا
     $('#error-message').text(errorMessage);
-    
+
     // تنظیم دکمه‌ها
     $('#processing-buttons').addClass('d-none');
     $('#failed-buttons').removeClass('d-none');
@@ -2886,7 +2886,7 @@ function completePaymentFailure(errorMessage) {
 
 function registerFinalInvoice(amount, paymentMethod) {
     console.log('📝 در حال ثبت نهایی فاکتور...');
-    
+
     // استفاده از تابع finalizeInvoice موجود
     $.ajax({
         url: "{% url 'invoice_app:finalize_invoice' %}",
@@ -2904,11 +2904,11 @@ function registerFinalInvoice(amount, paymentMethod) {
                 console.log('✅ فاکتور ثبت شد:', data.invoice_id);
                 paymentInvoiceId = data.invoice_id;
                 $('#success-invoice-number').text(data.invoice_number || data.invoice_id);
-                
+
                 // نمایش شماره مرجع
                 $('#transaction-reference').text(generateReferenceNumber());
                 $('#transaction-response').text('00 - موفق');
-                
+
             } else {
                 console.error('❌ خطا در ثبت فاکتور:', data.message);
                 completePaymentFailure('خطا در ثبت فاکتور: ' + data.message);
@@ -2933,7 +2933,7 @@ function printInvoice() {
     if (paymentInvoiceId) {
         const printUrl = "{% url 'invoice_app:invoice_print' 0 %}".replace('0', paymentInvoiceId);
         window.open(printUrl, '_blank');
-        
+
         // بستن مودال
         bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
     }
@@ -2942,7 +2942,7 @@ function printInvoice() {
 function createNewInvoice() {
     // بستن مودال
     bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
-    
+
     // ریدایرکت به صفحه ایجاد فاکتور جدید
     setTimeout(() => {
         window.location.href = "{% url 'invoice_app:create_invoice' %}";
@@ -2952,7 +2952,7 @@ function createNewInvoice() {
 function retryPayment() {
     // بستن مودال فعلی
     bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
-    
+
     // تلاش مجدد پرداخت
     setTimeout(() => {
         const amount = calculateInvoiceTotal().totalAmount;
@@ -2963,10 +2963,10 @@ function retryPayment() {
 
 function cancelPayment() {
     console.log('❌ پرداخت توسط کاربر لغو شد');
-    
+
     // بستن مودال
     bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
-    
+
     showToast('پرداخت لغو شد', 'warning');
 }
 
@@ -2977,17 +2977,17 @@ function cancelPayment() {
 // تابع اصلی finalizeInvoice که برای همه روش‌های پرداخت استفاده می‌شود
 function finalizeInvoice(action) {
     console.log('🔄 شروع فرآیند ثبت فاکتور...');
-    
+
     // اعتبارسنجی اولیه
     if (!validateInvoiceBeforeSubmit()) {
         return;
     }
-    
+
     const paymentMethod = currentPaymentMethod;
     const amount = calculateInvoiceTotal().totalAmount;
-    
+
     console.log('💳 روش پرداخت:', paymentMethod, 'مبلغ:', amount);
-    
+
     // برای پرداخت POS از فرآیند جدید استفاده کن
     if (paymentMethod === 'pos') {
         const posDeviceId = $('#pos-device').val();
@@ -2995,14 +2995,14 @@ function finalizeInvoice(action) {
             showToast('لطفا یک دستگاه پوز انتخاب کنید', 'error');
             return;
         }
-        
+
         processPosPayment(amount, posDeviceId);
-    } 
+    }
     // برای سایر روش‌های پرداخت از تابع قدیمی استفاده کن
     else if (paymentMethod === 'check') {
         // نمایش مودال چک
         $('#checkPaymentModal').modal('show');
-    } 
+    }
     else if (paymentMethod === 'credit') {
         // نمایش مودال نسیه
         $('#creditPaymentModal').modal('show');
@@ -3029,11 +3029,11 @@ function submitFinalInvoice(action, paymentMethod, amount) {
         success: function(data) {
             if (data.status === 'success') {
                 showToast('فاکتور با موفقیت ثبت شد', 'success');
-                
+
                 if (action === 'print_and_save') {
                     const printUrl = "{% url 'invoice_app:invoice_print' 0 %}".replace('0', data.invoice_id);
                     window.open(printUrl, '_blank');
-                    
+
                     setTimeout(() => {
                         const successUrl = "{% url 'invoice_app:invoice_success' 0 %}".replace('0', data.invoice_id);
                         window.location.href = successUrl;
@@ -3064,27 +3064,28 @@ $(document).ready(function() {
         console.log('💳 دکمه ثبت فاکتور کلیک شد');
         finalizeInvoice('save_only');
     });
-    
+
     // تغییر دکمه ثبت و چاپ فاکتور
     $('#print-invoice-btn').off('click').on('click', function(e) {
         e.preventDefault();
         console.log('💳 دکمه ثبت و چاپ فاکتور کلیک شد');
         finalizeInvoice('print_and_save');
     });
-    
+
     // برای چک و نسیه، پس از ذخیره اطلاعات، فاکتور را ثبت کن
     window.saveCheckPayment = function() {
         // ذخیره اطلاعات چک و سپس ثبت فاکتور
         const amount = calculateInvoiceTotal().totalAmount;
         submitFinalInvoice('save_only', 'check', amount);
     };
-    
+
     window.saveCreditPayment = function() {
         // ذخیره اطلاعات نسیه و سپس ثبت فاکتور
         const amount = calculateInvoiceTotal().totalAmount;
         submitFinalInvoice('save_only', 'credit', amount);
     };
 });
+
 </script>
 </body>
 </html>

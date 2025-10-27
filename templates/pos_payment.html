@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سیستم پیشرفته پرداخت پوز</title>
+    <title>سیستم پرداخت پوز</title>
     <style>
         * {
             box-sizing: border-box;
@@ -23,7 +22,7 @@
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
             background: white;
             padding: 30px;
@@ -79,7 +78,7 @@
         
         .button-group {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin: 30px 0;
         }
@@ -114,21 +113,6 @@
         
         .btn-send {
             background: linear-gradient(135deg, #28a745, #1e7e34);
-            color: white;
-        }
-        
-        .btn-large {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-            color: white;
-        }
-        
-        .btn-billion {
-            background: linear-gradient(135deg, #8e44ad, #732d91);
-            color: white;
-        }
-        
-        .btn-protocol {
-            background: linear-gradient(135deg, #17a2b8, #138496);
             color: white;
         }
         
@@ -172,6 +156,12 @@
             background: linear-gradient(135deg, #f8d7da, #f5c6cb);
             color: #721c24;
             border: 2px solid #dc3545;
+        }
+        
+        .cancelled {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            color: #856404;
+            border: 2px solid #ffc107;
         }
         
         .debug-info {
@@ -226,57 +216,23 @@
         
         .quick-actions {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 10px;
             margin: 20px 0;
         }
         
         .quick-btn {
-            padding: 12px;
+            padding: 10px;
             background: #6c757d;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
         }
         
         .quick-btn:hover {
             background: #545b62;
-        }
-        
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-        
-        .results-table th, .results-table td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: right;
-        }
-        
-        .results-table th {
-            background: #f8f9fa;
-            font-weight: bold;
-        }
-        
-        .success-badge {
-            background: #28a745;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-        
-        .error-badge {
-            background: #dc3545;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
         }
         
         @media (max-width: 768px) {
@@ -291,16 +247,20 @@
             h1 {
                 font-size: 24px;
             }
+            
+            .quick-actions {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>💳 سیستم پیشرفته پرداخت پوز</h1>
+        <h1>💳 سیستم پرداخت پوز</h1>
         
         <div class="header-info">
-            <strong>🎯 سیستم کاملاً عملیاتی - پشتیبانی از تمام مبالغ</strong><br>
-            • اتصال به دستگاه پوز | • ارسال تراکنش‌های عادی و بزرگ | • تست 200 میلیارد ریال
+            <strong>🎯 سیستم ارتباط با دستگاه پوز</strong><br>
+            • بررسی اتصال به دستگاه • ارسال تراکنش • دریافت پاسخ
         </div>
         
         <div class="status-info status-unknown" id="statusInfo">
@@ -320,9 +280,6 @@
         <div class="form-group">
             <label>💰 مبلغ تراکنش (ریال):</label>
             <input type="number" id="amount" value="1000" placeholder="مبلغ را به ریال وارد کنید">
-            <div style="color: #666; font-size: 14px; margin-top: 8px;">
-                💡 می‌توانید تا 999,999,999,999 ریال (حدود 1 تریلیون) وارد کنید
-            </div>
         </div>
 
         <!-- دکمه‌های سریع برای مبالغ رایج -->
@@ -337,30 +294,11 @@
         
         <!-- گروه دکمه‌های اصلی -->
         <div class="button-group">
-            <button class="btn-test" onclick="testAPI()">
-                🔧 تست API
-            </button>
             <button class="btn-test" onclick="testConnection()">
                 🔍 بررسی اتصال
             </button>
             <button class="btn-send" onclick="sendTransaction()">
                 💸 ارسال تراکنش
-            </button>
-            <button class="btn-large" onclick="sendLargeAmount()">
-                🚀 ارسال مبلغ بزرگ
-            </button>
-        </div>
-        
-        <!-- گروه دکمه‌های ویژه -->
-        <div class="button-group">
-            <button class="btn-billion" onclick="send200Billion()">
-                💎 ارسال 200 میلیارد
-            </button>
-            <button class="btn-protocol" onclick="testProtocols()">
-                🧪 تست پروتکل‌ها
-            </button>
-            <button class="btn-protocol" onclick="testAmounts()">
-                📊 تست مبالغ مختلف
             </button>
         </div>
         
@@ -414,22 +352,6 @@
         
         // ==================== توابع اصلی ====================
         
-        async function testAPI() {
-            showLoading(true);
-            updateDebugInfo('🔧 در حال تست API...');
-            
-            try {
-                const response = await fetch(BASE_URL + 'test-api/');
-                const data = await response.json();
-                showResult(`✅ ${data.message}<br>🕒 ${data.timestamp}`, 'success');
-                updateStatus('API فعال', 'connected');
-            } catch (error) {
-                showResult(`❌ خطا در تست API: ${error.message}`, 'error');
-                updateStatus('API مشکل دارد', 'disconnected');
-            }
-            showLoading(false);
-        }
-        
         async function testConnection() {
             const ip = document.getElementById('ip').value.trim();
             const port = document.getElementById('port').value;
@@ -479,171 +401,66 @@
                 
                 if (data.status === 'success') {
                     let message = `✅ ${data.message}<br>`;
-                    message += `<strong>🎯 انتظار می‌رود:</strong> ${data.on_pos}<br>`;
-                    if (data.debug) {
-                        message += `<br><strong>🐛 اطلاعات دیباگ:</strong><br>`;
-                        message += `• پیام ارسالی: ${data.debug.message_sent}<br>`;
-                        message += `• پاسخ دستگاه: ${data.debug.response}<br>`;
-                        message += `• بایت ارسال شده: ${data.debug.bytes_sent}<br>`;
-                    }
-                    showResult(message, 'success');
-                } else {
-                    showResult(`❌ ${data.message}`, 'error');
-                }
-            } catch (error) {
-                showResult(`❌ خطا در ارسال تراکنش: ${error.message}`, 'error');
-            }
-            showLoading(false);
-        }
-        
-        async function sendLargeAmount() {
-            const ip = document.getElementById('ip').value.trim();
-            const port = document.getElementById('port').value;
-            const amount = document.getElementById('amount').value;
-            
-            showLoading(true);
-            updateDebugInfo(`🚀 در حال ارسال مبلغ بزرگ: ${amount} ریال...`);
-            
-            try {
-                const response = await fetch(BASE_URL + 'send-large-amount/', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ip: ip, port: port, amount: amount})
-                });
-                
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    let message = `✅ ${data.message}<br>`;
-                    message += `<strong>🎯 انتظار می‌رود:</strong> ${data.on_pos}<br>`;
-                    if (data.debug) {
-                        message += `<br><strong>🐛 اطلاعات دیباگ:</strong><br>`;
-                        message += `• پیام ارسالی: ${data.debug.message_sent}<br>`;
-                        message += `• پاسخ دستگاه: ${data.debug.response}<br>`;
-                    }
-                    showResult(message, 'success');
-                } else {
-                    showResult(`❌ ${data.message}`, 'error');
-                }
-            } catch (error) {
-                showResult(`❌ خطا در ارسال مبلغ بزرگ: ${error.message}`, 'error');
-            }
-            showLoading(false);
-        }
-        
-        async function send200Billion() {
-            const ip = document.getElementById('ip').value.trim();
-            const port = document.getElementById('port').value;
-            
-            showLoading(true);
-            updateDebugInfo('💎 در حال ارسال 200 میلیارد ریال...');
-            
-            try {
-                const response = await fetch(BASE_URL + 'send-200-billion/', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ip: ip, port: port})
-                });
-                
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    let message = `✅ ${data.message}<br>`;
-                    message += `<strong>💎 200 میلیارد ریال ارسال شد!</strong><br>`;
-                    message += `<strong>🎯 انتظار می‌رود:</strong> ${data.on_pos}<br>`;
-                    if (data.debug) {
-                        message += `<br><strong>🐛 اطلاعات دیباگ:</strong><br>`;
-                        message += `• پیام ارسالی: ${data.debug.message_sent}<br>`;
-                        message += `• پاسخ دستگاه: ${data.debug.response}<br>`;
-                    }
-                    showResult(message, 'success');
-                } else {
-                    showResult(`❌ ${data.message}`, 'error');
-                }
-            } catch (error) {
-                showResult(`❌ خطا در ارسال 200 میلیارد: ${error.message}`, 'error');
-            }
-            showLoading(false);
-        }
-        
-        async function testProtocols() {
-            const ip = document.getElementById('ip').value.trim();
-            const port = document.getElementById('port').value;
-            
-            showLoading(true);
-            updateDebugInfo('🧪 در حال تست پروتکل‌ها...');
-            
-            try {
-                const response = await fetch(BASE_URL + 'test-protocols/', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ip: ip, port: port})
-                });
-                
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    let message = `✅ ${data.message}<br><br>`;
-                    data.results.forEach(result => {
-                        message += `<strong>${result.protocol}:</strong> ${result.result}<br>`;
-                    });
-                    showResult(message, 'success');
-                } else {
-                    showResult(`❌ ${data.message}`, 'error');
-                }
-            } catch (error) {
-                showResult(`❌ خطا در تست پروتکل‌ها: ${error.message}`, 'error');
-            }
-            showLoading(false);
-        }
-        
-        async function testAmounts() {
-            const ip = document.getElementById('ip').value.trim();
-            const port = document.getElementById('port').value;
-            
-            showLoading(true);
-            updateDebugInfo('📊 در حال تست مبالغ مختلف...');
-            
-            try {
-                const response = await fetch(BASE_URL + 'test-amounts/', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ip: ip, port: port})
-                });
-                
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    let message = `✅ ${data.message}<br><br>`;
-                    message += `<table class="results-table">`;
-                    message += `<tr><th>مبلغ</th><th>وضعیت</th><th>بایت ارسالی</th><th>طول پاسخ</th></tr>`;
                     
-                    data.results.forEach(result => {
-                        message += `<tr>`;
-                        message += `<td>${result.amount}</td>`;
-                        message += `<td><span class="${result.status === 'success' ? 'success-badge' : 'error-badge'}">${result.status === 'success' ? '✅ موفق' : '❌ خطا'}</span></td>`;
-                        message += `<td>${result.bytes_sent}</td>`;
-                        message += `<td>${result.response_length}</td>`;
-                        message += `</tr>`;
-                    });
+                    // نمایش alert با پاسخ دستگاه
+                    if (data.alert_message) {
+                        alert(`📋 پاسخ دستگاه پوز:\n\n${data.alert_message}`);
+                    }
                     
-                    message += `</table>`;
+                    // نمایش وضعیت تراکنش در صفحه
+                    if (data.transaction_status) {
+                        const status = data.transaction_status;
+                        message += `<br><strong>📊 وضعیت تراکنش:</strong><br>`;
+                        message += `• ${status.message}<br>`;
+                        message += `• طول پیام: ${status.length} بایت<br>`;
+                        
+                        if (status.length_part) {
+                            message += `• کد وضعیت: ${status.length_part}<br>`;
+                        }
+                        
+                        // تغییر رنگ نتیجه بر اساس نوع وضعیت
+                        if (status.status_type === 'success') {
+                            document.getElementById('result').className = 'result success';
+                        } else if (status.status_type === 'error') {
+                            document.getElementById('result').className = 'result error';
+                        } else if (status.status_type === 'cancelled') {
+                            document.getElementById('result').className = 'result cancelled';
+                        }
+                    }
+                    
+                    if (data.response_data) {
+                        message += `<br><strong>📥 اطلاعات پاسخ:</strong><br>`;
+                        message += `• طول پاسخ: ${data.response_data.response_length} بایت<br>`;
+                        
+                        if (data.response_data.raw_response) {
+                            message += `• پاسخ متنی: ${data.response_data.raw_response.substring(0, 100)}${data.response_data.raw_response.length > 100 ? '...' : ''}<br>`;
+                        }
+                    }
+                    
                     showResult(message, 'success');
+                    updateStatus('تراکنش ارسال شد', 'connected');
+                    
                 } else {
                     showResult(`❌ ${data.message}`, 'error');
+                    if (data.alert_message) {
+                        alert(`❌ خطا:\n\n${data.alert_message}`);
+                    }
                 }
             } catch (error) {
-                showResult(`❌ خطا در تست مبالغ: ${error.message}`, 'error');
+                const errorMsg = `❌ خطا در ارسال تراکنش: ${error.message}`;
+                showResult(errorMsg, 'error');
+                alert(errorMsg);
+                updateStatus('خطا در تراکنش', 'disconnected');
             }
             showLoading(false);
         }
         
         // راهنمای اولیه
         window.addEventListener('load', function() {
-            updateDebugInfo('🚀 سیستم پیشرفته پرداخت پوز راه‌اندازی شد');
-            updateDebugInfo('💡 برای شروع، "بررسی اتصال" را بزنید');
+            updateDebugInfo('🚀 سیستم پرداخت پوز راه‌اندازی شد');
+            updateDebugInfo('🔍 برای شروع، "بررسی اتصال" را بزنید');
+            updateDebugInfo('💸 سپس "ارسال تراکنش" را برای تست استفاده کنید');
             updateDebugInfo('💰 از دکمه‌های سریع برای مبالغ رایج استفاده کنید');
-            updateDebugInfo('💎 برای تست 200 میلیارد ریال از دکمه مخصوص استفاده کنید');
             updateStatus('سیستم آماده است', 'unknown');
         });
     </script>
