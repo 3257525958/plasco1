@@ -7,13 +7,14 @@ from django.utils import timezone
 from decimal import Decimal
 from account_app.models import Branch, PaymentMethod, InventoryCount, ProductPricing
 
-
 class POSDevice(models.Model):
     name = models.CharField(max_length=100, verbose_name="نام دستگاه")
     account_holder = models.CharField(max_length=100, verbose_name="نام صاحب حساب")
     card_number = models.CharField(max_length=16, verbose_name="شماره کارت")
     account_number = models.CharField(max_length=20, verbose_name="شماره حساب")
     bank_name = models.CharField(max_length=100, verbose_name="نام بانک")
+    ip_address = models.GenericIPAddressField(verbose_name="آدرس IP", default='192.168.1.157')  # فیلد جدید
+    port = models.IntegerField(verbose_name="پورت", default=1362)  # فیلد جدید
     is_default = models.BooleanField(default=False, verbose_name="پیش فرض")
     is_active = models.BooleanField(default=True, verbose_name="فعال")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -23,7 +24,7 @@ class POSDevice(models.Model):
         verbose_name_plural = "دستگاه‌های پوز"
 
     def __str__(self):
-        return f"{self.name} - {self.bank_name}"
+        return f"{self.name} - {self.bank_name} - {self.ip_address}:{self.port}"
 
     def save(self, *args, **kwargs):
         if self.is_default:
@@ -31,11 +32,6 @@ class POSDevice(models.Model):
         elif not POSDevice.objects.filter(is_default=True).exists():
             self.is_default = True
         super().save(*args, **kwargs)
-
-
-
-
-
 class Invoicefrosh(models.Model):
     PAYMENT_METHODS = [
         ('cash', 'نقدی'),
@@ -146,3 +142,12 @@ class CreditPayment(models.Model):
                                    verbose_name="دستگاه پوز برای باقیمانده")
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+# invoice_app/models.py (بخش اصلاح شده)
+
+from django.db import models
+from django.contrib.auth.models import User
+from jdatetime import datetime as jdatetime
+from django.utils import timezone
+

@@ -68,6 +68,12 @@ class Branch(models.Model):
     name = models.CharField(max_length=100, verbose_name="نام شعبه")
     address = models.TextField(verbose_name="آدرس شعبه")
     sellers = models.ManyToManyField('accuntmodel', blank=True, verbose_name="فروشندگان")
+    modem_ip = models.GenericIPAddressField(
+        verbose_name="IP مودم",
+        blank=True,
+        null=True,
+        help_text="آدرس IP مودم شعبه"
+    )
 
     class Meta:
         verbose_name = "شعبه"
@@ -75,7 +81,6 @@ class Branch(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class BranchAdmin(models.Model):
     branch = models.OneToOneField(Branch, on_delete=models.CASCADE, verbose_name="شعبه")

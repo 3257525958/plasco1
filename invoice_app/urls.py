@@ -1,4 +1,4 @@
-
+# invoice_app/urls.py
 
 from django.urls import path
 from . import views
@@ -20,6 +20,7 @@ urlpatterns = [
     path('save-credit-payment/', views.save_credit_payment, name='save_credit_payment'),
     path('save-discount/', views.save_discount, name='save_discount'),
     path('finalize/', views.finalize_invoice, name='finalize_invoice'),
+    path('process-pos-payment/', views.process_pos_payment, name='process_pos_payment'),  # جدید
     path('success/<int:invoice_id>/', views.invoice_success, name='invoice_success'),
     path('print/<int:invoice_id>/', views.invoice_print, name='invoice_print'),
     path('cancel/', views.cancel_invoice, name='invoice_cancel'),

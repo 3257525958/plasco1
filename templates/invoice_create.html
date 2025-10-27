@@ -1140,6 +1140,9 @@
     </div>
 </div>
 <!-- مودال وضعیت پرداخت -->
+<!-- این کد را به انتهای فایل invoice_create.html قبل از اسکریپت‌ها اضافه کنید -->
+
+<!-- مودال وضعیت پرداخت -->
 <div class="modal fade" id="paymentProcessingModal" tabindex="-1" aria-labelledby="paymentProcessingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -1251,7 +1254,6 @@
         </div>
     </div>
 </div>
-
 
 {% load static %}
 <!DOCTYPE html>
@@ -2789,6 +2791,299 @@ $(document).ready(function() {
             finalizeInvoice('print_and_save');
         }
     });
+});
+// این کد را به فایل template invoice_create.html اضافه کنید
+
+// =============================================
+// توابع مدیریت پرداخت POS
+// =============================================
+
+function processPosPayment(amount, posDeviceId) {
+    console.log('💰 شروع فرآیند پرداخت POS:', { amount, posDeviceId });
+    
+    showPaymentModal();
+    
+    // ارسال درخواست پرداخت به سرور
+    $.ajax({
+        url: "{% url 'invoice_app:process_pos_payment' %}",
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            amount: amount,
+            pos_device_id: posDeviceId
+        }),
+        headers: {'X-CSRFToken': getCookie('csrftoken')},
+        success: function(data) {
+            if (data.status === 'success') {
+                console.log('✅ پرداخت POS موفق:', data);
+                completePaymentSuccess(amount, data);
+            } else {
+                console.error('❌ خطا در پرداخت POS:', data);
+                completePaymentFailure(data.message || 'خطا در ارتباط با دستگاه پوز');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('❌ خطا در ارسال درخواست پرداخت:', error);
+            completePaymentFailure('خطا در ارتباط با سرور');
+        }
+    });
+}
+
+function showPaymentModal() {
+    // مخفی کردن تمام مراحل
+    $('.payment-step').removeClass('active');
+    
+    // نمایش مرحله پردازش
+    $('#payment-processing').addClass('active');
+    
+    // تنظیم دکمه‌ها
+    $('#success-buttons').addClass('d-none');
+    $('#failed-buttons').addClass('d-none');
+    $('#processing-buttons').removeClass('d-none');
+    
+    // مخفی کردن جزئیات تراکنش
+    $('#transaction-details').hide();
+    
+    // نمایش مودال
+    const modal = new bootstrap.Modal(document.getElementById('paymentProcessingModal'));
+    modal.show();
+}
+
+function completePaymentSuccess(amount, responseData) {
+    console.log('✅ پرداخت موفق');
+    
+    // نمایش مرحله موفقیت
+    $('.payment-step').removeClass('active');
+    $('#payment-success').addClass('active');
+    
+    // تنظیم دکمه‌ها
+    $('#processing-buttons').addClass('d-none');
+    $('#success-buttons').removeClass('d-none');
+    
+    // نمایش جزئیات
+    $('#transaction-amount').text(amount.toLocaleString('fa-IR') + ' تومان');
+    $('#transaction-time').text(new Date().toLocaleTimeString('fa-IR'));
+    $('#transaction-details').show();
+    
+    // ثبت نهایی فاکتور
+    registerFinalInvoice(amount, 'pos');
+}
+
+function completePaymentFailure(errorMessage) {
+    console.log('❌ پرداخت ناموفق:', errorMessage);
+    
+    // نمایش مرحله خطا
+    $('.payment-step').removeClass('active');
+    $('#payment-failed').addClass('active');
+    
+    // تنظیم پیام خطا
+    $('#error-message').text(errorMessage);
+    
+    // تنظیم دکمه‌ها
+    $('#processing-buttons').addClass('d-none');
+    $('#failed-buttons').removeClass('d-none');
+}
+
+function registerFinalInvoice(amount, paymentMethod) {
+    console.log('📝 در حال ثبت نهایی فاکتور...');
+    
+    // استفاده از تابع finalizeInvoice موجود
+    $.ajax({
+        url: "{% url 'invoice_app:finalize_invoice' %}",
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            action: 'save_only',
+            payment_method: paymentMethod,
+            paid_amount: amount,
+            timestamp: new Date().getTime()
+        }),
+        headers: {'X-CSRFToken': getCookie('csrftoken')},
+        success: function(data) {
+            if (data.status === 'success') {
+                console.log('✅ فاکتور ثبت شد:', data.invoice_id);
+                paymentInvoiceId = data.invoice_id;
+                $('#success-invoice-number').text(data.invoice_number || data.invoice_id);
+                
+                // نمایش شماره مرجع
+                $('#transaction-reference').text(generateReferenceNumber());
+                $('#transaction-response').text('00 - موفق');
+                
+            } else {
+                console.error('❌ خطا در ثبت فاکتور:', data.message);
+                completePaymentFailure('خطا در ثبت فاکتور: ' + data.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ خطا در ارتباط با سرور:', xhr);
+            completePaymentFailure('خطا در ارتباط با سرور');
+        }
+    });
+}
+
+function generateReferenceNumber() {
+    return 'REF' + Date.now().toString().slice(-10);
+}
+
+// =============================================
+// توابع مدیریت دکمه‌های مودال پرداخت
+// =============================================
+
+function printInvoice() {
+    if (paymentInvoiceId) {
+        const printUrl = "{% url 'invoice_app:invoice_print' 0 %}".replace('0', paymentInvoiceId);
+        window.open(printUrl, '_blank');
+        
+        // بستن مودال
+        bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
+    }
+}
+
+function createNewInvoice() {
+    // بستن مودال
+    bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
+    
+    // ریدایرکت به صفحه ایجاد فاکتور جدید
+    setTimeout(() => {
+        window.location.href = "{% url 'invoice_app:create_invoice' %}";
+    }, 500);
+}
+
+function retryPayment() {
+    // بستن مودال فعلی
+    bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
+    
+    // تلاش مجدد پرداخت
+    setTimeout(() => {
+        const amount = calculateInvoiceTotal().totalAmount;
+        const posDeviceId = $('#pos-device').val();
+        processPosPayment(amount, posDeviceId);
+    }, 300);
+}
+
+function cancelPayment() {
+    console.log('❌ پرداخت توسط کاربر لغو شد');
+    
+    // بستن مودال
+    bootstrap.Modal.getInstance(document.getElementById('paymentProcessingModal')).hide();
+    
+    showToast('پرداخت لغو شد', 'warning');
+}
+
+// =============================================
+// یکپارچه‌سازی با سیستم موجود
+// =============================================
+
+// تابع اصلی finalizeInvoice که برای همه روش‌های پرداخت استفاده می‌شود
+function finalizeInvoice(action) {
+    console.log('🔄 شروع فرآیند ثبت فاکتور...');
+    
+    // اعتبارسنجی اولیه
+    if (!validateInvoiceBeforeSubmit()) {
+        return;
+    }
+    
+    const paymentMethod = currentPaymentMethod;
+    const amount = calculateInvoiceTotal().totalAmount;
+    
+    console.log('💳 روش پرداخت:', paymentMethod, 'مبلغ:', amount);
+    
+    // برای پرداخت POS از فرآیند جدید استفاده کن
+    if (paymentMethod === 'pos') {
+        const posDeviceId = $('#pos-device').val();
+        if (!posDeviceId) {
+            showToast('لطفا یک دستگاه پوز انتخاب کنید', 'error');
+            return;
+        }
+        
+        processPosPayment(amount, posDeviceId);
+    } 
+    // برای سایر روش‌های پرداخت از تابع قدیمی استفاده کن
+    else if (paymentMethod === 'check') {
+        // نمایش مودال چک
+        $('#checkPaymentModal').modal('show');
+    } 
+    else if (paymentMethod === 'credit') {
+        // نمایش مودال نسیه
+        $('#creditPaymentModal').modal('show');
+    }
+    else {
+        // برای نقدی و سایر روش‌ها
+        submitFinalInvoice(action, paymentMethod, amount);
+    }
+}
+
+// تابع ارسال نهایی فاکتور برای روش‌های غیر POS
+function submitFinalInvoice(action, paymentMethod, amount) {
+    $.ajax({
+        url: "{% url 'invoice_app:finalize_invoice' %}",
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            action: action,
+            payment_method: paymentMethod,
+            paid_amount: amount,
+            timestamp: new Date().getTime()
+        }),
+        headers: {'X-CSRFToken': getCookie('csrftoken')},
+        success: function(data) {
+            if (data.status === 'success') {
+                showToast('فاکتور با موفقیت ثبت شد', 'success');
+                
+                if (action === 'print_and_save') {
+                    const printUrl = "{% url 'invoice_app:invoice_print' 0 %}".replace('0', data.invoice_id);
+                    window.open(printUrl, '_blank');
+                    
+                    setTimeout(() => {
+                        const successUrl = "{% url 'invoice_app:invoice_success' 0 %}".replace('0', data.invoice_id);
+                        window.location.href = successUrl;
+                    }, 2000);
+                } else {
+                    const successUrl = "{% url 'invoice_app:invoice_success' 0 %}".replace('0', data.invoice_id);
+                    window.location.href = successUrl;
+                }
+            } else {
+                showToast('خطا در ثبت فاکتور: ' + data.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            let errorMessage = 'خطا در ارتباط با سرور';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage += ': ' + xhr.responseJSON.message;
+            }
+            showToast(errorMessage, 'error');
+        }
+    });
+}
+
+// جایگزینی فراخوانی اصلی در دکمه‌ها
+$(document).ready(function() {
+    // تغییر دکمه ثبت فاکتور
+    $('#save-invoice-btn').off('click').on('click', function(e) {
+        e.preventDefault();
+        console.log('💳 دکمه ثبت فاکتور کلیک شد');
+        finalizeInvoice('save_only');
+    });
+    
+    // تغییر دکمه ثبت و چاپ فاکتور
+    $('#print-invoice-btn').off('click').on('click', function(e) {
+        e.preventDefault();
+        console.log('💳 دکمه ثبت و چاپ فاکتور کلیک شد');
+        finalizeInvoice('print_and_save');
+    });
+    
+    // برای چک و نسیه، پس از ذخیره اطلاعات، فاکتور را ثبت کن
+    window.saveCheckPayment = function() {
+        // ذخیره اطلاعات چک و سپس ثبت فاکتور
+        const amount = calculateInvoiceTotal().totalAmount;
+        submitFinalInvoice('save_only', 'check', amount);
+    };
+    
+    window.saveCreditPayment = function() {
+        // ذخیره اطلاعات نسیه و سپس ثبت فاکتور
+        const amount = calculateInvoiceTotal().totalAmount;
+        submitFinalInvoice('save_only', 'credit', amount);
+    };
 });
 </script>
 </body>
