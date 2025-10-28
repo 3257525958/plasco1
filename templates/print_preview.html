@@ -28,6 +28,7 @@
         body {
             background: white;
             padding: 0;
+            margin: 0;
             direction: rtl;
             font-family: var(--font-family);
         }
@@ -35,165 +36,85 @@
         .page-container {
             width: 210mm;
             margin: 0 auto;
-            {#padding: 5mm;#}
+            padding: 5mm;
         }
 
-        .labels-container {
+        .labels-grid {
             display: flex;
             flex-direction: column;
-            gap: 0;
+            gap: 2mm;
         }
 
         .label-row {
-            {#border: 1px solid #e0e0e0;#}
             page-break-inside: avoid;
-            margin-bottom: 0;
-        }
-
-        .top-marker {
             width: 100%;
-            height: 5mm; /* فاصله بین لیبلها*/
-            background-color: white;
-            margin: 0;
-        }
-
-        .product-name-row {
             display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 1mm;
+        }
+
+        .row-separator {
             width: 100%;
-            {#border-bottom: 1px dashed #ccc;#}
-            {% if not settings.show_product_name %}display: none;{% endif %}
-        }
-
-        .product-name-pair {
-            display: flex;
-            width: 100%;
-        }
-
-        .product-name-item {
-            flex: 1;
-            {#padding: 1mm 3mm;#}
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            {#border: 1px solid #ffcccb;#}
-        }
-
-        .product-name-item:first-child {
-            {#border-left: 2px solid #ff6b6b;#}
-            align-items: flex-start;
-            padding-left: 0;
-            justify-content: flex-start;
-        }
-
-        .product-name-item:last-child {
-            {#border-right: 2px solid #ff6b6b;#}
-            align-items: flex-end;
-            padding-right: 0;
-            justify-content: flex-end;
-        }
-
-        .product-name {
-            font-size: calc(var(--font-size) * 1.2);
-            font-weight: bold;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: 1.2;
-        }
-
-        .product-name-item:first-child .product-name {
-            text-align: left;
-            width: 100%;
-            padding-left: 11mm; /* فاصله اسم کالا از وسط*/
-        }
-
-        .product-name-item:last-child .product-name {
-            text-align: right;
-            width: 100%;
-            padding-right: 11mm; /* فاصله اسم کالا از وسط*/
-        }
-
-        .barcode-row {
-            display: flex;
-            width: 100%;
-        }
-
-        .barcode-pair {
-            display: flex;
-            width: 100%;
+            height: 10mm;
+            background-color: #ff0000;
+            border: 1px solid #ff0000;
+            margin: 1mm 0;
         }
 
         .barcode-item {
             flex: 1;
-            padding: 0; /* حذف padding */
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            {#border: 1px solid #b3d4fc;#}
-            justify-content: flex-start; /* چسباندن به بالا */
+            border: 1px solid #000;
+            padding: 1mm;
+            text-align: center;
+            min-height: 25mm;
+            max-width: calc(100% / 7 - 1mm);
+            page-break-inside: avoid;
+            transform: rotate(90deg);
+            transform-origin: center;
         }
 
-        .barcode-item:first-child {
-            {#border-left: 2px solid #4CAF50;#}
-            align-items: flex-end;
-            padding-left: 0;
-            justify-content: flex-start; /* تغییر به flex-start */
-        }
-
-        .barcode-item:last-child {
-            {#border-right: 2px solid #4CAF50;#}
-            align-items: flex-start;
-            padding-right: 0;
-            justify-content: flex-start; /* تغییر به flex-start */
+        .product-name {
+            font-size: calc(var(--font-size) * 0.7);
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.1;
+            margin-bottom: 1mm;
+            width: 100%;
+            {% if not settings.show_product_name %}display: none;{% endif %}
         }
 
         .barcode-image-container {
             display: flex;
-            height: var(--barcode-height);
-            margin: 0; /* حذف margin */
+            height: calc(var(--barcode-height) * 0.6);
+            margin: 0.5mm 0;
             width: 100%;
             justify-content: center;
-            align-items: flex-start; /* چسباندن به بالا */
-        }
-
-        .barcode-item:first-child .barcode-image-container {
-            justify-content: flex-end;
-            width: 100%;
-        }
-
-        .barcode-item:last-child .barcode-image-container {
-            justify-content: flex-start;
-            width: 100%;
+            align-items: center;
+            flex: 1;
         }
 
         .barcode-image {
-            max-width: var(--barcode-scale);
+            max-width: 100%;
             max-height: 100%;
             display: block;
-            width: auto;
-            height: auto;
-            margin: 0; /* حذف margin */
+            transform: scale(1.2);
+            transform-origin: center;
         }
 
         .price {
-            font-size: var(--font-size);
+            font-size: calc(var(--font-size) * 0.8);
             font-weight: bold;
             {% if not settings.show_price %}display: none;{% endif %}
             white-space: nowrap;
-            line-height: 1.2;
-            margin-top: 1mm; /* فقط margin-top برای فاصله از بارکد */
-        }
-
-        .barcode-item:first-child .price {
-            text-align: right;
+            margin-top: 0.5mm;
             width: 100%;
-            padding-right: 1mm;
-        }
-
-        .barcode-item:last-child .price {
-            text-align: left;
-            width: 100%;
-            padding-left: 1mm;
         }
 
         .print-actions {
@@ -228,81 +149,184 @@
                 padding: 0;
                 margin: 0;
             }
-            
+
             .page-container {
-                padding: 2mm;
+                padding: 3mm;
+                width: 210mm;
             }
-            
+
             .print-actions {
                 display: none;
             }
-            
+
+            .labels-grid {
+                gap: 1mm;
+            }
+
             .label-row {
                 page-break-inside: avoid;
                 break-inside: avoid;
-                margin-bottom: 0;
+                gap: 0.5mm;
             }
-            
+
+            .row-separator {
+                height: 10mm;
+                background-color: #ff0000;
+                border: 1px solid #ff0000;
+                margin: 0.5mm 0;
+            }
+
+            .barcode-item {
+                border: 1px solid #000;
+                padding: 0.5mm;
+                min-height: 22mm;
+                max-width: calc(100% / 7 - 0.5mm);
+                transform: rotate(90deg);
+                transform-origin: center;
+            }
+
+            .product-name {
+                font-size: calc(var(--font-size) * 0.6);
+                margin-bottom: 0.5mm;
+            }
+
+            .barcode-image-container {
+                height: calc(var(--barcode-height) * 0.48);
+                margin: 0.3mm 0;
+            }
+
+            .barcode-image {
+                max-width: 100%;
+                max-height: 100%;
+                transform: scale(1.2);
+                transform-origin: center;
+            }
+
+            .price {
+                font-size: calc(var(--font-size) * 0.7);
+                margin-top: 0.3mm;
+            }
+
             @page {
                 size: A4;
-                margin: 0;
+                margin: 3mm;
             }
         }
     </style>
 </head>
 <body>
     <div class="page-container">
-        <div class="labels-container">
-            {% for label in labels %}
-            <div class="label-row">
-                <!-- خط اول: مارکر قرمز که کل عرض خط را می‌پوشاند -->
-                <div class="top-marker"></div>
-                
-                <!-- خط دوم: دو نام کالا کنار هم -->
-                <div class="product-name-row">
-                    <div class="product-name-pair">
-                        {% for item in label %}
-                        <div class="product-name-item">
-                            <div class="product-name">{{ item.product_name }}</div>
-                        </div>
-                        {% endfor %}
+        <div class="labels-grid" id="labels-container">
+            {% for row in labels %}
+                {% for item in row %}
+                <div class="barcode-item" data-product="{{ item.product_name }}">
+                    <div class="product-name">{{ item.product_name }}</div>
+
+                    <div class="barcode-image-container">
+                        {% if item.barcode_base64 %}
+                            <img src="{{ item.barcode_base64 }}" alt="بارکد" class="barcode-image">
+                        {% else %}
+                            <div style="font-size: 8px;">بارکد تولید نشد</div>
+                        {% endif %}
                     </div>
+
+                    {% if settings.show_price %}
+                    <div class="price">{{ item.selling_price|floatformat:"0" }} تومان</div>
+                    {% endif %}
                 </div>
-                
-                <!-- خط سوم: دو بارکد کنار هم -->
-                <div class="barcode-row">
-                    <div class="barcode-pair">
-                        {% for item in label %}
-                        <div class="barcode-item">
-                            <div class="barcode-image-container">
-                                {% if item.barcode_base64 %}
-                                    <img src="{{ item.barcode_base64 }}" alt="بارکد" class="barcode-image">
-                                {% else %}
-                                    <div class="error">بارکد تولید نشد</div>
-                                {% endif %}
-                            </div>
-                            
-                            {% if settings.show_price %}
-                            <div class="price">{{ item.selling_price|floatformat:"0" }} تومان</div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- محدود کردن به ۵ ردیف در هر صفحه -->
-            {% if forloop.counter|divisibleby:5 and not forloop.last %}
-            <div style="page-break-after: always;"></div>
-            {% endif %}
+                {% endfor %}
             {% endfor %}
         </div>
     </div>
-    
+
     <div class="print-actions">
-        <button class="btn-print" onclick="window.print()">
+        <button class="btn-print" onclick="prepareAndPrint()">
             <i class="fas fa-print"></i> چاپ لیبل‌ها
         </button>
     </div>
+
+    <script>
+        function rearrangeLabels() {
+            const container = document.getElementById('labels-container');
+            const allItems = Array.from(container.querySelectorAll('.barcode-item'));
+
+            if (allItems.length === 0) {
+                return;
+            }
+
+            // پاک کردن کانتینر
+            container.innerHTML = '';
+
+            const itemsPerRow = 7;
+            let currentRow;
+
+            // مرتب‌سازی به صورت سطری (ردیف به ردیف)
+            allItems.forEach((item, index) => {
+                // اگر اولین آیتم ردیف جدید هست
+                if (index % itemsPerRow === 0) {
+                    // اگر ردیف قبلی وجود دارد، خط قرمز اضافه کن
+                    if (index > 0) {
+                        const separator = document.createElement('div');
+                        separator.className = 'row-separator';
+                        container.appendChild(separator);
+                    }
+                    
+                    currentRow = document.createElement('div');
+                    currentRow.className = 'label-row';
+                    container.appendChild(currentRow);
+                }
+
+                // اضافه کردن آیتم به ردیف فعلی
+                currentRow.appendChild(item);
+            });
+
+            // تکمیل آخرین ردیف با آیتم‌های خالی اگر نیاز باشد
+            const lastRow = container.lastElementChild;
+            if (lastRow && lastRow.children.length < itemsPerRow) {
+                const remaining = itemsPerRow - lastRow.children.length;
+                for (let i = 0; i < remaining; i++) {
+                    const emptyItem = document.createElement('div');
+                    emptyItem.className = 'barcode-item';
+                    emptyItem.style.border = '1px dashed #ccc';
+                    emptyItem.style.background = '#f9f9f9';
+                    emptyItem.innerHTML = `
+                        <div class="product-name">---</div>
+                        <div class="barcode-image-container">
+                            <div style="font-size: 8px;">---</div>
+                        </div>
+                        {% if settings.show_price %}
+                        <div class="price">---</div>
+                        {% endif %}
+                    `;
+                    lastRow.appendChild(emptyItem);
+                }
+            }
+
+            // اضافه کردن صفحه‌بندی
+            const allRows = container.querySelectorAll('.label-row');
+            allRows.forEach((row, index) => {
+                if ((index + 1) % 8 === 0 && index !== allRows.length - 1) {
+                    const pageBreak = document.createElement('div');
+                    pageBreak.style.pageBreakAfter = 'always';
+                    container.appendChild(pageBreak);
+                }
+            });
+        }
+
+        function prepareAndPrint() {
+            // مرتب‌سازی لیبل‌ها
+            rearrangeLabels();
+            
+            // سپس چاپ کن
+            setTimeout(() => {
+                window.print();
+            }, 100);
+        }
+
+        // فقط وقتی صفحه لود شد، مرتب‌سازی کن اما چاپ نکن
+        document.addEventListener('DOMContentLoaded', function() {
+            rearrangeLabels();
+        });
+    </script>
 </body>
 </html>
