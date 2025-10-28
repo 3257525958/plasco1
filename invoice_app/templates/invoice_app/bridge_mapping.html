@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>تنظیمات مپینگ پوز بریج</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: right; }
+        th { background-color: #f2f2f2; }
+        input[type="text"] { width: 150px; padding: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .btn { padding: 8px 15px; margin: 5px; border: none; cursor: pointer; }
+        .btn-test { background-color: #4CAF50; color: white; }
+        .btn-save { background-color: #2196F3; color: white; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <h2>🗺️ مدیریت مپینگ شعبه به سرویس واسط</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        <table>
+            <thead>
+                <tr>
+                    <th>شناسه شعبه</th>
+                    <th>نام شعبه</th>
+                    <th>IP مودم شعبه</th>
+                    <th>IP سرویس واسط</th>
+                    <th>تست ارتباط</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in current_mapping %}
+                <tr>
+                    <td>{{ item.branch.id }}</td>
+                    <td>{{ item.branch.name }}</td>
+                    <td>{{ item.branch.modem_ip|default:"تعیین نشده" }}</td>
+                    <td>
+                        <input type="text"
+                               name="branch_{{ item.branch.id }}"
+                               value="{{ item.bridge_ip }}"
+                               placeholder="192.168.1.100">
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-test" onclick="testConnection({{ item.branch.id }})">
+                            تست ارتباط
+                        </button>
+                        <br>
+                        <span id="status_{{ item.branch.id }}"></span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-save">💾 ذخیره تنظیمات</button>
+    </form>
+
+    <div style="margin-top: 30px; padding: 15px; background-color: #f9f9f9;">
+        <h3>📋 راهنمای تنظیمات:</h3>
+        <ol>
+            <li>IP سرویس واسط: آدرس کامپیوتری که سرویس پوز بریج روی آن اجرا شده است</li>
+            <li>IP مودم شعبه: آدرس دستگاه پوز همان شعبه (از قبل در تنظیمات شعبه وارد شده)</li>
+            <li>ابتدا "تست ارتباط" را بزنید، سپس تنظیمات را ذخیره کنید</li>
+        </ol>
+    </div>
+
+    <script>
+    function testConnection(branchId) {
+        const statusSpan = document.getElementById(`status_${branchId}`);
+        statusSpan.innerHTML = '⏳ در حال تست ارتباط...';
+        statusSpan.className = '';
+
+        fetch('/invoice/quick-pos-test-api/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({branch_id: branchId})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === 'success') {
+                statusSpan.innerHTML = '✅ سرویس فعال - ' + data.bridge_ip;
+                statusSpan.className = 'success';
+            } else {
+                statusSpan.innerHTML = '❌ ' + data.message;
+                statusSpan.className = 'error';
+            }
+        })
+        .catch(error => {
+            statusSpan.innerHTML = '❌ خطا در تست ارتباط';
+            statusSpan.className = 'error';
+        });
+    }
+    </script>
+</body>
+</html>

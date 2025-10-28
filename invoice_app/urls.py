@@ -1,11 +1,10 @@
-
-
 from django.urls import path
 from . import views
 
 app_name = 'invoice_app'
 
 urlpatterns = [
+    # 🔴 همه URLها را بدون فاصله اصلاح کنید
     path('create/', views.create_invoice, name='create_invoice'),
     path('manage-pos-devices/', views.manage_pos_devices, name='manage_pos_devices'),
     path('search-product/', views.search_product, name='invoice_search_product'),
@@ -27,5 +26,9 @@ urlpatterns = [
     path('get-summary/', views.get_invoice_summary, name='get_invoice_summary'),
     path('confirm-check-payment/', views.confirm_check_payment, name='confirm_check_payment'),
     path('quick-pos-test/', views.quick_pos_test, name='quick_pos_test'),
-]
 
+    # 🔴 URLهای جدید اضافه کنید
+    path('bridge-mapping/', views.bridge_mapping_view, name='bridge_mapping'),
+    path('test-bridge-connection/', views.test_bridge_connection, name='test_bridge_connection'),
+path('quick-pos-test-api/', views.quick_pos_test_api, name='quick_pos_test_api'),
+]

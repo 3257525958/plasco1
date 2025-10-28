@@ -1,3 +1,22 @@
+import socket
+import json
+import re
+import time
+
+from django.contrib.sites import requests
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.db import models
+from django.utils import timezone
+from decimal import Decimal
+import jdatetime
+from datetime import datetime
+
+from account_app.models import InventoryCount, Branch, ProductPricing
+from .models import Invoicefrosh, InvoiceItemfrosh, POSDevice, CheckPayment, CreditPayment
+from .forms import BranchSelectionForm, POSDeviceForm, CheckPaymentForm, CreditPaymentForm
 
 
 import jdatetime
@@ -15,6 +34,68 @@ from account_app.models import InventoryCount, Branch, ProductPricing
 from .models import Invoicefrosh, InvoiceItemfrosh, POSDevice, CheckPayment, CreditPayment
 from .forms import BranchSelectionForm, POSDeviceForm, CheckPaymentForm, CreditPaymentForm
 
+import jdatetime
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.db import models
+from django.utils import timezone
+from decimal import Decimal
+import json
+from datetime import datetime
+
+from account_app.models import InventoryCount, Branch, ProductPricing
+from .models import Invoicefrosh, InvoiceItemfrosh, POSDevice, CheckPayment, CreditPayment
+from .forms import BranchSelectionForm, POSDeviceForm, CheckPaymentForm, CreditPaymentForm
+
+# مپینگ شعبه به سرویس واسط
+BRIDGE_SERVICE_MAPPING = {
+    # branch_id: "bridge_service_ip"
+    # مثال - اینها را با IPهای واقعی پر کنید:
+    1: "192.168.1.172",  # شعبه مرکزی
+    2: "192.168.1.101",  # شعبه 1
+    3: "192.168.1.102",  # شعبه 2
+}
+
+
+def get_bridge_service_url(branch_id):
+    """دریافت آدرس سرویس واسط بر اساس شعبه"""
+    bridge_ip = BRIDGE_SERVICE_MAPPING.get(branch_id)
+    if not bridge_ip:
+        bridge_ip = list(BRIDGE_SERVICE_MAPPING.values())[0] if BRIDGE_SERVICE_MAPPING else '192.168.1.100'
+        print(f"⚠️ شعبه {branch_id} در مپینگ نبود، از {bridge_ip} استفاده شد")
+
+    return f"http://{bridge_ip}:5000/pos/payment"
+
+
+def send_via_bridge_service(branch_id, pos_ip, amount):
+    """ارسال از طریق سرویس واسط"""
+    try:
+        bridge_service_url = get_bridge_service_url(branch_id)
+
+        payload = {
+            'ip': pos_ip,
+            'port': 1362,
+            'amount': amount
+        }
+
+        print(f"🌐 ارسال به سرویس واسط شعبه {branch_id}")
+        print(f"📍 آدرس: {bridge_service_url}")
+
+        response = requests.post(bridge_service_url, json=payload, timeout=30)
+        result = response.json()
+
+        print(f"✅ پاسخ: {result.get('status')}")
+        return result
+
+    except requests.exceptions.ConnectionError:
+        bridge_ip = BRIDGE_SERVICE_MAPPING.get(branch_id, 'نامشخص')
+        error_msg = f"❌ امکان اتصال به سرویس واسط شعبه {branch_id} (IP: {bridge_ip}) وجود ندارد"
+        return {'status': 'error', 'message': error_msg}
+    except Exception as e:
+        error_msg = f"❌ خطا در ارتباط با سرویس واسط: {str(e)}"
+        return {'status': 'error', 'message': error_msg}
 @login_required
 @csrf_exempt
 def add_item_to_invoice(request):
@@ -718,40 +799,8 @@ def save_credit_payment(request):
     return JsonResponse({'status': 'error'})
 
 
-import jdatetime
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt
-from django.db import models
-from django.utils import timezone
-from decimal import Decimal
-import json
-from datetime import datetime
-
-from account_app.models import InventoryCount, Branch, ProductPricing
-from .models import Invoicefrosh, InvoiceItemfrosh, POSDevice, CheckPayment, CreditPayment
-from .forms import BranchSelectionForm, POSDeviceForm, CheckPaymentForm, CreditPaymentForm
-
 # invoice_app/views.py (بخش اصلاح شده)
 
-import socket
-import json
-import re
-import time
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt
-from django.db import models
-from django.utils import timezone
-from decimal import Decimal
-import jdatetime
-from datetime import datetime
-
-from account_app.models import InventoryCount, Branch, ProductPricing
-from .models import Invoicefrosh, InvoiceItemfrosh, POSDevice, CheckPayment, CreditPayment
-from .forms import BranchSelectionForm, POSDeviceForm, CheckPaymentForm, CreditPaymentForm
 
 
 # ==================== توابع ارتباط با پوز ====================
@@ -802,15 +851,13 @@ def build_sale_request(amount):
 @login_required
 @csrf_exempt
 def finalize_invoice(request):
-    """ویوی نهایی کردن فاکتور - نسخه ساده شده"""
+    """ویوی نهایی کردن فاکتور"""
     if request.method == 'POST':
         try:
-            # دریافت داده‌های اصلی
             branch_id = request.session.get('branch_id')
             items = request.session.get('invoice_items', [])
             payment_method = request.session.get('payment_method', 'pos')
 
-            # بررسی‌های اولیه
             if not branch_id:
                 return JsonResponse({'status': 'error', 'message': 'شعبه انتخاب نشده'})
 
@@ -822,7 +869,7 @@ def finalize_invoice(request):
             total_amount -= request.session.get('discount', 0)
             total_amount = max(0, total_amount)
 
-            print(f"💰 مبلغ فاکتور: {total_amount} تومان")
+            print(f"💰 مبلغ فاکتور: {total_amount} تومان - شعبه: {branch_id}")
 
             # اگر پرداخت POS است
             if payment_method == 'pos':
@@ -830,36 +877,31 @@ def finalize_invoice(request):
                 if not pos_device_id:
                     return JsonResponse({'status': 'error', 'message': 'دستگاه پوز انتخاب نشده'})
 
-                # دریافت اطلاعات دستگاه و شعبه
                 branch = get_object_or_404(Branch, id=branch_id)
                 pos_device = get_object_or_404(POSDevice, id=pos_device_id, is_active=True)
 
-                # 🔴 استفاده از IP مودم شعبه
                 branch_modem_ip = branch.modem_ip
                 if not branch_modem_ip:
                     return JsonResponse({
                         'status': 'error',
-                        'message': 'IP مودم شعبه تنظیم نشده'
+                        'message': f'IP مودم برای شعبه {branch.name} تنظیم نشده'
                     })
 
                 # تبدیل به ریال و ارسال
                 amount_rial = total_amount * 10
-                pos_port = getattr(pos_device, 'port', 1362)
 
-                print(f"🎯 ارسال به پوز: {amount_rial} ریال -> {branch_modem_ip}:{pos_port}")
-
-                # 🔴 ارسال مستقیم از سرور
-                pos_result = send_to_pos_from_server(branch_modem_ip, pos_port, amount_rial)
+                print(f"🎯 ارسال از طریق سرویس واسط")
+                pos_result = send_via_bridge_service(branch_id, branch_modem_ip, amount_rial)
 
                 if pos_result['status'] != 'success':
                     return JsonResponse({
                         'status': 'error',
-                        'message': f'خطا در پوز: {pos_result["message"]}'
+                        'message': f'خطا در پرداخت پوز: {pos_result["message"]}'
                     })
 
                 print("✅ پرداخت پوز موفق بود")
 
-            # 🔴 ثبت فاکتور در دیتابیس (کد ساده شده)
+            # ثبت فاکتور
             invoice = Invoicefrosh.objects.create(
                 branch_id=branch_id,
                 total_amount=total_amount,
@@ -879,8 +921,6 @@ def finalize_invoice(request):
                     price=item_data['price'],
                     discount=item_data.get('discount', 0)
                 )
-
-                # کاهش موجودی
                 product.quantity -= item_data['quantity']
                 product.save()
 
@@ -898,14 +938,13 @@ def finalize_invoice(request):
             })
 
         except Exception as e:
-            print(f"❌ خطا: {e}")
+            print(f"❌ خطا در ثبت فاکتور: {e}")
             return JsonResponse({
                 'status': 'error',
                 'message': f'خطا در ثبت فاکتور: {str(e)}'
             })
 
     return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
-
 # --------------------------------------------------------------------------
 @login_required
 @csrf_exempt
@@ -1363,21 +1402,146 @@ def is_valid_ip(ip):
 
 
 @login_required
-@csrf_exempt
 def quick_pos_test(request):
-    """تست سریع ارتباط با پوز"""
+    """تست سریع + مدیریت مپینگ پوز بریج"""
+    branches = Branch.objects.all()
+
+    # ایجاد لیست از مپینگ‌های فعلی
+    current_mapping = []
+    for branch in branches:
+        current_mapping.append({
+            'branch': branch,
+            'bridge_ip': BRIDGE_SERVICE_MAPPING.get(branch.id, 'تعیین نشده')
+        })
+
+    if request.method == 'POST':
+        # به روز کردن مپینگ
+        for branch in branches:
+            new_ip = request.POST.get(f'branch_{branch.id}', '').strip()
+            if new_ip:
+                BRIDGE_SERVICE_MAPPING[branch.id] = new_ip
+                print(f"✅ مپینگ به روز شد: شعبه {branch.id} -> {new_ip}")
+
+        return redirect('invoice_app:quick_pos_test')
+
+    return render(request, 'bridge_mapping.html', {
+        'current_mapping': current_mapping,
+        'branches': branches,
+    })
+
+
+
+# --------------------------------
+@login_required
+def bridge_mapping_view(request):
+    """مدیریت مپینگ شعبه به سرویس واسط"""
+    branches = Branch.objects.all()
+
+    current_mapping = []
+    for branch in branches:
+        current_mapping.append({
+            'branch': branch,
+            'bridge_ip': BRIDGE_SERVICE_MAPPING.get(branch.id, 'تعیین نشده')
+        })
+
+    if request.method == 'POST':
+        for branch in branches:
+            new_ip = request.POST.get(f'branch_{branch.id}', '').strip()
+            if new_ip:
+                BRIDGE_SERVICE_MAPPING[branch.id] = new_ip
+                print(f"✅ مپینگ به روز شد: شعبه {branch.id} -> {new_ip}")
+
+        return redirect('invoice_app:bridge_mapping')
+
+    return render(request, 'bridge_mapping.html', {
+        'current_mapping': current_mapping,
+        'branches': branches,
+    })
+
+
+@login_required
+@csrf_exempt
+def test_bridge_connection(request):
+    """تست ارتباط با سرویس واسط"""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            ip = data.get('ip', '192.168.1.1')  # IP پیش فرض
-            port = int(data.get('port', 1362))
-            amount = int(data.get('amount', 1000))  # 1000 ریال = 100 تومان
+            branch_id = data.get('branch_id')
 
-            result = send_to_pos_from_server(ip, port, amount)
-            return JsonResponse(result)
+            if not branch_id:
+                return JsonResponse({'status': 'error', 'message': 'شعبه مشخص نشده'})
+
+            bridge_ip = BRIDGE_SERVICE_MAPPING.get(int(branch_id))
+            if not bridge_ip:
+                return JsonResponse({'status': 'error', 'message': 'سرویس واسط برای این شعبه تنظیم نشده'})
+
+            health_url = f"http://{bridge_ip}:5000/health"
+            response = requests.get(health_url, timeout=10)
+
+            if response.status_code == 200:
+                return JsonResponse({
+                    'status': 'success',
+                    'message': f'سرویس واسط شعبه {branch_id} فعال است',
+                    'bridge_ip': bridge_ip
+                })
+            else:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'سرویس واسط پاسخ نمی‌دهد'
+                })
 
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
+            return JsonResponse({
+                'status': 'error',
+                'message': f'خطا در تست ارتباط: {str(e)}'
+            })
 
-    # صفحه تست ساده
-    return render(request, 'quick_pos_test.html')
+    return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
+
+
+@login_required
+@csrf_exempt
+def quick_pos_test_api(request):
+    """API برای تست ارتباط با سرویس واسط"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            branch_id = data.get('branch_id')
+
+            if not branch_id:
+                return JsonResponse({'status': 'error', 'message': 'شعبه مشخص نشده'})
+
+            bridge_ip = BRIDGE_SERVICE_MAPPING.get(int(branch_id))
+            if not bridge_ip:
+                return JsonResponse({'status': 'error', 'message': 'سرویس واسط برای این شعبه تنظیم نشده'})
+
+            # تست سلامت سرویس
+            health_url = f"http://{bridge_ip}:5000/health"
+            response = requests.get(health_url, timeout=10)
+
+            if response.status_code == 200:
+                health_data = response.json()
+                return JsonResponse({
+                    'status': 'success',
+                    'message': f'سرویس واسط شعبه {branch_id} فعال است',
+                    'bridge_ip': bridge_ip,
+                    'health_data': health_data
+                })
+            else:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'سرویس واسط پاسخ نمی‌دهد. کد وضعیت: {response.status_code}'
+                })
+
+        except requests.exceptions.ConnectionError:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'امکان اتصال به سرویس واسط در {bridge_ip} وجود ندارد'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'خطا در تست ارتباط: {str(e)}'
+            })
+
+    return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
