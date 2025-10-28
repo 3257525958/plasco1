@@ -65,8 +65,8 @@ body {
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
-    border: none;
-    padding: 0.5mm;
+    border: none; /* تغییر به none */
+    padding: 1mm;
     text-align: center;
     page-break-inside: avoid;
     background: white;
@@ -79,29 +79,26 @@ body {
 }
 
 .product-name {
-    font-size: 6pt;
+    font-size: 8pt;
     font-weight: bold;
-    line-height: 1.1;
-    width: calc(100% - 4mm); /* کاهش عرض برای فاصله 2mm از هر طرف */
+    line-height: 1.2;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
     {% if not settings.show_product_name %}display: none;{% endif %}
-    height: 6mm;
-    margin: 0 2mm 0.2mm 2mm; /* فاصله 2mm از راست و چپ */
+    height: 8mm;
+    margin-bottom: 0.5mm;
     overflow: hidden;
-    padding: 0;
-    word-wrap: break-word;
-    word-break: break-word;
-    display: block !important;
-    -webkit-line-clamp: unset;
-    -webkit-box-orient: unset;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .barcode-image-container {
     display: flex;
-    height: 40mm;
+    height: 32mm;
     width: 100%;
     justify-content: center;
     align-items: center;
@@ -156,18 +153,17 @@ body {
         transform-origin: center;
         width: 50mm;
         height: 25mm;
-        border: none;
+        border: none; /* تغییر به none */
     }
     
     .product-name {
-        font-size: 6pt;
-        height: 5mm;
-        margin: 0 2mm 0.2mm 2mm;
-        width: calc(100% - 4mm);
+        font-size: 7pt;
+        height: 6mm;
+        margin-bottom: 0.5mm;
     }
     
     .barcode-image-container {
-        height: 18mm;
+        height: 15mm;
     }
 }
 
@@ -212,7 +208,7 @@ body {
     }
 
     .row-separator {
-        height: 7mm !important;
+        height: 5mm !important;
         background-color: #ffffff !important;
         border: 1px solid #ffffff !important;
         margin: 0.5mm 0 !important;
@@ -221,7 +217,7 @@ body {
     .barcode-item {
         width: 25mm !important;
         height: 50mm !important;
-        border: none !important;
+        border: none !important; /* تغییر به none */
         padding: 0.5mm !important;
         transform: none !important;
         display: flex !important;
@@ -232,29 +228,27 @@ body {
     }
 
     .product-name {
-        font-size: 6pt !important;
-        margin: 0 2mm 0.2mm 2mm !important; /* فاصله 2mm از راست و چپ */
+        font-size: 7pt !important;
+        margin-bottom: 0.5mm !important;
         height: 6mm !important;
         transform: none !important;
-        width: calc(100% - 4mm) !important; /* کاهش عرض برای فاصله */
-        display: block !important;
+        width: 100% !important;
+        display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         text-align: center !important;
         overflow: hidden !important;
-        padding: 0 !important;
-        word-wrap: break-word !important;
-        word-break: break-word !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
         background: white !important;
-        -webkit-line-clamp: unset !important;
-        -webkit-box-orient: unset !important;
     }
 
     .barcode-image-container {
-        height: 40mm !important;
+        height: 38mm !important;
         transform: rotate(90deg) !important;
         transform-origin: center !important;
-        width: 40mm !important;
+        width: 38mm !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
@@ -347,7 +341,7 @@ body {
                 for (let i = 0; i < remaining; i++) {
                     const emptyItem = document.createElement('div');
                     emptyItem.className = 'barcode-item';
-                    emptyItem.style.border = 'none';
+                    emptyItem.style.border = 'none'; /* تغییر به none */
                     emptyItem.style.background = '#ffffff';
                     emptyItem.innerHTML = `
                         <div class="product-name">---</div>
