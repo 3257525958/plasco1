@@ -1,3 +1,5 @@
+
+
 from django.urls import path
 from . import views
 
@@ -24,4 +26,6 @@ urlpatterns = [
     path('cancel/', views.cancel_invoice, name='invoice_cancel'),
     path('get-summary/', views.get_invoice_summary, name='get_invoice_summary'),
     path('confirm-check-payment/', views.confirm_check_payment, name='confirm_check_payment'),
+    path('quick-pos-test/', views.quick_pos_test, name='quick_pos_test'),
 ]
+

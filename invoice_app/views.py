@@ -1,4 +1,5 @@
 
+
 import jdatetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
@@ -755,16 +756,6 @@ from .forms import BranchSelectionForm, POSDeviceForm, CheckPaymentForm, CreditP
 
 # ==================== توابع ارتباط با پوز ====================
 
-def is_valid_ip(ip):
-    """بررسی معتبر بودن آدرس IP"""
-    pattern = r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$'
-    if not re.match(pattern, ip):
-        return False
-    parts = ip.split('.')
-    for part in parts:
-        if not 0 <= int(part) <= 255:
-            return False
-    return True
 
 def normalize_ip(ip):
     """نرمال کردن آدرس IP"""
@@ -805,246 +796,115 @@ def build_sale_request(amount):
     return message
 
 
-# def send_to_pos(ip, port, amount):
-#     """ارسال مبلغ به دستگاه پوز - amount باید به ریال باشد"""
-#     try:
-#         print(f"💰 ارسال تراکنش برای مبلغ: {amount} ریال به {ip}:{port}")
-#
-#         if not ip:
-#             return {'status': 'error', 'message': 'آدرس IP نمی‌تواند خالی باشد'}
-#
-#         ip = normalize_ip(ip)
-#         if not is_valid_ip(ip):
-#             return {'status': 'error', 'message': 'آدرس IP معتبر نیست'}
-#
-#         # ساخت پیام با فرمت 12 رقمی - amount باید ریال باشد
-#         message = build_sale_request(amount)
-#
-#         print(f"📤 ارسال پیام به دستگاه...")
-#         print(f"📦 پیام ارسالی: {message}")
-#         print(f"🔢 پیام HEX: {message.encode('ascii').hex()}")
-#
-#         # ارسال به دستگاه
-#         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#         sock.settimeout(30)
-#         print(f"🔌 در حال اتصال به {ip}:{port}...")
-#         sock.connect((ip, port))
-#         print("✅ اتصال برقرار شد")
-#
-#         bytes_sent = sock.send(message.encode('ascii'))
-#         print(f"✅ {bytes_sent} بایت ارسال شد")
-#
-#         # زمان برای نمایش مبلغ روی دستگاه
-#         print("⏳ منتظر نمایش مبلغ روی دستگاه...")
-#         time.sleep(3)
-#
-#         response = b""
-#         try:
-#             print("📥 در حال دریافت پاسخ از دستگاه...")
-#             response = sock.recv(1024)
-#             if response:
-#                 print(f"📥 پاسخ دریافت شد: {len(response)} بایت")
-#                 print(f"📋 محتوای پاسخ: {response.decode('ascii', errors='ignore')}")
-#                 print(f"🔢 پاسخ HEX: {response.hex()}")
-#             else:
-#                 print("⚠️ پاسخ خالی از دستگاه")
-#         except socket.timeout:
-#             print("⏰ timeout در دریافت پاسخ - دستگاه پاسخی ارسال نکرد")
-#         except Exception as recv_error:
-#             print(f"❌ خطا در دریافت پاسخ: {recv_error}")
-#
-#         sock.close()
-#         print("🔒 اتصال بسته شد")
-#
-#         response_text = response.decode('ascii', errors='ignore') if response else "بدون پاسخ"
-#
-#         return {
-#             'status': 'success',
-#             'message': f'تراکنش {amount} ریال ارسال شد',
-#             'on_pos': 'مبلغ باید روی پوز نمایش داده شود',
-#             'debug': {
-#                 'message_sent': message,
-#                 'response': response_text,
-#                 'bytes_sent': bytes_sent,
-#                 'ip_port': f'{ip}:{port}',
-#                 'note': 'استفاده از فرمت 12 رقمی استاندارد'
-#             }
-#         }
-#
-#     except socket.timeout as timeout_error:
-#         print(f"⏰ خطای timeout در اتصال: {timeout_error}")
-#         return {
-#             'status': 'error',
-#             'message': f'اتصال timeout - دستگاه پوز پاسخ نداد: {str(timeout_error)}'
-#         }
-#     except ConnectionRefusedError as conn_error:
-#         print(f"🔌 خطای اتصال: {conn_error}")
-#         return {
-#             'status': 'error',
-#             'message': f'اتصال رد شد - پورت باز نیست یا دستگاه خاموش است: {str(conn_error)}'
-#         }
-#     except Exception as e:
-#         print(f"❌ خطا در ارسال به پوز: {e}")
-#         return {
-#             'status': 'error',
-#             'message': f'خطا در ارسال تراکنش: {str(e)}'
-#         }
-
 
 # ==================== ویوهای اصلی فاکتور ====================
 
 @login_required
 @csrf_exempt
 def finalize_invoice(request):
-    """ویوی نهایی کردن و ثبت فاکتور فروش - نسخه بهبود یافته"""
-    print("🔴 1 - تابع finalize_invoice فراخوانی شد")
-
+    """ویوی نهایی کردن فاکتور - نسخه ساده شده"""
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
-            action = data.get('action', 'save_only')
-            paid_amount = data.get('paid_amount', 0)
-
-            # بررسی وجود شعبه در session
+            # دریافت داده‌های اصلی
             branch_id = request.session.get('branch_id')
-            if not branch_id:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'شعبه انتخاب نشده است. لطفا ابتدا شعبه را انتخاب کنید.'
-                })
-
-            # بررسی وجود آیتم در فاکتور
             items = request.session.get('invoice_items', [])
-            if not items:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'فاکتور خالی است. لطفا ابتدا کالاهایی به فاکتور اضافه کنید.'
-                })
-
-            branch = get_object_or_404(Branch, id=branch_id)
             payment_method = request.session.get('payment_method', 'pos')
 
-            # محاسبه دقیق مبالغ
-            total_without_discount = sum(item['total'] for item in items)
-            items_discount = sum(item.get('discount', 0) for item in items)
-            invoice_discount = request.session.get('discount', 0)
-            total_discount = items_discount + invoice_discount
-            total_amount = max(0, total_without_discount - total_discount)
+            # بررسی‌های اولیه
+            if not branch_id:
+                return JsonResponse({'status': 'error', 'message': 'شعبه انتخاب نشده'})
 
-            print(f"💰 مبلغ کل: {total_amount}, تخفیف: {total_discount}")
+            if not items:
+                return JsonResponse({'status': 'error', 'message': 'فاکتور خالی است'})
 
-            # بررسی موجودی هر آیتم قبل از ثبت نهایی
-            stock_errors = []
-            for index, item_data in enumerate(items, 1):
-                try:
-                    product = InventoryCount.objects.get(id=item_data['product_id'], branch=branch)
-                    if product.quantity < item_data['quantity']:
-                        stock_errors.append(
-                            f"ردیف {index}: کالای '{product.product_name}'. موجودی: {product.quantity}, درخواستی: {item_data['quantity']}"
-                        )
-                except InventoryCount.DoesNotExist:
-                    stock_errors.append(f"ردیف {index}: کالا یافت نشد (ID: {item_data['product_id']})")
+            # محاسبه مبلغ
+            total_amount = sum(item['total'] - item.get('discount', 0) for item in items)
+            total_amount -= request.session.get('discount', 0)
+            total_amount = max(0, total_amount)
 
-            if stock_errors:
-                error_message = "موجودی برخی کالاها کافی نیست:\n" + "\n".join(stock_errors)
-                return JsonResponse({
-                    'status': 'error',
-                    'message': error_message,
-                    'stock_errors': stock_errors
-                })
+            print(f"💰 مبلغ فاکتور: {total_amount} تومان")
 
-            # اگر روش پرداخت POS است، مبلغ را به دستگاه پوز ارسال کن
+            # اگر پرداخت POS است
             if payment_method == 'pos':
-                print(f"🎯 روش پرداخت: POS")
                 pos_device_id = request.session.get('pos_device_id')
-
                 if not pos_device_id:
-                    print(f"❌ هیچ دستگاه پوزی در session وجود ندارد")
+                    return JsonResponse({'status': 'error', 'message': 'دستگاه پوز انتخاب نشده'})
+
+                # دریافت اطلاعات دستگاه و شعبه
+                branch = get_object_or_404(Branch, id=branch_id)
+                pos_device = get_object_or_404(POSDevice, id=pos_device_id, is_active=True)
+
+                # 🔴 استفاده از IP مودم شعبه
+                branch_modem_ip = branch.modem_ip
+                if not branch_modem_ip:
                     return JsonResponse({
                         'status': 'error',
-                        'message': 'هیچ دستگاه پوزی انتخاب نشده است'
+                        'message': 'IP مودم شعبه تنظیم نشده'
                     })
 
-                print(f"📟 دستگاه پوز انتخاب شده: {pos_device_id}")
+                # تبدیل به ریال و ارسال
+                amount_rial = total_amount * 10
+                pos_port = getattr(pos_device, 'port', 1362)
 
-                try:
-                    pos_device = POSDevice.objects.get(id=pos_device_id, is_active=True)
-                    print(f"✅ دستگاه پوز یافت شد: {pos_device.name}")
+                print(f"🎯 ارسال به پوز: {amount_rial} ریال -> {branch_modem_ip}:{pos_port}")
 
-                    # 🔴 دریافت IP مودم از شعبه
-                    branch_modem_ip = branch.modem_ip
-                    if not branch_modem_ip:
-                        print(f"❌ IP مودم برای شعبه {branch.name} تنظیم نشده است")
-                        return JsonResponse({
-                            'status': 'error',
-                            'message': f'IP مودم برای شعبه {branch.name} تنظیم نشده است. لطفا با مدیر سیستم تماس بگیرید.'
-                        })
+                # 🔴 ارسال مستقیم از سرور
+                pos_result = send_to_pos_from_server(branch_modem_ip, pos_port, amount_rial)
 
-                    print(f"📡 IP مودم شعبه: {branch_modem_ip}")
-
-                    # تبدیل تومان به ریال (ضرب در 10)
-                    amount_rial = total_amount * 10
-                    print(f"💸 تبدیل مبلغ فاکتور:")
-                    print(f"   شعبه: {branch.name}")
-                    print(f"   تومان: {total_amount:,}")
-                    print(f"   ریال: {amount_rial:,}")
-
-                    # دریافت پورت از دستگاه پوز
-                    pos_port = getattr(pos_device, 'port', 1362)
-
-                    print(f"📍 اطلاعات اتصال:")
-                    print(f"   شعبه: {branch.name}")
-                    print(f"   دستگاه پوز: {pos_device.name}")
-                    print(f"   IP مودم: {branch_modem_ip}")
-                    print(f"   پورت: {pos_port}")
-
-                    # 🔴 ارسال مبلغ ریال به دستگاه پوز با استفاده از IP مودم شعبه
-                    print(f"🚀 شروع ارسال مبلغ به دستگاه پوز...")
-                    pos_result = send_to_pos_with_status(branch_modem_ip, pos_port, amount_rial)
-
-                    if pos_result['status'] != 'success':
-                        print(f"❌ خطا در ارسال به پوز: {pos_result['message']}")
-                        return JsonResponse({
-                            'status': 'error',
-                            'message': f'خطا در ارتباط با دستگاه پوز: {pos_result["message"]}'
-                        })
-                    else:
-                        print(f"✅ مبلغ با موفقیت به پوز ارسال شد")
-                        print(f"📋 پاسخ پوز: {pos_result.get('debug', {}).get('response', 'بدون پاسخ')}")
-
-                except POSDevice.DoesNotExist:
-                    print(f"❌ دستگاه پوز با ID {pos_device_id} یافت نشد")
+                if pos_result['status'] != 'success':
                     return JsonResponse({
                         'status': 'error',
-                        'message': 'دستگاه پوز انتخاب شده یافت نشد'
-                    })
-                except Exception as e:
-                    print(f"❌ خطای غیرمنتظره در پردازش POS: {e}")
-                    return JsonResponse({
-                        'status': 'error',
-                        'message': f'خطا در پردازش پرداخت POS: {str(e)}'
+                        'message': f'خطا در پوز: {pos_result["message"]}'
                     })
 
-            # بقیه کد ثبت فاکتور بدون تغییر...
-            # [کدهای قبلی مربوط به ایجاد فاکتور و آیتم‌ها]
+                print("✅ پرداخت پوز موفق بود")
 
-        except Exception as e:
-            import traceback
-            error_traceback = traceback.format_exc()
-            print(f"❌ خطای غیرمنتظره در ثبت فاکتور: {str(e)}")
-            print(f"📋 جزئیات خطا:\n{error_traceback}")
+            # 🔴 ثبت فاکتور در دیتابیس (کد ساده شده)
+            invoice = Invoicefrosh.objects.create(
+                branch_id=branch_id,
+                total_amount=total_amount,
+                payment_method=payment_method,
+                customer_name=request.session.get('customer_name', ''),
+                customer_phone=request.session.get('customer_phone', ''),
+                created_by=request.user
+            )
+
+            # ثبت آیتم‌ها
+            for item_data in items:
+                product = InventoryCount.objects.get(id=item_data['product_id'])
+                InvoiceItemfrosh.objects.create(
+                    invoice=invoice,
+                    product=product,
+                    quantity=item_data['quantity'],
+                    price=item_data['price'],
+                    discount=item_data.get('discount', 0)
+                )
+
+                # کاهش موجودی
+                product.quantity -= item_data['quantity']
+                product.save()
+
+            # پاکسازی session
+            session_keys = ['invoice_items', 'customer_name', 'customer_phone',
+                            'payment_method', 'discount', 'pos_device_id']
+            for key in session_keys:
+                if key in request.session:
+                    del request.session[key]
 
             return JsonResponse({
-                'status': 'error',
-                'message': f'خطای غیرمنتظره در ثبت فاکتور: {str(e)}',
-                'debug_info': 'لطفا با پشتیبانی تماس بگیرید'
+                'status': 'success',
+                'message': 'فاکتور با موفقیت ثبت شد',
+                'invoice_id': invoice.id
             })
 
-    return JsonResponse({
-        'status': 'error',
-        'message': 'درخواست نامعتبر. لطفا از فرم صحیح استفاده کنید.'
-    })
+        except Exception as e:
+            print(f"❌ خطا: {e}")
+            return JsonResponse({
+                'status': 'error',
+                'message': f'خطا در ثبت فاکتور: {str(e)}'
+            })
 
+    return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
 
 # --------------------------------------------------------------------------
 @login_required
@@ -1420,3 +1280,104 @@ def get_transaction_status(response_length, response_text):
 
     print(f"📋 نتیجه تحلیل: {status_info['message']}")
     return status_info
+
+# ------------------------------------------------------------------------------------------
+import socket
+import time
+import re
+
+
+def send_to_pos_from_server(ip, port, amount):
+    """ارسال مستقیم از سرور به دستگاه پوز - نسخه ساده و مطمئن"""
+    try:
+        print(f"🚀 ارسال از سرور به پوز: {amount} ریال به {ip}:{port}")
+
+        # اعتبارسنجی IP
+        if not ip or not is_valid_ip(ip):
+            return {
+                'status': 'error',
+                'message': 'آدرس IP معتبر نیست'
+            }
+
+        # ساخت پیام ساده
+        amount_str = str(amount).zfill(12)
+        message = f"0047RQ034PR006000000AM012{amount_str}CU003364PD0011"
+
+        print(f"📦 پیام ارسالی: {message}")
+
+        # ارسال به دستگاه پوز
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(15)  # کاهش timeout
+        sock.connect((ip, port))
+
+        # ارسال پیام
+        sock.send(message.encode('ascii'))
+        print("✅ پیام ارسال شد")
+
+        # کمی صبر کن
+        time.sleep(2)
+
+        # دریافت پاسخ
+        response = b""
+        try:
+            sock.settimeout(10)
+            response = sock.recv(1024)
+            print(f"📥 پاسخ دریافت شد: {response}")
+        except socket.timeout:
+            print("⚠️ پاسخی دریافت نشد")
+        finally:
+            sock.close()
+
+        return {
+            'status': 'success',
+            'message': 'مبلغ به پوز ارسال شد',
+            'response': response.decode('ascii', errors='ignore') if response else "بدون پاسخ"
+        }
+
+    except ConnectionRefusedError:
+        return {
+            'status': 'error',
+            'message': 'دستگاه پوز روشن نیست یا پورت باز نیست'
+        }
+    except socket.timeout:
+        return {
+            'status': 'error',
+            'message': 'اتصال timeout خورد'
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'خطا: {str(e)}'
+        }
+
+
+def is_valid_ip(ip):
+    """بررسی ساده IP"""
+    parts = ip.split('.')
+    if len(parts) != 4:
+        return False
+    try:
+        return all(0 <= int(part) <= 255 for part in parts)
+    except:
+        return False
+
+
+@login_required
+@csrf_exempt
+def quick_pos_test(request):
+    """تست سریع ارتباط با پوز"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            ip = data.get('ip', '192.168.1.1')  # IP پیش فرض
+            port = int(data.get('port', 1362))
+            amount = int(data.get('amount', 1000))  # 1000 ریال = 100 تومان
+
+            result = send_to_pos_from_server(ip, port, amount)
+            return JsonResponse(result)
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+    # صفحه تست ساده
+    return render(request, 'quick_pos_test.html')
