@@ -836,7 +836,7 @@ def build_sale_request(amount):
 @login_required
 @csrf_exempt
 def finalize_invoice(request):
-    """ویوی نهایی کردن فاکتور"""
+    """ویوی نهایی کردن فاکتور - نسخه نهایی"""
     if request.method == 'POST':
         try:
             branch_id = request.session.get('branch_id')
@@ -858,34 +858,19 @@ def finalize_invoice(request):
 
             # اگر پرداخت POS است
             if payment_method == 'pos':
+                # بررسی اینکه دستگاه پوز انتخاب شده
                 pos_device_id = request.session.get('pos_device_id')
                 if not pos_device_id:
                     return JsonResponse({'status': 'error', 'message': 'دستگاه پوز انتخاب نشده'})
 
-                branch = get_object_or_404(Branch, id=branch_id)
-                pos_device = get_object_or_404(POSDevice, id=pos_device_id, is_active=True)
+                # ایجاد تراکنش پوز
+                transaction_result = create_pos_transaction(request)
+                transaction_data = json.loads(transaction_result.content)
 
-                branch_modem_ip = branch.modem_ip
-                if not branch_modem_ip:
+                if transaction_data['status'] != 'success':
                     return JsonResponse({
                         'status': 'error',
-                        'message': f'IP مودم برای شعبه {branch.name} تنظیم نشده'
-                    })
-
-                # تبدیل به ریال و ارسال
-                amount_rial = total_amount * 10
-
-                print(f"🎯 ارسال از طریق سرویس واسط")
-                print(f"🏢 شعبه: {branch.name} (ID: {branch_id})")
-                print(f"📟 دستگاه پوز: {branch_modem_ip}")
-                print(f"💸 مبلغ: {amount_rial} ریال")
-
-                pos_result = send_via_bridge_service(branch_id, branch_modem_ip, amount_rial)
-
-                if pos_result['status'] != 'success':
-                    return JsonResponse({
-                        'status': 'error',
-                        'message': f'خطا در پرداخت پوز: {pos_result["message"]}'
+                        'message': transaction_data['message']
                     })
 
                 print("✅ پرداخت پوز موفق بود")
@@ -934,7 +919,6 @@ def finalize_invoice(request):
             })
 
     return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
-
 
 # --------------------------------------------------------------------------
 @login_required
@@ -1540,3 +1524,187 @@ def quick_pos_test_api(request):
             })
 
     return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
+
+
+import uuid
+import time
+from datetime import datetime, timedelta
+from django.db import transaction as db_transaction
+
+
+# 🔥 ویوهای جدید برای سیستم ارتباط معکوس
+
+@login_required
+@csrf_exempt
+def create_pos_transaction(request):
+    """ایجاد تراکنش پوز جدید و انتظار برای نتیجه"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            branch_id = data.get('branch_id')
+            amount_toman = data.get('amount')
+
+            if not branch_id or not amount_toman:
+                return JsonResponse({'status': 'error', 'message': 'شعبه و مبلغ الزامی هستند'})
+
+            branch = get_object_or_404(Branch, id=branch_id)
+
+            if not branch.modem_ip:
+                return JsonResponse({'status': 'error', 'message': 'IP مودم شعبه تنظیم نشده'})
+
+            # تبدیل به ریال
+            amount_rial = int(amount_toman) * 10
+
+            # ایجاد شناسه یکتا برای تراکنش
+            transaction_id = f"POS_{int(time.time())}_{uuid.uuid4().hex[:8]}"
+
+            # ایجاد تراکنش در دیتابیس
+            pos_transaction = POSTransaction.objects.create(
+                branch=branch,
+                amount_rial=amount_rial,
+                pos_ip=branch.modem_ip,
+                status='pending',
+                transaction_id=transaction_id
+            )
+
+            print(f"🔵 تراکنش ایجاد شد: {transaction_id}")
+            print(f"🏢 شعبه: {branch.name}")
+            print(f"💸 مبلغ: {amount_rial} ریال")
+            print(f"📡 دستگاه پوز: {branch.modem_ip}")
+
+            # انتظار برای نتیجه (تا 2 دقیقه)
+            max_wait_time = 120  # ثانیه
+            check_interval = 2  # ثانیه
+
+            for i in range(max_wait_time // check_interval):
+                time.sleep(check_interval)
+
+                # بررسی به روزرسانی وضعیت
+                pos_transaction.refresh_from_db()
+
+                if pos_transaction.status in ['success', 'failed', 'timeout']:
+                    if pos_transaction.status == 'success':
+                        print(f"✅ تراکنش موفق: {transaction_id}")
+                        return JsonResponse({
+                            'status': 'success',
+                            'message': 'پرداخت با موفقیت انجام شد',
+                            'transaction_id': transaction_id
+                        })
+                    else:
+                        error_msg = pos_transaction.result_message or 'خطا در پرداخت'
+                        print(f"❌ تراکنش ناموفق: {transaction_id} - {error_msg}")
+                        return JsonResponse({
+                            'status': 'error',
+                            'message': error_msg,
+                            'transaction_id': transaction_id
+                        })
+
+            # اگر زمان به پایان رسید
+            pos_transaction.status = 'timeout'
+            pos_transaction.result_message = 'زمان پرداخت به پایان رسید'
+            pos_transaction.save()
+
+            return JsonResponse({
+                'status': 'error',
+                'message': 'زمان پرداخت به پایان رسید. لطفاً مجدداً تلاش کنید.'
+            })
+
+        except Exception as e:
+            print(f"❌ خطا در ایجاد تراکنش: {e}")
+            return JsonResponse({
+                'status': 'error',
+                'message': f'خطا در ایجاد تراکنش: {str(e)}'
+            })
+
+    return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
+
+
+@csrf_exempt
+def get_pending_transactions(request):
+    """دریافت تراکنش‌های در انتظار برای کامپیوترهای داخلی"""
+    if request.method == 'GET':
+        try:
+            branch_id = request.GET.get('branch_id')
+            if not branch_id:
+                return JsonResponse({'status': 'error', 'message': 'branch_id الزامی است'})
+
+            # پیدا کردن تراکنش‌های در انتظار برای این شعبه
+            five_minutes_ago = datetime.now() - timedelta(minutes=5)
+
+            pending_transactions = POSTransaction.objects.filter(
+                branch_id=branch_id,
+                status='pending',
+                created_at__gte=five_minutes_ago
+            ).order_by('created_at')[:5]  # فقط 5 تراکنش آخر
+
+            transactions_data = []
+            for trans in pending_transactions:
+                transactions_data.append({
+                    'transaction_id': trans.transaction_id,
+                    'amount_rial': trans.amount_rial,
+                    'pos_ip': trans.pos_ip,
+                    'created_at': trans.created_at.isoformat()
+                })
+
+            return JsonResponse({
+                'status': 'success',
+                'pending_transactions': transactions_data,
+                'count': len(transactions_data)
+            })
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+    return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
+
+
+@csrf_exempt
+def update_transaction_status(request):
+    """به روزرسانی وضعیت تراکنش توسط کامپیوترهای داخلی"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            transaction_id = data.get('transaction_id')
+            status = data.get('status')
+            message = data.get('message', '')
+
+            if not transaction_id or not status:
+                return JsonResponse({'status': 'error', 'message': 'transaction_id و status الزامی هستند'})
+
+            if status not in ['processing', 'success', 'failed']:
+                return JsonResponse({'status': 'error', 'message': 'status نامعتبر'})
+
+            # پیدا کردن تراکنش و به روزرسانی
+            try:
+                pos_transaction = POSTransaction.objects.get(transaction_id=transaction_id)
+                pos_transaction.status = status
+                pos_transaction.result_message = message
+                pos_transaction.save()
+
+                print(f"🟢 وضعیت تراکنش به روز شد: {transaction_id} -> {status}")
+
+                return JsonResponse({'status': 'success', 'message': 'وضعیت به روز شد'})
+
+            except POSTransaction.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'تراکنش یافت نشد'})
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+    return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر'})
+
+
+@login_required
+def transaction_status(request, transaction_id):
+    """بررسی وضعیت یک تراکنش"""
+    try:
+        pos_transaction = get_object_or_404(POSTransaction, transaction_id=transaction_id)
+        return JsonResponse({
+            'status': 'success',
+            'transaction_status': pos_transaction.status,
+            'message': pos_transaction.result_message,
+            'created_at': pos_transaction.created_at.isoformat(),
+            'updated_at': pos_transaction.updated_at.isoformat()
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})

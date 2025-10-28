@@ -31,4 +31,10 @@ urlpatterns = [
     path('bridge-mapping/', views.bridge_mapping_view, name='bridge_mapping'),
     path('test-bridge-connection/', views.test_bridge_connection, name='test_bridge_connection'),
 path('quick-pos-test-api/', views.quick_pos_test_api, name='quick_pos_test_api'),
+
+
+path('create-pos-transaction/', views.create_pos_transaction, name='create_pos_transaction'),
+    path('get-pending-transactions/', views.get_pending_transactions, name='get_pending_transactions'),
+    path('update-transaction-status/', views.update_transaction_status, name='update_transaction_status'),
+    path('transaction-status/<str:transaction_id>/', views.transaction_status, name='transaction_status'),
 ]

@@ -152,3 +152,28 @@ from jdatetime import datetime as jdatetime
 from django.utils import timezone
 
 
+class POSTransaction(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'در انتظار'),
+        ('processing', 'در حال پردازش'),
+        ('success', 'موفق'),
+        ('failed', 'ناموفق'),
+        ('timeout', 'Timeout'),
+    ]
+
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    amount_rial = models.BigIntegerField(verbose_name="مبلغ به ریال")
+    pos_ip = models.CharField(max_length=20, verbose_name="IP دستگاه پوز")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    result_message = models.TextField(blank=True, null=True, verbose_name="پیام نتیجه")
+    transaction_id = models.CharField(max_length=100, unique=True, verbose_name="شناسه تراکنش")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "تراکنش پوز"
+        verbose_name_plural = "تراکنش‌های پوز"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.transaction_id} - {self.branch.name} - {self.amount_rial} ریال"
