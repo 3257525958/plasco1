@@ -1,7 +1,7 @@
 import requests
 import json
 from django.conf import settings
-from sync_app.models import DataSyncLog, SyncSession  # ✅ import درست
+from sync_app.models import DataSyncLog, SyncSession
 from django.utils import timezone
 import hashlib
 import logging
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class BidirectionalSyncService:
     def __init__(self):
         self.server_url = "https://plasmarket.ir"
-        self.api_key = "your-secret-key"
+        self.api_key = "hUafL49RYuXQSRyyc7ZoRF_SxFdF8wUomtjF5YICRVk"  # 🔴 این خط رو آپدیت کن - توکن واقعی رو بذار
         self.last_sync_time = None
 
     def full_sync_cycle(self):
@@ -64,7 +64,7 @@ class BidirectionalSyncService:
             }
 
     def push_local_changes(self):
-        """ارسال تغییرات لوکال به سرور"""
+        """ارسال واقعی تغییرات لوکال به سرور"""
         unsynced_logs = DataSyncLog.objects.filter(
             sync_status=False,
             sync_direction='local_to_server'
@@ -73,77 +73,84 @@ class BidirectionalSyncService:
         sent_count = 0
         for log in unsynced_logs:
             try:
-                # شبیه‌سازی ارسال به سرور
-                print(f"  📤 ارسال {log.model_type} (ID: {log.record_id}) - {log.action}")
+                # ارسال واقعی به API سرور
+                response = requests.post(
+                    f"{self.server_url}/api/sync/push/",
+                    json={
+                        'model_type': log.model_type,
+                        'record_id': log.record_id,
+                        'action': log.action,
+                        'data': log.data
+                    },
+                    headers={'Authorization': f'Token {self.api_key}'},
+                    timeout=30
+                )
 
-                # در حالت واقعی:
-                # response = requests.post(
-                #     f"{self.server_url}/api/sync/push/",
-                #     json={
-                #         'model_type': log.model_type,
-                #         'record_id': log.record_id,
-                #         'action': log.action,
-                #         'data': log.data,
-                #         'timestamp': log.created_at.isoformat()
-                #     },
-                #     headers={'Authorization': f'Bearer {self.api_key}'},
-                #     timeout=30
-                # )
+                if response.status_code == 200:
+                    result = response.json()
+                    if result['status'] == 'success':
+                        log.sync_status = True
+                        log.synced_at = timezone.now()
+                        log.save()
+                        sent_count += 1
+                        print(f"  ✅ ارسال موفق {log.model_type} (ID: {log.record_id})")
+                    else:
+                        print(f"  ❌ خطا از سرور: {result['message']}")
+                        log.error_message = result['message']
+                        log.save()
+                else:
+                    print(f"  ❌ خطای HTTP: {response.status_code}")
+                    log.error_message = f"HTTP {response.status_code}"
+                    log.save()
 
-                # مارک کردن به عنوان همگام شده
-                log.sync_status = True
-                log.synced_at = timezone.now()
-                log.save()
-                sent_count += 1
-
-            except Exception as e:
-                logger.error(f"خطا در ارسال {log.model_type}: {e}")
+            except requests.exceptions.RequestException as e:
+                print(f"  ❌ خطای ارتباط: {e}")
                 log.error_message = str(e)
                 log.save()
 
         return {'sent_count': sent_count, 'status': 'success'}
 
     def pull_server_changes(self):
-        """دریافت تغییرات از سرور"""
+        """دریافت واقعی از سرور"""
         try:
-            # شبیه‌سازی دریافت از سرور
-            # داده‌های نمونه از سرور (شبیه‌سازی)
-            server_data = [
-                {
-                    'model_type': 'product',
-                    'record_id': 1001,
-                    'action': 'update',
-                    'data': {'name': 'لوله PVC آپدیت شده', 'current_stock': 25},
-                    'server_timestamp': timezone.now().isoformat()
-                },
-                {
-                    'model_type': 'stock',
-                    'record_id': 2001,
-                    'action': 'create',
-                    'data': {'product_id': 1, 'quantity': 50, 'type': 'purchase'},
-                    'server_timestamp': timezone.now().isoformat()
-                }
-            ]
+            # پارامتر آخرین همگام‌سازی
+            params = {}
+            if self.last_sync_time:
+                params['last_sync'] = self.last_sync_time.isoformat()
 
-            received_count = 0
-            for server_item in server_data:
-                # ثبت به عنوان تغییرات دریافتی از سرور
-                DataSyncLog.objects.create(
-                    model_type=server_item['model_type'],
-                    record_id=server_item['record_id'],
-                    action=server_item['action'],
-                    data=server_item['data'],
-                    sync_direction='server_to_local',
-                    sync_status=True,
-                    synced_at=timezone.now()
-                )
-                received_count += 1
-                print(f"  📥 دریافت {server_item['model_type']} (ID: {server_item['record_id']})")
+            response = requests.get(
+                f"{self.server_url}/api/sync/pull/",
+                headers={'Authorization': f'Token {self.api_key}'},
+                params=params,
+                timeout=30
+            )
 
-            return {'received_count': received_count, 'status': 'success'}
+            if response.status_code == 200:
+                result = response.json()
+                server_data = result.get('changes', [])
 
-        except Exception as e:
-            logger.error(f"خطا در دریافت از سرور: {e}")
+                received_count = 0
+                for server_item in server_data:
+                    DataSyncLog.objects.create(
+                        model_type=server_item['model_type'],
+                        record_id=server_item['record_id'],
+                        action=server_item['action'],
+                        data=server_item['data'],
+                        sync_direction='server_to_local',
+                        sync_status=True,
+                        synced_at=timezone.now()
+                    )
+                    received_count += 1
+                    print(f"  📥 دریافت {server_item['model_type']} (ID: {server_item['record_id']})")
+
+                # آپدیت زمان آخرین همگام‌سازی
+                self.last_sync_time = timezone.now()
+
+                return {'received_count': received_count, 'status': 'success'}
+            else:
+                return {'received_count': 0, 'status': 'error', 'message': f"HTTP {response.status_code}"}
+
+        except requests.exceptions.RequestException as e:
             return {'received_count': 0, 'status': 'error', 'message': str(e)}
 
     def resolve_conflicts(self):
