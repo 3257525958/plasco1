@@ -452,3 +452,22 @@ class ExpenseImage(models.Model):
 
     def __str__(self):
         return f"Receipt for {self.expense}"
+
+
+class StockTransaction(models.Model):
+    TRANSACTION_TYPES = [
+        ('purchase', 'خرید'),
+        ('sale', 'فروش'),
+        ('return', 'مرجوعی'),
+        ('adjustment', 'تعدیل'),
+    ]
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    quantity = models.IntegerField()
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'stock_transactions'
