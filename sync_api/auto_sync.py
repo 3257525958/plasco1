@@ -12,7 +12,7 @@ class SmartSyncEngine:
         self.excluded_models = [
             'ContentType', 'Session', 'LogEntry', 'Permission', 'Group',
             'Migration', 'Token', 'DataSyncLog', 'ServerSyncLog',
-            'SyncToken', 'SyncSession', 'TokenProxy'
+            'SyncToken', 'SyncSession', 'TokenProxy', 'User'
         ]
 
         # اپ‌هایی که نباید سینک شوند
@@ -23,11 +23,12 @@ class SmartSyncEngine:
             'rest_framework', 'rest_framework.authtoken', 'corsheaders'
         ]
 
-    def discover_all_models(self):
-        """کشف خودکار همه مدل‌های قابل سینک"""
-        print("🔍 در حال کشف خودکار همه مدل‌ها...")
+    def discover_all_models_dynamic(self):
+        """کشف پویا و هوشمند همه مدل‌های قابل سینک"""
+        print("🔍 در حال کشف پویای همه مدل‌ها...")
 
         syncable_models = []
+        discovered_count = 0
 
         for app_config in apps.get_app_configs():
             app_name = app_config.name
@@ -45,46 +46,116 @@ class SmartSyncEngine:
                 if model_name in self.excluded_models:
                     continue
 
-                model_info = {
-                    'app_name': app_name,
-                    'model_name': model_name,
-                    'model_class': model,
-                    'fields': self.analyze_model_fields(model),
-                    'record_count': model.objects.count()
-                }
+                # بررسی اینکه مدل قابلیت سینک دارد
+                if self.is_model_syncable(model):
+                    model_info = {
+                        'app_name': app_name,
+                        'model_name': model_name,
+                        'model_class': model,
+                        'fields': self.analyze_model_fields(model),
+                        'record_count': model.objects.count(),
+                        'sync_priority': self.calculate_sync_priority(model)
+                    }
 
-                syncable_models.append(model_info)
-                print(f"  ✅ پیدا شد: {model_name} ({model_info['record_count']} رکورد)")
+                    syncable_models.append(model_info)
+                    discovered_count += 1
+                    print(f"  ✅ پیدا شد: {model_name} ({model_info['record_count']} رکورد)")
 
-        print(f"🎯 تعداد مدل‌های قابل سینک: {len(syncable_models)}")
+        print(f"🎯 تعداد مدل‌های قابل سینک: {discovered_count}")
         return syncable_models
 
-    def analyze_model_fields(self, model_class):
-        """آنالیز هوشمند فیلدهای مدل"""
-        fields_info = []
+    def is_model_syncable(self, model_class):
+        """بررسی هوشمند اینکه آیا مدل قابل سینک است"""
+        try:
+            # بررسی وجود فیلدهای ضروری
+            has_id = hasattr(model_class, 'id')
+            has_manager = hasattr(model_class, 'objects')
 
-        for field in model_class._meta.get_fields():
-            field_info = {
-                'name': field.name,
-                'type': type(field).__name__,
-                'is_relation': field.is_relation,
-                'editable': getattr(field, 'editable', True),
-                'nullable': getattr(field, 'null', False)
+            # بررسی اینکه مدل abstract نیست
+            is_abstract = model_class._meta.abstract
+
+            # بررسی وجود حداقل یک فیلد غیر-رابطه‌ای
+            has_non_relation_fields = any(
+                not field.is_relation for field in model_class._meta.get_fields()
+            )
+
+            return has_id and has_manager and not is_abstract and has_non_relation_fields
+        except:
+            return False
+
+    def calculate_sync_priority(self, model_class):
+        """محاسبه اولویت سینک بر اساس نوع مدل"""
+        model_name = model_class.__name__.lower()
+
+        priority_rules = {
+            'high': ['branch', 'user', 'customer', 'product'],
+            'medium': ['invoice', 'order', 'transaction', 'payment'],
+            'low': ['log', 'history', 'audit', 'setting']
+        }
+
+        for priority, keywords in priority_rules.items():
+            if any(keyword in model_name for keyword in keywords):
+                return priority
+
+        return 'medium'
+
+    def generate_dynamic_sync_payload(self):
+        """تولید پکیج سینک پویا بر اساس مدل‌های کشف شده"""
+        all_models = self.discover_all_models_dynamic()
+        sync_payload = {
+            'models': [],
+            'changes': [],
+            'summary': {
+                'total_models': 0,
+                'total_records': 0,
+                'generated_at': timezone.now().isoformat(),
+                'sync_mode': 'DYNAMIC_AUTO_DISCOVERY'
             }
+        }
 
-            # برای فیلدهای رابطه‌ای
-            if field.is_relation and field.related_model:
-                field_info['related_model'] = {
-                    'app': field.related_model._meta.app_label,
-                    'model': field.related_model.__name__
-                }
+        total_records = 0
 
-            fields_info.append(field_info)
+        for model_info in all_models:
+            model_class = model_info['model_class']
+            app_name = model_info['app_name']
+            model_name = model_info['model_name']
 
-        return fields_info
+            # سریالایز کردن داده‌های مدل
+            model_data = self.serialize_model_data_dynamic(model_class)
 
-    def serialize_model_data(self, model_class, batch_size=200):
-        """سریالایز کردن هوشمند داده‌های مدل"""
+            if model_data:
+                # اضافه کردن به لیست مدل‌ها
+                sync_payload['models'].append({
+                    'app': app_name,
+                    'model': model_name,
+                    'fields': model_info['fields'],
+                    'record_count': len(model_data),
+                    'sync_priority': model_info['sync_priority']
+                })
+
+                # اضافه کردن داده‌ها
+                for data_item in model_data:
+                    sync_payload['changes'].append({
+                        'app_name': app_name,
+                        'model_type': model_name,
+                        'record_id': data_item['id'],
+                        'action': 'auto_sync',
+                        'data': data_item['data'],
+                        'server_timestamp': data_item['timestamp'],
+                        'sync_priority': model_info['sync_priority']
+                    })
+
+                total_records += len(model_data)
+                print(f"📦 {app_name}.{model_name}: {len(model_data)} رکورد آماده")
+
+        sync_payload['summary']['total_models'] = len(sync_payload['models'])
+        sync_payload['summary']['total_records'] = total_records
+
+        print(f"🎉 پکیج سینک پویا تولید شد: {len(sync_payload['models'])} مدل, {total_records} رکورد")
+        return sync_payload
+
+    def serialize_model_data_dynamic(self, model_class, batch_size=200):
+        """سریالایز کردن هوشمند داده‌های مدل با مدیریت پویا"""
         try:
             records = model_class.objects.all()[:batch_size]
             serialized_records = []
@@ -129,54 +200,27 @@ class SmartSyncEngine:
             print(f"❌ خطا در سریالایز مدل {model_class.__name__}: {e}")
             return []
 
-    def generate_sync_payload(self):
-        """تولید پکیج کامل سینک"""
-        all_models = self.discover_all_models()
-        sync_payload = {
-            'models': [],
-            'changes': [],
-            'summary': {
-                'total_models': 0,
-                'total_records': 0,
-                'generated_at': timezone.now().isoformat()
+    # متدهای موجود قبلی را نگه دارید
+    def analyze_model_fields(self, model_class):
+        """آنالیز هوشمند فیلدهای مدل"""
+        fields_info = []
+
+        for field in model_class._meta.get_fields():
+            field_info = {
+                'name': field.name,
+                'type': type(field).__name__,
+                'is_relation': field.is_relation,
+                'editable': getattr(field, 'editable', True),
+                'nullable': getattr(field, 'null', False)
             }
-        }
 
-        total_records = 0
+            # برای فیلدهای رابطه‌ای
+            if field.is_relation and field.related_model:
+                field_info['related_model'] = {
+                    'app': field.related_model._meta.app_label,
+                    'model': field.related_model.__name__
+                }
 
-        for model_info in all_models:
-            model_class = model_info['model_class']
-            app_name = model_info['app_name']
-            model_name = model_info['model_name']
+            fields_info.append(field_info)
 
-            # سریالایز کردن داده‌های مدل
-            model_data = self.serialize_model_data(model_class)
-
-            if model_data:
-                # اضافه کردن به لیست مدل‌ها
-                sync_payload['models'].append({
-                    'app': app_name,
-                    'model': model_name,
-                    'fields': model_info['fields'],
-                    'record_count': len(model_data)
-                })
-
-                # اضافه کردن داده‌ها
-                for data_item in model_data:
-                    sync_payload['changes'].append({
-                        'app_name': app_name,
-                        'model_type': model_name,
-                        'record_id': data_item['id'],
-                        'action': 'auto_sync',
-                        'data': data_item['data'],
-                        'server_timestamp': data_item['timestamp']
-                    })
-
-                total_records += len(model_data)
-                print(f"📦 {app_name}.{model_name}: {len(model_data)} رکورد آماده")
-
-        sync_payload['summary']['total_models'] = len(sync_payload['models'])
-        sync_payload['summary']['total_records'] = total_records
-
-        print(f"🎉 پکیج سینک تولید شد: {len(sync_payload['models'])} مدل, {total_records} رکورد")
-        return sync_payload
+        return fields_info

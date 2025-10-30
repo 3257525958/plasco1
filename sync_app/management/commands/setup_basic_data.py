@@ -29,32 +29,59 @@ class Command(BaseCommand):
         else:
             self.stdout.write('✅ کاربر پیش‌فرض موجود است')
 
-        # ایجاد شعبه پیش‌فرض
-        branch, created = Branch.objects.get_or_create(
-            name='شعبه مرکزی',
-            defaults={
-                'address': 'آدرس پیش‌فرض - لطفا ویرایش کنید',
-                'phone': '02100000000',
-                'is_active': True
-            }
-        )
-        if created:
-            self.stdout.write(f'✅ شعبه پیش‌فرض ایجاد شد: {branch.name}')
-        else:
-            self.stdout.write(f'✅ شعبه پیش‌فرض موجود است: {branch.name}')
+        # ایجاد شعبه پیش‌فرض - فقط با فیلدهای موجود
+        try:
+            branch, created = Branch.objects.get_or_create(
+                name='شعبه مرکزی',
+                defaults={
+                    'address': 'آدرس پیش‌فرض - لطفا ویرایش کنید',
+                    # فیلدهای 'is_active' و 'phone' را حذف کردیم
+                }
+            )
+            if created:
+                self.stdout.write(f'✅ شعبه پیش‌فرض ایجاد شد: {branch.name}')
+            else:
+                self.stdout.write(f'✅ شعبه پیش‌فرض موجود است: {branch.name}')
+        except Exception as e:
+            self.stdout.write(f'⚠️ خطا در ایجاد شعبه: {e}')
+            # اگر باز هم خطا داد، فقط با name ایجاد کن
+            try:
+                branch, created = Branch.objects.get_or_create(
+                    name='شعبه مرکزی'
+                )
+                if created:
+                    self.stdout.write(f'✅ شعبه پیش‌فرض ایجاد شد (ساده): {branch.name}')
+                else:
+                    self.stdout.write(f'✅ شعبه پیش‌فرض موجود است: {branch.name}')
+            except Exception as e2:
+                self.stdout.write(f'❌ خطا در ایجاد شعبه پیش‌فرض: {e2}')
 
-        # ایجاد فروشنده پیش‌فرض
-        froshande, created = Froshande.objects.get_or_create(
-            name='فروشنده پیش‌فرض',
-            defaults={
-                'phone': '09120000000',
-                'address': 'آدرس پیش‌فرض',
-                'is_active': True
-            }
-        )
-        if created:
-            self.stdout.write(f'✅ فروشنده پیش‌فرض ایجاد شد: {froshande.name}')
-        else:
-            self.stdout.write(f'✅ فروشنده پیش‌فرض موجود است: {froshande.name}')
+        # ایجاد فروشنده پیش‌فرض - فقط با فیلدهای موجود
+        try:
+            froshande, created = Froshande.objects.get_or_create(
+                name='فروشنده پیش‌فرض',
+                defaults={
+                    'phone': '09120000000',
+                    'address': 'آدرس پیش‌فرض',
+                    # فیلد 'is_active' را حذف کردیم
+                }
+            )
+            if created:
+                self.stdout.write(f'✅ فروشنده پیش‌فرض ایجاد شد: {froshande.name}')
+            else:
+                self.stdout.write(f'✅ فروشنده پیش‌فرض موجود است: {froshande.name}')
+        except Exception as e:
+            self.stdout.write(f'⚠️ خطا در ایجاد فروشنده: {e}')
+            # اگر باز هم خطا داد، فقط با name ایجاد کن
+            try:
+                froshande, created = Froshande.objects.get_or_create(
+                    name='فروشنده پیش‌فرض'
+                )
+                if created:
+                    self.stdout.write(f'✅ فروشنده پیش‌فرض ایجاد شد (ساده): {froshande.name}')
+                else:
+                    self.stdout.write(f'✅ فروشنده پیش‌فرض موجود است: {froshande.name}')
+            except Exception as e2:
+                self.stdout.write(f'❌ خطا در ایجاد فروشنده پیش‌فرض: {e2}')
 
         self.stdout.write('🎉 آماده‌سازی داده‌های پایه تکمیل شد')
