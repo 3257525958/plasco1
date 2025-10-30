@@ -5,6 +5,8 @@ from sync_app.models import DataSyncLog, SyncSession
 from django.utils import timezone
 import hashlib
 import logging
+import threading
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -12,8 +14,45 @@ logger = logging.getLogger(__name__)
 class BidirectionalSyncService:
     def __init__(self):
         self.server_url = "https://plasmarket.ir"
-        self.api_key = "hUafL49RYuXQSRyyc7ZoRF_SxFdF8wUomtjF5YICRVk"  # 🔴 این خط رو آپدیت کن - توکن واقعی رو بذار
+        self.api_key = "hUafL49RYuXQSRyyc7ZoRF_SxFdF8wUomtjF5YICRVk"  # توکن شما
         self.last_sync_time = None
+        self.sync_interval = 60  # 🔥 تغییر به 60 ثانیه (1 دقیقه)
+        self.is_running = False
+
+    def start_auto_sync(self):
+        """شروع همگام‌سازی خودکار هر 1 دقیقه"""
+        if self.is_running:
+            print("⚠️ سرویس همگام‌سازی در حال اجراست")
+            return
+
+        self.is_running = True
+        print(f"🔄 شروع همگام‌سازی خودکار هر {self.sync_interval} ثانیه")
+
+        def sync_worker():
+            while self.is_running:
+                try:
+                    print(f"⏰ همگام‌سازی خودکار در {timezone.now()}")
+                    result = self.full_sync_cycle()
+
+                    if result['total_synced'] > 0:
+                        print(f"✅ همگام‌سازی موفق: {result['total_synced']} رکورد")
+                    else:
+                        print("ℹ️ هیچ داده جدیدی برای سینک نبود")
+
+                except Exception as e:
+                    print(f"❌ خطا در همگام‌سازی خودکار: {e}")
+
+                # انتظار 1 دقیقه
+                time.sleep(self.sync_interval)
+
+        # اجرای در thread جداگانه
+        self.sync_thread = threading.Thread(target=sync_worker, daemon=True)
+        self.sync_thread.start()
+
+    def stop_auto_sync(self):
+        """توقف همگام‌سازی خودکار"""
+        self.is_running = False
+        print("🛑 همگام‌سازی خودکار متوقف شد")
 
     def full_sync_cycle(self):
         """یک سیکل کامل همگام‌سازی دوطرفه"""
@@ -64,7 +103,8 @@ class BidirectionalSyncService:
             }
 
     def push_local_changes(self):
-        """ارسال واقعی تغییرات لوکال به سرور"""
+        """ارسال تغییرات لوکال به سرور"""
+        # کد فعلی شما بدون تغییر
         unsynced_logs = DataSyncLog.objects.filter(
             sync_status=False,
             sync_direction='local_to_server'
@@ -111,17 +151,11 @@ class BidirectionalSyncService:
         return {'sent_count': sent_count, 'status': 'success'}
 
     def pull_server_changes(self):
-        """دریافت واقعی از سرور"""
+        """دریافت از سرور و ذخیره در مدل‌های واقعی"""
         try:
-            # پارامتر آخرین همگام‌سازی
-            params = {}
-            if self.last_sync_time:
-                params['last_sync'] = self.last_sync_time.isoformat()
-
             response = requests.get(
                 f"{self.server_url}/api/sync/pull/",
                 headers={'Authorization': f'Token {self.api_key}'},
-                params=params,
                 timeout=30
             )
 
@@ -131,6 +165,32 @@ class BidirectionalSyncService:
 
                 received_count = 0
                 for server_item in server_data:
+                    # 🔥 ذخیره در مدل‌های واقعی
+                    if server_item['model_type'] == 'product':
+                        from account_app.models import Product
+                        Product.objects.update_or_create(
+                            id=server_item['record_id'],
+                            defaults=server_item['data']
+                        )
+                        print(f"  📦 محصول: {server_item['data']['name']}")
+
+                    elif server_item['model_type'] == 'contact':
+                        from cantact_app.models import Contact
+                        Contact.objects.update_or_create(
+                            id=server_item['record_id'],
+                            defaults=server_item['data']
+                        )
+                        print(f"  👥 مخاطب: {server_item['data']['name']}")
+
+                    elif server_item['model_type'] == 'invoice':
+                        from invoice_app.models import Invoice
+                        Invoice.objects.update_or_create(
+                            id=server_item['record_id'],
+                            defaults=server_item['data']
+                        )
+                        print(f"  🧾 فاکتور: {server_item['data']['invoice_number']}")
+
+                    # همچنین در لاگ هم ذخیره شود
                     DataSyncLog.objects.create(
                         model_type=server_item['model_type'],
                         record_id=server_item['record_id'],
@@ -141,20 +201,17 @@ class BidirectionalSyncService:
                         synced_at=timezone.now()
                     )
                     received_count += 1
-                    print(f"  📥 دریافت {server_item['model_type']} (ID: {server_item['record_id']})")
 
-                # آپدیت زمان آخرین همگام‌سازی
                 self.last_sync_time = timezone.now()
-
                 return {'received_count': received_count, 'status': 'success'}
             else:
                 return {'received_count': 0, 'status': 'error', 'message': f"HTTP {response.status_code}"}
 
         except requests.exceptions.RequestException as e:
             return {'received_count': 0, 'status': 'error', 'message': str(e)}
-
     def resolve_conflicts(self):
-        """حل تضادهای همگام‌سازی"""
+        """حل تضادها"""
+        # کد فعلی شما بدون تغییر
         conflicts = DataSyncLog.objects.filter(
             sync_status=False,
             conflict_resolved=False
@@ -162,7 +219,6 @@ class BidirectionalSyncService:
 
         resolved_count = 0
         for conflict in conflicts:
-            # استراتژی ساده: آخرین تغییر برنده
             conflict.conflict_resolved = True
             conflict.sync_status = True
             conflict.synced_at = timezone.now()
@@ -170,28 +226,6 @@ class BidirectionalSyncService:
             resolved_count += 1
 
         return {'resolved_count': resolved_count, 'status': 'success'}
-
-    def sync_stock_changes(self):
-        """همگام‌سازی ویژه برای تغییرات موجودی"""
-        print("📦 همگام‌سازی تغییرات موجودی...")
-
-        # اینجا می‌تونی منطق واقعی برای تغییرات موجودی پیاده‌سازی کنی
-        stock_changes = [
-            {'product_id': 1, 'change': +10, 'reason': 'خرید انبار'},
-            {'product_id': 2, 'change': -5, 'reason': 'فروش'},
-        ]
-
-        for change in stock_changes:
-            DataSyncLog.objects.create(
-                model_type='stock',
-                record_id=change['product_id'],
-                action='update',
-                data=change,
-                sync_direction='local_to_server'
-            )
-            print(f"  📦 ثبت تغییر موجودی: محصول {change['product_id']} - {change['change']}")
-
-        return len(stock_changes)
 
 
 # ایجاد نمونه سرویس
