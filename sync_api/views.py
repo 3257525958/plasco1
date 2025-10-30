@@ -1,4 +1,6 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
@@ -6,12 +8,12 @@ from .models import SyncToken
 
 
 @api_view(['GET'])
+@authentication_classes([])  # 🔥 غیرفعال کردن authentication پیشفرض
+@permission_classes([])  # 🔥 غیرفعال کردن permission پیشفرض
 def sync_pull(request):
-    """ارسال داده به کامپیوترهای آفلاین - بدون هیچ authentication"""
+    """ارسال داده به کامپیوترهای آفلاین"""
     try:
-        print("🔄 درخواست sync_pull دریافت شد")
-
-        # بررسی توکن به صورت دستی
+        # بررسی توکن دستی
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
 
         if not auth_header.startswith('Token '):
