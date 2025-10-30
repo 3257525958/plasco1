@@ -6,16 +6,15 @@ from .models import SyncToken
 
 
 @api_view(['GET'])
-@authentication_classes([])  # 🔥 غیرفعال کردن کامل authentication
-@permission_classes([])  # 🔥 غیرفعال کردن کامل permission
+@authentication_classes([])
+@permission_classes([])
 def sync_pull(request):
-    """سینک همه مدل‌های اصلی - بدون هیچ authentication"""
+    """سینک همه مدل‌ها با نام‌های دقیق"""
     try:
-        print("🔄 درخواست sync_pull دریافت شد - نسخه بدون احراز هویت")
+        print("🔄 درخواست sync_pull برای همه مدل‌ها")
 
-        # بررسی توکن به صورت دستی
+        # بررسی توکن
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-        print(f"📨 هدر احراز: {auth_header}")
 
         if not auth_header.startswith('Token '):
             return Response({
@@ -24,14 +23,11 @@ def sync_pull(request):
             }, status=status.HTTP_401_UNAUTHORIZED)
 
         token_key = auth_header[6:]
-        print(f"🔑 توکن دریافت شده: {token_key}")
 
-        # بررسی توکن در دیتابیس
         try:
             token = SyncToken.objects.get(token=token_key, is_active=True)
             print(f"✅ توکن معتبر: {token.name}")
         except SyncToken.DoesNotExist:
-            print("❌ توکن نامعتبر")
             return Response({
                 'status': 'error',
                 'message': 'توکن نامعتبر است'
@@ -39,7 +35,35 @@ def sync_pull(request):
 
         changes = []
 
-        # 🔥 مدل‌های اصلی از account_app
+        # 🔥 ۱. کاربران سیستم
+        try:
+            from django.contrib.auth.models import User
+            users = User.objects.all()[:100]
+            for user in users:
+                user_data = {
+                    'username': user.username,
+                    'email': user.email or '',
+                    'first_name': user.first_name or '',
+                    'last_name': user.last_name or '',
+                    'is_staff': user.is_staff,
+                    'is_superuser': user.is_superuser,
+                    'is_active': user.is_active,
+                    'date_joined': user.date_joined.isoformat(),
+                    'last_login': user.last_login.isoformat() if user.last_login else '',
+                    'password': user.password  # 🔥 مهم: هش پسورد
+                }
+                changes.append({
+                    'app_name': 'auth',
+                    'model_type': 'User',
+                    'record_id': user.id,
+                    'action': 'create_or_update',
+                    'data': user_data
+                })
+            print(f"✅ کاربران سیستم: {len(users)}")
+        except Exception as e:
+            print(f"⚠️ خطا در کاربران: {e}")
+
+        # 🔥 ۲. account_app
         try:
             from account_app.models import Product
             products = Product.objects.all()[:100]
@@ -50,73 +74,84 @@ def sync_pull(request):
                     'record_id': product.id,
                     'action': 'create_or_update',
                     'data': {
-                        'name': product.name,
+                        'name': product.name or '',
                         'description': product.description or '',
-                        'created_at': product.created_at.isoformat() if product.created_at else timezone.now().isoformat(),
-                        'updated_at': product.updated_at.isoformat() if product.updated_at else timezone.now().isoformat()
+                        'created_at': product.created_at.isoformat() if product.created_at else '',
+                        'updated_at': product.updated_at.isoformat() if product.updated_at else ''
                     }
                 })
-            print(f"✅ محصولات: {len(products)} رکورد")
+            print(f"✅ محصولات: {len(products)}")
         except Exception as e:
             print(f"⚠️ خطا در محصولات: {e}")
 
-        # 🔥 مدل‌های از dashbord_app
+        # 🔥 ۳. dashbord_app - با نام‌های دقیق
         try:
-            from dashbord_app.models import Froshande, Product as DashProduct
-            # فروشندگان
-            froshandes = Froshande.objects.all()[:50]
-            for froshande in froshandes:
+            from dashbord_app.models import Froshande
+            froshandes = Froshande.objects.all()[:100]
+            for frosh in froshandes:
                 changes.append({
                     'app_name': 'dashbord_app',
                     'model_type': 'Froshande',
-                    'record_id': froshande.id,
+                    'record_id': frosh.id,
                     'action': 'create_or_update',
                     'data': {
-                        'name': froshande.name or '',
-                        'family': froshande.family or '',
-                        'store_name': froshande.store_name or '',
-                        'address': froshande.address or ''
+                        'name': frosh.name or '',
+                        'family': frosh.family or '',
+                        'store_name': frosh.store_name or '',
+                        'address': frosh.address or ''
                     }
                 })
-
-            # محصولات dashbord
-            dash_products = DashProduct.objects.all()[:50]
-            for product in dash_products:
-                changes.append({
-                    'app_name': 'dashbord_app',
-                    'model_type': 'Product',
-                    'record_id': product.id,
-                    'action': 'create_or_update',
-                    'data': {
-                        'name': product.name or '',
-                        'barcode': product.barcode or '',
-                        'unit_price': str(product.unit_price) if product.unit_price else '0'
-                    }
-                })
-            print(f"✅ فروشندگان: {len(froshandes)}، محصولات: {len(dash_products)}")
+            print(f"✅ فروشندگان: {len(froshandes)}")
         except Exception as e:
-            print(f"⚠️ خطا در dashbord_app: {e}")
+            print(f"⚠️ خطا در فروشندگان: {e}")
 
-        # 🔥 مدل‌های از invoice_app
+        # 🔥 ۴. cantact_app - با نام‌های دقیق
+        try:
+            from cantact_app.models import accuntmodel
+            accounts = accuntmodel.objects.all()[:100]
+            for acc in accounts:
+                changes.append({
+                    'app_name': 'cantact_app',
+                    'model_type': 'accuntmodel',  # 🔥 با حروف کوچک
+                    'record_id': acc.id,
+                    'action': 'create_or_update',
+                    'data': {
+                        'firstname': acc.firstname or '',
+                        'lastname': acc.lastname or '',
+                        'melicode': acc.melicode or '',
+                        'phonnumber': acc.phonnumber or ''
+                    }
+                })
+            print(f"✅ حساب‌های کاربری: {len(accounts)}")
+        except Exception as e:
+            print(f"⚠️ خطا در حساب‌های کاربری: {e}")
+
+        # 🔥 ۵. invoice_app - با نام‌های دقیق
         try:
             from invoice_app.models import Invoicefrosh
-            invoices = Invoicefrosh.objects.all()[:30]
-            for invoice in invoices:
+            invoices = Invoicefrosh.objects.all()[:50]
+            for inv in invoices:
+                # برای فیلدهای ForeignKey فقط ID را می‌فرستیم
+                invoice_data = {
+                    'created_at': inv.created_at.isoformat() if inv.created_at else '',
+                    'payment_date': inv.payment_date.isoformat() if inv.payment_date else ''
+                }
+                # اضافه کردن فیلدهای معمولی
+                if hasattr(inv, 'branch_id') and inv.branch_id:
+                    invoice_data['branch_id'] = inv.branch_id
+
                 changes.append({
                     'app_name': 'invoice_app',
                     'model_type': 'Invoicefrosh',
-                    'record_id': invoice.id,
+                    'record_id': inv.id,
                     'action': 'create_or_update',
-                    'data': {
-                        'branch': invoice.branch.name if invoice.branch else '',
-                        'created_at': invoice.created_at.isoformat() if invoice.created_at else timezone.now().isoformat()
-                    }
+                    'data': invoice_data
                 })
             print(f"✅ فاکتورها: {len(invoices)}")
         except Exception as e:
             print(f"⚠️ خطا در فاکتورها: {e}")
 
-        print(f"📤 ارسال {len(changes)} رکورد از {len([c for c in changes if c['app_name'] == 'account_app'])} مدل")
+        print(f"📤 ارسال {len(changes)} رکورد از {len(set([c['app_name'] for c in changes]))} اپ")
 
         return Response({
             'status': 'success',
@@ -129,8 +164,4 @@ def sync_pull(request):
         print(f"❌ خطا در sync_pull: {str(e)}")
         import traceback
         traceback.print_exc()
-
-        return Response({
-            'status': 'error',
-            'message': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'status': 'error', 'message': str(e)})

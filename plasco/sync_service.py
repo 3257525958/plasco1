@@ -151,7 +151,7 @@ class BidirectionalSyncService:
         return {'sent_count': sent_count, 'status': 'success'}
 
     def pull_server_changes(self):
-        """دریافت همه داده‌ها از سرور و ذخیره در مدل‌های واقعی"""
+        """دریافت و پردازش همه مدل‌ها"""
         try:
             response = requests.get(
                 f"{self.server_url}/api/sync/pull/",
@@ -172,15 +172,50 @@ class BidirectionalSyncService:
                         model_name = server_item['model_type']
                         record_data = server_item['data']
 
-                        # گرفتن مدل
-                        from django.apps import apps
-                        model_class = apps.get_model(app_name, model_name)
+                        # 🔥 پردازش بر اساس app و model
+                        if app_name == 'auth' and model_name == 'User':
+                            from django.contrib.auth.models import User
+                            User.objects.update_or_create(
+                                id=server_item['record_id'],
+                                defaults=record_data
+                            )
+                            print(f"  👤 کاربر: {record_data['username']}")
 
-                        # ایجاد یا آپدیت رکورد
-                        model_class.objects.update_or_create(
-                            id=server_item['record_id'],
-                            defaults=record_data
-                        )
+                        elif app_name == 'account_app' and model_name == 'Product':
+                            from account_app.models import Product
+                            Product.objects.update_or_create(
+                                id=server_item['record_id'],
+                                defaults=record_data
+                            )
+                            print(f"  📦 محصول: {record_data['name']}")
+
+                        elif app_name == 'dashbord_app' and model_name == 'Froshande':
+                            from dashbord_app.models import Froshande
+                            Froshande.objects.update_or_create(
+                                id=server_item['record_id'],
+                                defaults=record_data
+                            )
+                            print(f"  🏪 فروشنده: {record_data['name']} {record_data['family']}")
+
+                        elif app_name == 'cantact_app' and model_name == 'accuntmodel':  # 🔥 با حروف کوچک
+                            from cantact_app.models import accuntmodel
+                            accuntmodel.objects.update_or_create(
+                                id=server_item['record_id'],
+                                defaults=record_data
+                            )
+                            print(f"  📞 حساب: {record_data['firstname']} {record_data['lastname']}")
+
+                        elif app_name == 'invoice_app' and model_name == 'Invoicefrosh':
+                            from invoice_app.models import Invoicefrosh
+                            Invoicefrosh.objects.update_or_create(
+                                id=server_item['record_id'],
+                                defaults=record_data
+                            )
+                            print(f"  🧾 فاکتور: {server_item['record_id']}")
+
+                        else:
+                            print(f"  ⚠️ مدل ناشناخته: {app_name}.{model_name}")
+                            continue
 
                         # شمارش
                         if model_name not in model_counts:
@@ -188,13 +223,12 @@ class BidirectionalSyncService:
                         model_counts[model_name] += 1
                         received_count += 1
 
-                        print(f"  ✅ {app_name}.{model_name} (ID: {server_item['record_id']})")
-
                     except Exception as e:
-                        print(f"  ❌ خطا در پردازش {server_item['model_type']}: {e}")
+                        print(f"  ❌ خطا در پردازش {app_name}.{model_name}: {e}")
                         continue
 
                     # ذخیره در لاگ
+                    from sync_app.models import DataSyncLog
                     DataSyncLog.objects.create(
                         model_type=f"{app_name}.{model_name}",
                         record_id=server_item['record_id'],
@@ -221,6 +255,8 @@ class BidirectionalSyncService:
 
         except requests.exceptions.RequestException as e:
             return {'received_count': 0, 'status': 'error', 'message': str(e)}
+
+
     def resolve_conflicts(self):
         """حل تضادها"""
         # کد فعلی شما بدون تغییر
