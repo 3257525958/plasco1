@@ -2,17 +2,17 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
+from django.apps import apps
 from .models import SyncToken
-from account_app.models import Product  # 🔥 مدل واقعی
-from cantact_app.models import Contact  # 🔥 مدل واقعی
-from invoice_app.models import Invoice  # 🔥 مدل واقعی
+from .sync_config import SYNC_CONFIG
+import json
 
 
 @api_view(['GET'])
 def sync_pull(request):
-    """ارسال داده‌های واقعی به کامپیوترهای آفلاین"""
+    """ارسال همه داده‌ها به کامپیوترهای آفلاین"""
     try:
-        print("🔄 درخواست sync_pull دریافت شد")
+        print("🔄 درخواست sync_pull برای همه مدل‌ها دریافت شد")
 
         # بررسی توکن
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
@@ -25,7 +25,6 @@ def sync_pull(request):
 
         token_key = auth_header[6:]
 
-        # بررسی توکن در دیتابیس
         try:
             token = SyncToken.objects.get(token=token_key, is_active=True)
             print(f"✅ توکن معتبر: {token.name}")
@@ -36,76 +35,61 @@ def sync_pull(request):
             }, status=status.HTTP_401_UNAUTHORIZED)
 
         changes = []
+        total_records = 0
 
-        # 🔥 محصولات واقعی
-        products = Product.objects.all()[:50]  # 50 محصول اول
-        for product in products:
-            changes.append({
-                'model_type': 'product',
-                'record_id': product.id,
-                'action': 'create',
-                'data': {
-                    'name': product.name,
-                    'description': product.description,
-                    'price': str(product.price) if hasattr(product, 'price') else '0',
-                    # سایر فیلدهای محصول
-                },
-                'server_timestamp': product.updated_at.isoformat() if hasattr(product,
-                                                                              'updated_at') else timezone.now().isoformat()
-            })
+        # 🔥 سینک همه مدل‌ها بر اساس config
+        for app_name, models in SYNC_CONFIG.items():
+            for model_name, config in models.items():
+                try:
+                    # گرفتن مدل
+                    model_class = apps.get_model(app_name, model_name)
 
-        # 🔥 مخاطبین واقعی
-        try:
-            contacts = Contact.objects.all()[:50]  # 50 مخاطب اول
-            for contact in contacts:
-                changes.append({
-                    'model_type': 'contact',
-                    'record_id': contact.id,
-                    'action': 'create',
-                    'data': {
-                        'name': contact.name,
-                        'phone': contact.phone,
-                        'email': getattr(contact, 'email', ''),
-                        # سایر فیلدهای مخاطب
-                    },
-                    'server_timestamp': contact.updated_at.isoformat() if hasattr(contact,
-                                                                                  'updated_at') else timezone.now().isoformat()
-                })
-        except Exception as e:
-            print(f"⚠️ خطا در دریافت مخاطبین: {e}")
+                    # گرفتن همه رکوردها
+                    records = model_class.objects.all()[:config['batch_size']]
 
-        # 🔥 فاکتورهای واقعی
-        try:
-            invoices = Invoice.objects.all()[:30]  # 30 فاکتور اول
-            for invoice in invoices:
-                changes.append({
-                    'model_type': 'invoice',
-                    'record_id': invoice.id,
-                    'action': 'create',
-                    'data': {
-                        'invoice_number': invoice.invoice_number,
-                        'customer_name': getattr(invoice, 'customer_name', ''),
-                        'total_amount': str(getattr(invoice, 'total_amount', 0)),
-                        'date': invoice.date.isoformat() if hasattr(invoice, 'date') else timezone.now().isoformat(),
-                        # سایر فیلدهای فاکتور
-                    },
-                    'server_timestamp': invoice.updated_at.isoformat() if hasattr(invoice,
-                                                                                  'updated_at') else timezone.now().isoformat()
-                })
-        except Exception as e:
-            print(f"⚠️ خطا در دریافت فاکتورها: {e}")
+                    for record in records:
+                        # ساخت دیتا
+                        record_data = {}
+                        for field in config['fields']:
+                            if hasattr(record, field):
+                                value = getattr(record, field)
+                                # تبدیل انواع مختلف به string
+                                if hasattr(value, 'isoformat'):  # برای DateTime
+                                    record_data[field] = value.isoformat()
+                                else:
+                                    record_data[field] = str(value) if value is not None else ''
 
-        print(f"📤 ارسال {len(changes)} رکورد واقعی")
+                        changes.append({
+                            'app_name': app_name,
+                            'model_type': model_name,
+                            'record_id': record.id,
+                            'action': 'create_or_update',
+                            'data': record_data,
+                            'server_timestamp': timezone.now().isoformat()
+                        })
+
+                        total_records += 1
+
+                    print(f"✅ {app_name}.{model_name}: {len(records)} رکورد")
+
+                except Exception as e:
+                    print(f"⚠️ خطا در مدل {app_name}.{model_name}: {e}")
+                    continue
+
+        print(f"📤 ارسال {total_records} رکورد از {len(changes)} مدل")
 
         return Response({
             'status': 'success',
-            'message': 'همگام‌سازی موفق',
+            'message': f'همگام‌سازی {total_records} رکورد موفق',
             'changes': changes,
-            'count': len(changes)
+            'total_records': total_records
         })
 
     except Exception as e:
         print(f"❌ خطا در sync_pull: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
         return Response({
             'status': 'error',
             'message': str(e)

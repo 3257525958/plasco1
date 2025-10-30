@@ -151,7 +151,7 @@ class BidirectionalSyncService:
         return {'sent_count': sent_count, 'status': 'success'}
 
     def pull_server_changes(self):
-        """دریافت از سرور و ذخیره در مدل‌های واقعی"""
+        """دریافت همه داده‌ها از سرور و ذخیره در مدل‌های واقعی"""
         try:
             response = requests.get(
                 f"{self.server_url}/api/sync/pull/",
@@ -164,35 +164,39 @@ class BidirectionalSyncService:
                 server_data = result.get('changes', [])
 
                 received_count = 0
+                model_counts = {}
+
                 for server_item in server_data:
-                    # 🔥 ذخیره در مدل‌های واقعی
-                    if server_item['model_type'] == 'product':
-                        from account_app.models import Product
-                        Product.objects.update_or_create(
-                            id=server_item['record_id'],
-                            defaults=server_item['data']
-                        )
-                        print(f"  📦 محصول: {server_item['data']['name']}")
+                    try:
+                        app_name = server_item['app_name']
+                        model_name = server_item['model_type']
+                        record_data = server_item['data']
 
-                    elif server_item['model_type'] == 'contact':
-                        from cantact_app.models import Contact
-                        Contact.objects.update_or_create(
-                            id=server_item['record_id'],
-                            defaults=server_item['data']
-                        )
-                        print(f"  👥 مخاطب: {server_item['data']['name']}")
+                        # گرفتن مدل
+                        from django.apps import apps
+                        model_class = apps.get_model(app_name, model_name)
 
-                    elif server_item['model_type'] == 'invoice':
-                        from invoice_app.models import Invoice
-                        Invoice.objects.update_or_create(
+                        # ایجاد یا آپدیت رکورد
+                        model_class.objects.update_or_create(
                             id=server_item['record_id'],
-                            defaults=server_item['data']
+                            defaults=record_data
                         )
-                        print(f"  🧾 فاکتور: {server_item['data']['invoice_number']}")
 
-                    # همچنین در لاگ هم ذخیره شود
+                        # شمارش
+                        if model_name not in model_counts:
+                            model_counts[model_name] = 0
+                        model_counts[model_name] += 1
+                        received_count += 1
+
+                        print(f"  ✅ {app_name}.{model_name} (ID: {server_item['record_id']})")
+
+                    except Exception as e:
+                        print(f"  ❌ خطا در پردازش {server_item['model_type']}: {e}")
+                        continue
+
+                    # ذخیره در لاگ
                     DataSyncLog.objects.create(
-                        model_type=server_item['model_type'],
+                        model_type=f"{app_name}.{model_name}",
                         record_id=server_item['record_id'],
                         action=server_item['action'],
                         data=server_item['data'],
@@ -200,10 +204,18 @@ class BidirectionalSyncService:
                         sync_status=True,
                         synced_at=timezone.now()
                     )
-                    received_count += 1
+
+                # نمایش خلاصه
+                print("📊 خلاصه سینک:")
+                for model, count in model_counts.items():
+                    print(f"  📦 {model}: {count} رکورد")
 
                 self.last_sync_time = timezone.now()
-                return {'received_count': received_count, 'status': 'success'}
+                return {
+                    'received_count': received_count,
+                    'status': 'success',
+                    'model_counts': model_counts
+                }
             else:
                 return {'received_count': 0, 'status': 'error', 'message': f"HTTP {response.status_code}"}
 
