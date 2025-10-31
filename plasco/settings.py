@@ -139,8 +139,8 @@ INSTALLED_APPS = [
     'invoice_app.apps.InvoiceAppConfig',
     'it_app.apps.ItAppConfig',
     'pos_payment.apps.PosPaymentConfig',
-    'sync_app',
-    'sync_api',
+    'sync_app.apps.SyncAppConfig',  # با پیکربندی دقیق
+    'sync_api.apps.SyncApiConfig',
 ]
 
 MIDDLEWARE = [
@@ -172,7 +172,7 @@ DATABASES = {
     }
 }
 
-# بقیه تنظیمات مانند قبل...
+# بقیه تنظیمات...
 LANGUAGE_CODE = 'fa-ir'
 TIME_ZONE = 'Asia/Tehran'
 USE_I18N = True
@@ -190,3 +190,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SYNC_INTERVAL = 600
 ONLINE_SERVER_URL = "https://plasmarket.ir"
 OFFLINE_MODE = False  # مهم: در سرور آنلاین false باشد
+
+# تنظیمات لاگ‌گیری
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
