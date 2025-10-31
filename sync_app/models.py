@@ -60,3 +60,32 @@ class OfflineSetting(models.Model):
 
     def __str__(self):
         return self.setting_key
+
+
+# اضافه کردن مدل ServerSyncLog که گم شده بود
+class ServerSyncLog(models.Model):
+    MODEL_TYPES = [
+        ('product', 'محصولات'),
+        ('invoice', 'فاکتورها'),
+        ('customer', 'مشتریان'),
+        ('pos', 'تراکنش‌های پوز'),
+        ('stock', 'موجودی انبار'),
+        ('user', 'کاربران'),
+        ('branch', 'شعبه‌ها'),
+        ('expense', 'هزینه‌ها'),
+    ]
+
+    model_type = models.CharField(max_length=20, choices=MODEL_TYPES)
+    record_id = models.IntegerField()
+    action = models.CharField(max_length=10)
+    data = models.JSONField()
+    source_ip = models.GenericIPAddressField()
+    sync_direction = models.CharField(max_length=20, choices=[('local_to_server', 'لوکال به سرور'),
+                                                              ('server_to_local', 'سرور به لوکال')])
+    created_at = models.DateTimeField(auto_now_add=True)
+    processed = models.BooleanField(default=False)
+    processed_at = models.DateTimeField(null=True, blank=True)
+    error_message = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'server_sync_log'
