@@ -8,7 +8,7 @@ class OfflineModeMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # اگر در حالت آفلاین هستیم
+        # فقط در حالت آفلاین IP چک شود
         if getattr(settings, 'OFFLINE_MODE', False):
             client_ip = self.get_client_ip(request)
             allowed_ips = getattr(settings, 'ALLOWED_OFFLINE_IPS', [])

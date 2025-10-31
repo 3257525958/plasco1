@@ -1,55 +1,78 @@
-# sync_api/views.py
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import SyncToken
-from .auto_sync import SmartSyncEngine
+from sync_app.models import ServerSyncLog
+from django.apps import apps
 
 
 @api_view(['GET'])
-@authentication_classes([])
-@permission_classes([])
 def sync_pull(request):
-    """سینک هوشمند پویا - کشف خودکار همه مدل‌ها"""
+    """ارسال داده‌ها به سیستم‌های آفلاین"""
     try:
-        print("🤖 راه‌اندازی موتور سینک پویا...")
+        # کشف خودکار تمام مدل‌ها
+        changes = []
 
-        # بررسی توکن
-        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-        if not auth_header.startswith('Token '):
-            return Response({
-                'status': 'error',
-                'message': 'توکن ارسال نشده است'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+        for app_config in apps.get_app_configs():
+            if any(app_config.name.startswith(excluded) for excluded in [
+                'django.contrib.admin', 'django.contrib.auth',
+                'django.contrib.contenttypes', 'django.contrib.sessions'
+            ]):
+                continue
 
-        token_key = auth_header[6:]
-        try:
-            token = SyncToken.objects.get(token=token_key, is_active=True)
-            print(f"✅ توکن معتبر: {token.name}")
-        except SyncToken.DoesNotExist:
-            return Response({
-                'status': 'error',
-                'message': 'توکن نامعتبر است'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            for model in app_config.get_models():
+                if model.__name__ in ['DataSyncLog', 'SyncSession', 'OfflineSetting', 'ServerSyncLog', 'SyncToken']:
+                    continue
 
-        # ایجاد موتور سینک پویا
-        sync_engine = SmartSyncEngine()
+                # سریالایز کردن داده‌ها
+                for obj in model.objects.all()[:100]:  # محدودیت برای تست
+                    data = {}
+                    for field in obj._meta.get_fields():
+                        if not field.is_relation or field.one_to_one:
+                            try:
+                                value = getattr(obj, field.name)
+                                if hasattr(value, 'isoformat'):
+                                    data[field.name] = value.isoformat()
+                                else:
+                                    data[field.name] = str(value)
+                            except:
+                                data[field.name] = None
 
-        # تولید پکیج سینک پویا
-        sync_payload = sync_engine.generate_dynamic_sync_payload()
+                    changes.append({
+                        'app_name': app_config.name,
+                        'model_type': model.__name__,
+                        'record_id': obj.id,
+                        'action': 'sync',
+                        'data': data
+                    })
 
         return Response({
             'status': 'success',
-            'message': f'سینک پویا - {sync_payload["summary"]["total_records"]} رکورد از {sync_payload["summary"]["total_models"]} مدل',
-            'sync_mode': 'DYNAMIC_AUTO_DISCOVERY',
-            'payload': sync_payload
+            'changes': changes,
+            'total_changes': len(changes)
         })
 
     except Exception as e:
-        print(f"❌ خطا در سینک پویا: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return Response({
-            'status': 'error',
-            'message': f'خطا در سینک پویا: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'status': 'error', 'message': str(e)})
+
+
+@api_view(['POST'])
+def sync_receive(request):
+    """دریافت تغییرات از سیستم‌های آفلاین"""
+    try:
+        data = request.data
+        print(f"📩 دریافت از آفلاین: {data.get('model_type')}")
+
+        # ذخیره در لاگ سرور
+        ServerSyncLog.objects.create(
+            model_type=data.get('model_type'),
+            record_id=data.get('record_id'),
+            action=data.get('action'),
+            data=data.get('data'),
+            source_ip=request.META.get('REMOTE_ADDR'),
+            sync_direction='local_to_server'
+        )
+
+        return Response({'status': 'success', 'message': 'دریافت شد'})
+
+    except Exception as e:
+        return Response({'status': 'error', 'message': str(e)})

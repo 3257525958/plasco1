@@ -1,88 +1,65 @@
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from account_app.models import Product, Expense, StockTransaction  # ✅ StockTransaction اضافه شد
-from invoice_app.models import Invoicefrosh
-from pos_payment.models import POSTransaction
+from django.apps import apps
 from .models import DataSyncLog
 
 
-@receiver(post_save, sender=Product)
-def log_product_change(sender, instance, created, **kwargs):
-    action = 'create' if created else 'update'
+def register_all_signals():
+    """ثبت سیگنال برای تمام مدل‌ها"""
+    for app_config in apps.get_app_configs():
+        if any(app_config.name.startswith(excluded) for excluded in [
+            'django.contrib.admin', 'django.contrib.auth',
+            'django.contrib.contenttypes', 'django.contrib.sessions'
+        ]):
+            continue
 
-    # فقط از فیلدهای واقعی استفاده کن
-    data = {
-        'name': instance.name,
-        'description': instance.description,
-    }
+        for model in app_config.get_models():
+            if model.__name__ in ['DataSyncLog', 'SyncSession', 'OfflineSetting', 'ServerSyncLog', 'SyncToken']:
+                continue
 
-    DataSyncLog.objects.create(
-        model_type='product',
-        record_id=instance.id,
-        action=action,
-        data=data
-    )
-    print(f"📝 سیگنال: محصول {instance.name} در لاگ ثبت شد")
+            post_save.connect(handle_model_change, sender=model)
+            print(f"✅ سیگنال ثبت شد: {app_config.name}.{model.__name__}")
 
 
-@receiver(post_save, sender=StockTransaction)  # ✅ سیگنال جدید برای تراکنش‌های انبار
-def log_stock_transaction(sender, instance, created, **kwargs):
-    if created:  # فقط برای تراکنش‌های جدید
-        data = {
-            'product_id': instance.product.id,
-            'product_name': instance.product.name,
-            'transaction_type': instance.transaction_type,
-            'quantity': instance.quantity,
-            'description': instance.description,
-            'user_id': instance.user.id,
-            'username': instance.user.username
-        }
+def handle_model_change(sender, instance, created, **kwargs):
+    """مدیریت تغییرات تمام مدل‌ها"""
+    try:
+        app_label = instance._meta.app_label
+        model_name = instance._meta.model_name
 
-        DataSyncLog.objects.create(
-            model_type='stock',
-            record_id=instance.id,
-            action='create',
-            data=data,
-            sync_direction='local_to_server'
-        )
-        print(f"📝 سیگنال: تراکنش انبار {instance.id} در لاگ ثبت شد")
+        if model_name in ['datasynclog', 'syncsession', 'offlinesetting']:
+            return
 
+        action = 'create' if created else 'update'
 
-@receiver(post_save, sender=Invoicefrosh)
-def log_invoice_change(sender, instance, created, **kwargs):
-    action = 'create' if created else 'update'
+        # جمع‌آوری داده‌ها
+        data = {}
+        for field in instance._meta.get_fields():
+            if not field.is_relation or field.one_to_one:
+                try:
+                    value = getattr(instance, field.name)
+                    if hasattr(value, 'isoformat'):
+                        data[field.name] = value.isoformat()
+                    else:
+                        data[field.name] = str(value)
+                except:
+                    data[field.name] = None
 
-    data = {
-        'customer_name': instance.customer_name,
-        'total_amount': str(instance.total_amount) if hasattr(instance, 'total_amount') else '0',
-    }
+        # ثبت در لاگ (فقط در آفلاین)
+        from django.conf import settings
+        if settings.OFFLINE_MODE:
+            DataSyncLog.objects.create(
+                model_type=model_name,
+                record_id=instance.id,
+                action=action,
+                data=data,
+                sync_direction='local_to_server'
+            )
+            print(f"📝 تغییر ثبت شد: {model_name} - ID: {instance.id}")
 
-    if hasattr(instance, 'branch') and instance.branch:
-        data['branch_id'] = instance.branch.id
-
-    DataSyncLog.objects.create(
-        model_type='invoice',
-        record_id=instance.id,
-        action=action,
-        data=data
-    )
+    except Exception as e:
+        print(f"❌ خطا در سیگنال: {e}")
 
 
-@receiver(post_save, sender=POSTransaction)
-def log_pos_change(sender, instance, created, **kwargs):
-    action = 'create' if created else 'update'
-
-    data = {
-        'amount': str(instance.amount),
-        'status': instance.status,
-    }
-
-    if hasattr(instance, 'transaction_id'):
-        data['transaction_id'] = instance.transaction_id
-
-    DataSyncLog.objects.create(
-        model_type='pos',
-        record_id=instance.id,
-        action=action,
-        data=data
-    )
+# ثبت خودکار هنگام بارگذاری
+register_all_signals()

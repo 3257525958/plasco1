@@ -5,5 +5,5 @@ app_name = 'sync_api'
 
 urlpatterns = [
     path('pull/', views.sync_pull, name='sync_pull'),
-    # خط sync_push را کاملاً حذف کنید چون وجود ندارد
+    path('receive/', views.sync_receive, name='sync_receive'),
 ]
