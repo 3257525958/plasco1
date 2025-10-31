@@ -80,7 +80,21 @@
 #     }
 # }
 #
-# # بقیه تنظیمات...
+# AUTH_PASSWORD_VALIDATORS = [
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+#     },
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+#     },
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+#     },
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+#     },
+# ]
+#
 # LANGUAGE_CODE = 'fa-ir'
 # TIME_ZONE = 'Asia/Tehran'
 # USE_I18N = True
@@ -115,7 +129,18 @@ IS_OFFLINE_MODE = False
 SECRET_KEY = 'django-insecure-9a=faq-)zl&%@!5(9t8!0r(ar)&()3l+hc#a)+-!eh$-ljkdh@'
 DEBUG = False
 
-ALLOWED_HOSTS = ['plasmarket.ir', 'www.plasmarket.ir', 'https://plasmarket.ir']
+# در بخش ALLOWED_HOSTS
+ALLOWED_HOSTS = ['plasmarket.ir', 'www.plasmarket.ir', 'localhost', '127.0.0.1', '0.0.0.0']
+
+# در بخش CORS (اگر نیاز است)
+CORS_ALLOW_ALL_ORIGINS = True  # فقط برای تست
+# یا
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
 
 print("🔵 اجرا در حالت آنلاین - ديتابيس اصلی (Master)")
 
