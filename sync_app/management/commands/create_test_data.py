@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User, Group
-from account_app.models import Customer
+
+from cantact_app.models import Branch
 import random
 
 

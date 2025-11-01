@@ -25,7 +25,7 @@ class Command(BaseCommand):
         # تست سینک
         self.stdout.write('🔄 شروع فرآیند سینک...')
         try:
-            result = sync_service.pull_server_changes()
+            result = sync_service.download_from_server()
 
             if result['status'] == 'success':
                 self.stdout.write(

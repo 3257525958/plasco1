@@ -49,7 +49,7 @@ class UniversalSyncService:
             if response.status_code == 200:
                 data = response.json()
                 if data.get('status') == 'success':
-                    return self.process_server_data(data['payload'])
+                    return self.process_server_data(data)
                 else:
                     return {'status': 'error', 'message': data.get('message', 'خطا در سرور')}
             else:
