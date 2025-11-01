@@ -117,7 +117,27 @@ class UniversalSyncService:
                                 filtered_data['created_by_id'] = default_user.id
                         except Exception as e:
                             print(f"⚠️ خطا در دریافت کاربر پیش‌فرض: {e}")
+                if model_key == 'account_app.Expense':
+                    # اگر branch_id وجود ندارد، از شعبه پیش‌فرض استفاده کن
+                    if 'branch_id' not in filtered_data and 'branch' not in filtered_data:
+                        try:
+                            from cantact_app.models import Branch
+                            default_branch = Branch.objects.first()
+                            if default_branch:
+                                filtered_data['branch_id'] = default_branch.id
+                        except Exception as e:
+                            print(f"⚠️ خطا در دریافت شعبه پیش‌فرض برای Expense: {e}")
 
+                    # اگر user_id وجود ندارد، از کاربر پیش‌فرض استفاده کن
+                    if 'user_id' not in filtered_data and 'user' not in filtered_data:
+                        try:
+                            from django.contrib.auth.models import User
+                            default_user = User.objects.first()
+                            if default_user:
+                                filtered_data['user_id'] = default_user.id
+                                print(f"✅ user_id پیش‌فرض برای Expense اضافه شد: {default_user.id}")
+                        except Exception as e:
+                            print(f"⚠️ خطا در دریافت کاربر پیش‌فرض برای Expense: {e}")
 
                 # ایجاد یا آپدیت رکورد در دیتابیس محلی
                 if filtered_data:  # فقط اگر فیلد معتبر وجود دارد
