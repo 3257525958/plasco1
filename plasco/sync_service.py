@@ -77,14 +77,22 @@ class UniversalSyncService:
                 data = change['data']
 
                 # فیلتر کردن فیلدهایی که در مدل وجود دارند
-                model_fields = [f.name for f in model_class._meta.get_fields()]
+                # فیلتر کردن فیلدهایی که در مدل وجود دارند و قابل نوشتن هستند
+                model_fields = []
+                for f in model_class._meta.get_fields():
+                    # فقط فیلدهای غیر رابطه‌ای یا رابطه‌ای مستقیم (نه معکوس) را شامل شو
+                    if not f.is_relation or (f.is_relation and not f.auto_created):
+                        model_fields.append(f.name)
+
                 filtered_data = {}
 
                 for field_name, value in data.items():
                     if field_name in model_fields:
                         filtered_data[field_name] = value
                     else:
-                        print(f"⚠️ فیلد ناشناخته '{field_name}' در {model_key} نادیده گرفته شد")
+                        print(f"⚠️ فیلد ناشناخته یا غیرقابل نوشتن '{field_name}' در {model_key} نادیده گرفته شد")
+
+
 
                 # ایجاد یا آپدیت رکورد در دیتابیس محلی
                 if filtered_data:  # فقط اگر فیلد معتبر وجود دارد
