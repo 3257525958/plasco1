@@ -96,6 +96,7 @@ class UniversalSyncService:
                         print(f"⚠️ فیلد ناشناخته '{field_name}' در {model_key} نادیده گرفته شد")
 
                 # مدیریت فیلدهای اجباری برای مدل‌های خاص
+                # مدیریت فیلدهای اجباری برای مدل‌های خاص
                 if model_key == 'invoice_app.Invoicefrosh':
                     # اگر branch_id وجود ندارد، از شعبه پیش‌فرض استفاده کن
                     if 'branch_id' not in filtered_data and 'branch' not in filtered_data:
@@ -106,6 +107,17 @@ class UniversalSyncService:
                                 filtered_data['branch_id'] = default_branch.id
                         except Exception as e:
                             print(f"⚠️ خطا در دریافت شعبه پیش‌فرض: {e}")
+
+                    # اگر created_by_id وجود ندارد، از کاربر پیش‌فرض استفاده کن
+                    if 'created_by_id' not in filtered_data and 'created_by' not in filtered_data:
+                        try:
+                            from django.contrib.auth.models import User
+                            default_user = User.objects.first()
+                            if default_user:
+                                filtered_data['created_by_id'] = default_user.id
+                        except Exception as e:
+                            print(f"⚠️ خطا در دریافت کاربر پیش‌فرض: {e}")
+
 
                 # ایجاد یا آپدیت رکورد در دیتابیس محلی
                 if filtered_data:  # فقط اگر فیلد معتبر وجود دارد
