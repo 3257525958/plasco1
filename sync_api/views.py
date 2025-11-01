@@ -13,24 +13,55 @@ def sync_pull(request):
         changes = []
 
         # فقط مدل‌های اصلی کسب و کار
+        # لیست کامل تمام مدل‌های مهم
         target_models = [
+            # account_app
             'account_app.Product',
             'account_app.Customer',
             'account_app.Expense',
-            'cantact_app.Contact',
-            'dashbord_app.Product',
-            'invoice_app.Invoicefrosh',
-            'pos_payment.POSTransaction',
+            'account_app.ExpenseImage',
+            'account_app.FinancialDocument',
+            'account_app.FinancialDocumentItem',
+            'account_app.InventoryCount',
+            'account_app.PaymentMethod',
+            'account_app.ProductPricing',
+            'account_app.StockTransaction',
+
+            # cantact_app
+            'cantact_app.Branch',
+            'cantact_app.BranchAdmin',
+            'cantact_app.accuntmodel',
+            'cantact_app.dataacont',
+            'cantact_app.phonnambermodel',
+            'cantact_app.savecodphon',
+
+            # dashbord_app
+            'dashbord_app.BankAccount',
+            'dashbord_app.ContactNumber',
             'dashbord_app.Froshande',
-            'cantact_app.Branch'
+            'dashbord_app.Invoice',
+            'dashbord_app.InvoiceItem',
+            'dashbord_app.Product',
+
+            # invoice_app
+            'invoice_app.Invoicefrosh',
+            'invoice_app.InvoiceItemfrosh',
+            'invoice_app.CheckPayment',
+            'invoice_app.CreditPayment',
+            'invoice_app.POSDevice',
+            'invoice_app.POSTransaction',
+
+            # pos_payment
+            'pos_payment.POSTransaction',
         ]
+
+
         for model_path in target_models:
             try:
                 app_name, model_name = model_path.split('.')
                 model_class = apps.get_model(app_name, model_name)
 
-                for obj in model_class.objects.all()[:500]:  # محدودیت برای تست
-                    data = {}
+                for obj in model_class.objects.all():  # همه رکوردها                    data = {}
                     for field in obj._meta.get_fields():
                         if not field.is_relation or field.one_to_one:
                             try:
