@@ -76,7 +76,6 @@ class UniversalSyncService:
                 record_id = change['record_id']
                 data = change['data']
 
-                # فیلتر کردن فیلدهایی که در مدل وجود دارند
                 # فیلتر کردن فیلدهایی که در مدل وجود دارند و قابل نوشتن هستند
                 model_fields = []
                 for f in model_class._meta.get_fields():
@@ -88,11 +87,25 @@ class UniversalSyncService:
 
                 for field_name, value in data.items():
                     if field_name in model_fields:
-                        filtered_data[field_name] = value
+                        # مدیریت مقادیر خاص
+                        if value == "None" or value == "null":
+                            continue  # این مقادیر را نادیده بگیر
+                        else:
+                            filtered_data[field_name] = value
                     else:
-                        print(f"⚠️ فیلد ناشناخته یا غیرقابل نوشتن '{field_name}' در {model_key} نادیده گرفته شد")
+                        print(f"⚠️ فیلد ناشناخته '{field_name}' در {model_key} نادیده گرفته شد")
 
-
+                # مدیریت فیلدهای اجباری برای مدل‌های خاص
+                if model_key == 'invoice_app.Invoicefrosh':
+                    # اگر branch_id وجود ندارد، از شعبه پیش‌فرض استفاده کن
+                    if 'branch_id' not in filtered_data and 'branch' not in filtered_data:
+                        try:
+                            from cantact_app.models import Branch
+                            default_branch = Branch.objects.first()
+                            if default_branch:
+                                filtered_data['branch_id'] = default_branch.id
+                        except Exception as e:
+                            print(f"⚠️ خطا در دریافت شعبه پیش‌فرض: {e}")
 
                 # ایجاد یا آپدیت رکورد در دیتابیس محلی
                 if filtered_data:  # فقط اگر فیلد معتبر وجود دارد
@@ -107,7 +120,6 @@ class UniversalSyncService:
                         print(f"✅ {action}: {model_key} - ID: {record_id}")
                 else:
                     print(f"⚠️ هیچ فیلد معتبری برای {model_key} - ID: {record_id}")
-                    continue
 
             except Exception as e:
                 print(f"❌ خطا در پردازش {model_key}: {e}")
