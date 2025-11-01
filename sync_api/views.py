@@ -16,13 +16,14 @@ def sync_pull(request):
         target_models = [
             'account_app.Product',
             'account_app.Customer',
+            'account_app.Expense',
             'cantact_app.Contact',
+            'dashbord_app.Product',
             'invoice_app.Invoicefrosh',
             'pos_payment.POSTransaction',
             'dashbord_app.Froshande',
             'cantact_app.Branch'
         ]
-
         for model_path in target_models:
             try:
                 app_name, model_name = model_path.split('.')
