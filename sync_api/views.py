@@ -61,28 +61,37 @@ def sync_pull(request):
                 app_name, model_name = model_path.split('.')
                 model_class = apps.get_model(app_name, model_name)
 
-                for obj in model_class.objects.all():  # همه رکوردها                    data = {}
-                    for field in obj._meta.get_fields():
-                        if not field.is_relation or field.one_to_one:
-                            try:
-                                value = getattr(obj, field.name)
-                                if hasattr(value, 'isoformat'):
-                                    data[field.name] = value.isoformat()
-                                elif isinstance(value, (int, float, bool)):
-                                    data[field.name] = value
-                                else:
-                                    data[field.name] = str(value)
-                            except:
-                                data[field.name] = None
+            for model_path in target_models:
+                try:
+                    app_name, model_name = model_path.split('.')
+                    model_class = apps.get_model(app_name, model_name)
 
-                    changes.append({
-                        'app_name': app_name,
-                        'model_type': model_name,
-                        'record_id': obj.id,
-                        'action': 'sync',
-                        'data': data
-                    })
+                    for obj in model_class.objects.all():  # همه رکوردها
+                        data = {}
+                        for field in obj._meta.get_fields():
+                            if not field.is_relation or field.one_to_one:
+                                try:
+                                    value = getattr(obj, field.name)
+                                    if hasattr(value, 'isoformat'):
+                                        data[field.name] = value.isoformat()
+                                    elif isinstance(value, (int, float, bool)):
+                                        data[field.name] = value
+                                    else:
+                                        data[field.name] = str(value)
+                                except:
+                                    data[field.name] = None
 
+                        changes.append({
+                            'app_name': app_name,
+                            'model_type': model_name,
+                            'record_id': obj.id,
+                            'action': 'sync',
+                            'data': data
+                        })
+
+                except Exception as e:
+                    print(f"⚠️ خطا در پردازش {model_path}: {e}")
+                    continue
             except Exception as e:
                 print(f"⚠️ خطا در پردازش {model_path}: {e}")
                 continue
