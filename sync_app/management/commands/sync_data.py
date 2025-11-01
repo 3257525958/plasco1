@@ -30,8 +30,7 @@ class Command(BaseCommand):
             )
         else:
             # همگام‌سازی کامل
-            result = sync_service.full_sync_cycle()
-
+            result = sync_service.full_sync()
             self.stdout.write(
                 self.style.SUCCESS(
                     f"🎉 همگام‌سازی دوطرفه کامل شد!\n"
