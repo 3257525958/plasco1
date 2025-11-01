@@ -76,46 +76,30 @@ class UniversalSyncService:
                 record_id = change['record_id']
                 data = change['data']
 
-                # ایجاد یا آپدیت رکورد در دیتابیس محلی
                 # فیلتر کردن فیلدهایی که در مدل وجود دارند
-                try:
-                    model_fields = [f.name for f in model_class._meta.get_fields()]
-                    filtered_data = {}
+                model_fields = [f.name for f in model_class._meta.get_fields()]
+                filtered_data = {}
 
-                    for field_name, value in data.items():
-                        if field_name in model_fields:
-                            filtered_data[field_name] = value
-                        else:
-                            print(f"⚠️ فیلد ناشناخته {field_name} در {model_key} نادیده گرفته شد")
-
-                    if filtered_data:  # فقط اگر فیلد معتبر وجود دارد
-                        obj, created = model_class.objects.update_or_create(
-                            id=record_id,
-                            defaults=filtered_data
-                        )
-
-                        processed_count += 1
-                        if processed_count <= 10:  # فقط 10 تای اول را لاگ کن
-                            action = "ایجاد" if created else "آپدیت"
-                            print(f"✅ {action}: {model_key} - ID: {record_id}")
+                for field_name, value in data.items():
+                    if field_name in model_fields:
+                        filtered_data[field_name] = value
                     else:
-                        print(f"⚠️ هیچ فیلد معتبری برای {model_key} - ID: {record_id}")
-                        continue
+                        print(f"⚠️ فیلد ناشناخته '{field_name}' در {model_key} نادیده گرفته شد")
 
-                except Exception as e:
-                    print(f"❌ خطا در پردازش {model_key}: {e}")
+                # ایجاد یا آپدیت رکورد در دیتابیس محلی
+                if filtered_data:  # فقط اگر فیلد معتبر وجود دارد
+                    obj, created = model_class.objects.update_or_create(
+                        id=record_id,
+                        defaults=filtered_data
+                    )
+
+                    processed_count += 1
+                    if processed_count <= 10:  # فقط 10 تای اول را لاگ کن
+                        action = "ایجاد" if created else "آپدیت"
+                        print(f"✅ {action}: {model_key} - ID: {record_id}")
+                else:
+                    print(f"⚠️ هیچ فیلد معتبری برای {model_key} - ID: {record_id}")
                     continue
-
-
-
-
-
-
-
-                processed_count += 1
-                if processed_count <= 10:  # فقط 10 تای اول را لاگ کن
-                    action = "ایجاد" if created else "آپدیت"
-                    print(f"✅ {action}: {model_key} - ID: {record_id}")
 
             except Exception as e:
                 print(f"❌ خطا در پردازش {model_key}: {e}")
@@ -123,7 +107,6 @@ class UniversalSyncService:
 
         print(f"🎯 دریافت شد: {processed_count} رکورد از سرور اصلی")
         return {'status': 'success', 'processed_count': processed_count}
-
     def upload_to_server(self):
         """ارسال تغییرات محلی به سرور اصلی"""
         if not settings.OFFLINE_MODE:
