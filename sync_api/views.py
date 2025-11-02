@@ -2,8 +2,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.apps import apps
-
-
+from django.utils import timezone
+import decimal
 
 @api_view(['GET'])
 def sync_pull(request):
@@ -13,20 +13,8 @@ def sync_pull(request):
 
         changes = []
 
-        # لیست کامل مدل‌ها
+        # لیست کامل مدل‌ها - فقط cantact_app را می‌خواهیم
         target_models = [
-            # account_app
-            'account_app.Product',
-            'account_app.Customer',
-            'account_app.Expense',
-            'account_app.ExpenseImage',
-            'account_app.FinancialDocument',
-            'account_app.FinancialDocumentItem',
-            'account_app.InventoryCount',
-            'account_app.PaymentMethod',
-            'account_app.ProductPricing',
-            'account_app.StockTransaction',
-
             # cantact_app
             'cantact_app.Branch',
             'cantact_app.BranchAdmin',
@@ -34,25 +22,6 @@ def sync_pull(request):
             'cantact_app.dataacont',
             'cantact_app.phonnambermodel',
             'cantact_app.savecodphon',
-
-            # dashbord_app
-            'dashbord_app.BankAccount',
-            'dashbord_app.ContactNumber',
-            'dashbord_app.Froshande',
-            'dashbord_app.Invoice',
-            'dashbord_app.InvoiceItem',
-            'dashbord_app.Product',
-
-            # invoice_app
-            'invoice_app.Invoicefrosh',
-            'invoice_app.InvoiceItemfrosh',
-            'invoice_app.CheckPayment',
-            'invoice_app.CreditPayment',
-            'invoice_app.POSDevice',
-            'invoice_app.POSTransaction',
-
-            # pos_payment
-            'pos_payment.POSTransaction',
         ]
 
         for model_path in target_models:
@@ -70,6 +39,8 @@ def sync_pull(request):
                                     data[field.name] = value.isoformat()
                                 elif isinstance(value, (int, float, bool)):
                                     data[field.name] = value
+                                elif isinstance(value, decimal.Decimal):
+                                    data[field.name] = float(value)
                                 else:
                                     data[field.name] = str(value)
                             except:
@@ -80,8 +51,11 @@ def sync_pull(request):
                         'model_type': model_name,
                         'record_id': obj.id,
                         'action': 'sync',
-                        'data': data
+                        'data': data,
+                        'server_timestamp': timezone.now().isoformat()
                     })
+
+                print(f"✅ {model_path}: {model_class.objects.count()} رکورد آماده")
 
             except Exception as e:
                 print(f"⚠️ خطا در پردازش {model_path}: {e}")
@@ -91,7 +65,8 @@ def sync_pull(request):
             'status': 'success',
             'message': f'ارسال {len(changes)} رکورد از سرور',
             'changes': changes,
-            'total_changes': len(changes)
+            'total_changes': len(changes),
+            'server_timestamp': timezone.now().isoformat()
         })
 
     except Exception as e:

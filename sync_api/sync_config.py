@@ -1,41 +1,35 @@
 # sync_api/sync_config.py
 SYNC_CONFIG = {
-    'account_app': {
-        'Product': {
-            'fields': ['name', 'description', 'price', 'category', 'stock_quantity', 'created_at', 'updated_at'],
-            'batch_size': 100
-        },
-        'Customer': {
-            'fields': ['name', 'phone', 'email', 'address', 'created_at'],
-            'batch_size': 100
-        }
-    },
     'cantact_app': {
-        'Contact': {
-            'fields': ['name', 'phone', 'email', 'company', 'position', 'notes', 'created_at'],
-            'batch_size': 100
-        }
-    },
-    'invoice_app': {
-        'Invoice': {
-            'fields': ['invoice_number', 'customer_name', 'total_amount', 'date', 'status', 'created_at'],
-            'batch_size': 50
+        'Branch': {
+            'fields': ['name', 'address', 'phone', 'is_active', 'created_at'],
+            'batch_size': 100,
+            'sync_priority': 'high'
         },
-        'InvoiceItem': {
-            'fields': ['invoice_id', 'product_name', 'quantity', 'unit_price', 'total_price'],
-            'batch_size': 200
-        }
-    },
-    'it_app': {
-        'Device': {
-            'fields': ['name', 'serial_number', 'type', 'status', 'assigned_to', 'created_at'],
-            'batch_size': 50
-        }
-    },
-    'pos_payment': {
-        'Transaction': {
-            'fields': ['transaction_id', 'amount', 'payment_method', 'status', 'created_at'],
-            'batch_size': 100
+        'BranchAdmin': {
+            'fields': ['branch', 'user', 'role', 'is_active'],
+            'batch_size': 100,
+            'sync_priority': 'high'
+        },
+        'accuntmodel': {
+            'fields': ['name', 'phone', 'email', 'address'],
+            'batch_size': 100,
+            'sync_priority': 'medium'
+        },
+        'dataacont': {
+            'fields': ['name', 'phone', 'email'],
+            'batch_size': 100,
+            'sync_priority': 'medium'
+        },
+        'phonnambermodel': {
+            'fields': ['number', 'type', 'is_active'],
+            'batch_size': 100,
+            'sync_priority': 'medium'
+        },
+        'savecodphon': {
+            'fields': ['code', 'phone', 'is_used'],
+            'batch_size': 100,
+            'sync_priority': 'low'
         }
     }
 }
