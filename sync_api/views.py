@@ -14,8 +14,21 @@ def sync_pull(request):
         changes = []
 
         # لیست کامل مدل‌ها - فقط cantact_app را می‌خواهیم
+        # در تابع sync_pull، لیست target_models را به این صورت به‌روز کنید:
         target_models = [
-            # cantact_app
+            # account_app - مدل‌های اصلی
+            'account_app.Product',
+            'account_app.Customer',
+            'account_app.Expense',
+            'account_app.ExpenseImage',
+            'account_app.FinancialDocument',
+            'account_app.FinancialDocumentItem',
+            'account_app.InventoryCount',
+            'account_app.PaymentMethod',
+            'account_app.ProductPricing',
+            'account_app.StockTransaction',
+
+            # cantact_app - مدل‌های ارتباطی
             'cantact_app.Branch',
             'cantact_app.BranchAdmin',
             'cantact_app.accuntmodel',
@@ -23,7 +36,6 @@ def sync_pull(request):
             'cantact_app.phonnambermodel',
             'cantact_app.savecodphon',
         ]
-
         for model_path in target_models:
             try:
                 app_name, model_name = model_path.split('.')
