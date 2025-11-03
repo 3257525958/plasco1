@@ -72,7 +72,7 @@ class Command(BaseCommand):
         for change in all_changes:
             if change.get('app_name') == 'account_app':
                 model_type = change.get('model_type')
-                if not target_models or model_type in target_odels:
+                if not target_models or model_type in target_models:
                     account_changes.append(change)
 
         self.stdout.write(f"🎯 رکوردهای account_app: {len(account_changes)}")
@@ -151,29 +151,67 @@ class Command(BaseCommand):
         """بررسی وضعیت نهایی داده‌های سینک شده"""
         try:
             from account_app.models import (
-                Product, Customer, Expense, ExpenseImage, FinancialDocument,
+                Product, Expense, ExpenseImage, FinancialDocument,
                 FinancialDocumentItem, InventoryCount, PaymentMethod,
                 ProductPricing, StockTransaction
             )
 
             self.stdout.write(f"\n📋 وضعیت نهایی account_app:")
 
-            model_stats = {
-                'Product': Product.objects.count(),
-                'Customer': Customer.objects.count(),
-                'Expense': Expense.objects.count(),
-                'ExpenseImage': ExpenseImage.objects.count(),
-                'FinancialDocument': FinancialDocument.objects.count(),
-                'FinancialDocumentItem': FinancialDocumentItem.objects.count(),
-                'InventoryCount': InventoryCount.objects.count(),
-                'PaymentMethod': PaymentMethod.objects.count(),
-                'ProductPricing': ProductPricing.objects.count(),
-                'StockTransaction': StockTransaction.objects.count(),
-            }
+            model_stats = {}
+
+            # اضافه کردن مدل‌ها با مدیریت خطا
+            try:
+                model_stats['Product'] = Product.objects.count()
+            except Exception as e:
+                model_stats['Product'] = f"خطا: {e}"
+
+            try:
+                model_stats['Expense'] = Expense.objects.count()
+            except Exception as e:
+                model_stats['Expense'] = f"خطا: {e}"
+
+            try:
+                model_stats['ExpenseImage'] = ExpenseImage.objects.count()
+            except Exception as e:
+                model_stats['ExpenseImage'] = f"خطا: {e}"
+
+            try:
+                model_stats['FinancialDocument'] = FinancialDocument.objects.count()
+            except Exception as e:
+                model_stats['FinancialDocument'] = f"خطا: {e}"
+
+            try:
+                model_stats['FinancialDocumentItem'] = FinancialDocumentItem.objects.count()
+            except Exception as e:
+                model_stats['FinancialDocumentItem'] = f"خطا: {e}"
+
+            try:
+                model_stats['InventoryCount'] = InventoryCount.objects.count()
+            except Exception as e:
+                model_stats['InventoryCount'] = f"خطا: {e}"
+
+            try:
+                model_stats['PaymentMethod'] = PaymentMethod.objects.count()
+            except Exception as e:
+                model_stats['PaymentMethod'] = f"خطا: {e}"
+
+            try:
+                model_stats['ProductPricing'] = ProductPricing.objects.count()
+            except Exception as e:
+                model_stats['ProductPricing'] = f"خطا: {e}"
+
+            try:
+                model_stats['StockTransaction'] = StockTransaction.objects.count()
+            except Exception as e:
+                model_stats['StockTransaction'] = f"خطا: {e}"
 
             for model_name, count in model_stats.items():
-                status = "✅" if count > 0 else "⚠️"
-                self.stdout.write(f"   {status} {model_name}: {count} رکورد")
+                if isinstance(count, int):
+                    status = "✅" if count > 0 else "⚠️"
+                    self.stdout.write(f"   {status} {model_name}: {count} رکورد")
+                else:
+                    self.stdout.write(f"   ❌ {model_name}: {count}")
 
         except Exception as e:
             self.stdout.write(f"⚠️ خطا در بررسی وضعیت نهایی: {e}")

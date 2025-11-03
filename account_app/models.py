@@ -11,7 +11,105 @@ from django.db import models, connection
 from decimal import Decimal
 import random
 
-class InventoryCount(models.Model):  # حذف class تکراری
+# class InventoryCount(models.Model):  # حذف class تکراری
+#     product_name = models.CharField(max_length=100, verbose_name="نام کالا")
+#     is_new = models.BooleanField(default=True, verbose_name="کالای جدید")
+#     quantity = models.IntegerField(verbose_name="تعداد")
+#     count_date = models.CharField(max_length=10, verbose_name="تاریخ شمارش", default="")
+#     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+#     barcode_data = models.CharField(max_length=100, blank=True, null=True, verbose_name="داده بارکد")
+#     selling_price = models.PositiveIntegerField(verbose_name="قیمت فروش", blank=True, null=True)
+#     # در models.py اصلاح کنید:
+#     branch = models.ForeignKey(Branch, on_delete=models.PROTECT, verbose_name="شعبه")
+#     counter = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name="شمارنده")
+#     profit_percentage = models.DecimalField(
+#         max_digits=5,
+#         decimal_places=2,
+#         verbose_name="درصد سود",
+#         default=Decimal('30.00'),
+#     )
+#
+#     class Meta:
+#         verbose_name = "شمارش انبار"
+#         verbose_name_plural = "شمارش های انبار"
+#         ordering = ['-created_at']
+#
+#     def clean(self):
+#         """
+#         اعتبارسنجی خودکار قبل از ذخیره‌سازی
+#         """
+#         try:
+#             profit_value = Decimal(str(self.profit_percentage))
+#             if profit_value < Decimal('0.00') or profit_value > Decimal('10000.00'):
+#                 self.profit_percentage = Decimal('30.00')
+#         except (TypeError, ValueError, InvalidOperation):
+#             self.profit_percentage = Decimal('30.00')
+#
+#     def generate_unique_numeric_barcode(self):
+#         """تولید بارکد عددی ۱۲ رقمی یکتا"""
+#         while True:
+#             # تولید عدد ۱۲ رقمی
+#             barcode = ''.join([str(random.randint(0, 9)) for _ in range(12)])
+#
+#             # بررسی یکتا بودن
+#             if not InventoryCount.objects.filter(barcode_data=barcode).exists():
+#                 return barcode
+#
+#     def save(self, *args, **kwargs):
+#         self.clean()
+#
+#         if not self.count_date:
+#             jalali_date = jdatetime.datetime.now().strftime('%Y/%m/%d')
+#             self.count_date = jalali_date
+#
+#         if not self.barcode_data:
+#             self.barcode_data = self.generate_unique_numeric_barcode()
+#
+#         print(f"✅ شروع محاسبه قیمت برای کالا: {self.product_name}")
+#
+#         # ایجاد ProductPricing اگر وجود ندارد
+#         try:
+#             pricing = ProductPricing.objects.get(product_name=self.product_name)
+#             print(f"✅ ProductPricing یافت شد: {pricing}")
+#         except ProductPricing.DoesNotExist:
+#             # ایجاد ProductPricing با مقادیر پیشفرض
+#             pricing = ProductPricing.objects.create(
+#                 product_name=self.product_name,
+#                 highest_purchase_price=Decimal('0'),
+#                 standard_price=Decimal('0')
+#             )
+#             print(f"✅ ProductPricing جدید ایجاد شد برای: {self.product_name}")
+#
+#         # محاسبه قیمت فروش
+#         if pricing.standard_price is not None and pricing.standard_price > 0:
+#             try:
+#                 profit_percentage = Decimal(str(self.profit_percentage))
+#             except (TypeError, ValueError):
+#                 profit_percentage = Decimal('100.00')
+#
+#             print(f"✅ درصد سود استفاده شده: {profit_percentage}")
+#
+#             new_price = pricing.standard_price * (1 + profit_percentage / 100)
+#             self.selling_price = Decimal(math.ceil(new_price / 1000) * 1000)
+#             print(f"✅ قیمت فروش محاسبه و تنظیم شد: {self.selling_price}")
+#         else:
+#             print("⚠️ قیمت معیار صفر یا None است، قیمت فروش تنظیم نشد")
+#
+#         super().save(*args, **kwargs)
+#         print("✅ متد save با موفقیت اجرا شد.")
+#
+#
+#     def __str__(self):
+#         return f"{self.product_name} - {self.branch.name} - {self.quantity}"
+import math  # این خط را اضافه کنید
+from decimal import Decimal, InvalidOperation
+import hashlib
+import jdatetime
+from django.db import models, connection
+from decimal import Decimal
+import random
+
+class InventoryCount(models.Model):
     product_name = models.CharField(max_length=100, verbose_name="نام کالا")
     is_new = models.BooleanField(default=True, verbose_name="کالای جدید")
     quantity = models.IntegerField(verbose_name="تعداد")
@@ -19,7 +117,6 @@ class InventoryCount(models.Model):  # حذف class تکراری
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     barcode_data = models.CharField(max_length=100, blank=True, null=True, verbose_name="داده بارکد")
     selling_price = models.PositiveIntegerField(verbose_name="قیمت فروش", blank=True, null=True)
-    # در models.py اصلاح کنید:
     branch = models.ForeignKey(Branch, on_delete=models.PROTECT, verbose_name="شعبه")
     counter = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name="شمارنده")
     profit_percentage = models.DecimalField(
@@ -69,6 +166,8 @@ class InventoryCount(models.Model):  # حذف class تکراری
 
         # ایجاد ProductPricing اگر وجود ندارد
         try:
+            # import داخلی برای جلوگیری از circular import
+            from .models import ProductPricing
             pricing = ProductPricing.objects.get(product_name=self.product_name)
             print(f"✅ ProductPricing یافت شد: {pricing}")
         except ProductPricing.DoesNotExist:
@@ -76,12 +175,16 @@ class InventoryCount(models.Model):  # حذف class تکراری
             pricing = ProductPricing.objects.create(
                 product_name=self.product_name,
                 highest_purchase_price=Decimal('0'),
+                adjustment_percentage=Decimal('0'),
                 standard_price=Decimal('0')
             )
             print(f"✅ ProductPricing جدید ایجاد شد برای: {self.product_name}")
+        except Exception as e:
+            print(f"⚠️ خطا در دسترسی به ProductPricing: {e}")
+            pricing = None
 
         # محاسبه قیمت فروش
-        if pricing.standard_price is not None and pricing.standard_price > 0:
+        if pricing and pricing.standard_price is not None and pricing.standard_price > 0:
             try:
                 profit_percentage = Decimal(str(self.profit_percentage))
             except (TypeError, ValueError):
@@ -98,10 +201,8 @@ class InventoryCount(models.Model):  # حذف class تکراری
         super().save(*args, **kwargs)
         print("✅ متد save با موفقیت اجرا شد.")
 
-
     def __str__(self):
         return f"{self.product_name} - {self.branch.name} - {self.quantity}"
-
 
 
 
@@ -218,13 +319,76 @@ from django.db import models, transaction
 from django.db.models import F
 from decimal import Decimal
 
+# --------------------------------------------------------------------
+# class ProductPricing(models.Model):
+#     product_name = models.CharField(max_length=100, verbose_name="نام کالا", unique=True)
+#     highest_purchase_price = models.DecimalField(
+#         max_digits=15,
+#         decimal_places=2,
+#         verbose_name="بالاترین قیمت خرید"
+#     )
+#     invoice_date = models.CharField(max_length=10, verbose_name="تاریخ فاکتور", blank=True, null=True)
+#     invoice_number = models.CharField(max_length=50, verbose_name="شماره فاکتور", blank=True, null=True)
+#     adjustment_percentage = models.DecimalField(
+#         max_digits=5,
+#         decimal_places=2,
+#         default=0,
+#         verbose_name="درصد تعدیل قیمت خرید"
+#     )
+#     standard_price = models.DecimalField(
+#         max_digits=15,
+#         decimal_places=2,
+#         verbose_name="قیمت معیار",
+#         blank=True, null=True
+#     )
+#     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+#     updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین بروزرسانی")
+#
+#     class Meta:
+#         verbose_name = "قیمت‌گذاری محصول"
+#         verbose_name_plural = "قیمت‌گذاری محصولات"
+#
+#     def save(self, *args, **kwargs):
+#         # ابتدا object رو ذخیره می‌کنیم
+#         super().save(*args, **kwargs)
+#
+#         # سپس مستقیماً در دیتابیس آپدیت می‌کنیم
+#         self.force_update_standard_price()
+#
+#     def force_update_standard_price(self):
+#         """آپدیت قطعی قیمت معیار با استفاده از transaction"""
+#         try:
+#             with transaction.atomic():
+#                 # محاسبه قیمت جدید
+#                 if self.highest_purchase_price is not None and self.adjustment_percentage is not None:
+#                     adjustment_amount = self.highest_purchase_price * (self.adjustment_percentage / Decimal('100'))
+#                     new_price = self.highest_purchase_price + adjustment_amount
+#
+#                     # آپدیت مستقیم در دیتابیس
+#                     ProductPricing.objects.filter(pk=self.pk).update(
+#                         standard_price=new_price
+#                     )
+#
+#                     # رفرش object از دیتابیس
+#                     self.refresh_from_db()
+#                     print(f"✅ قیمت معیار با موفقیت در دیتابیس ذخیره شد: {self.standard_price}")
+#
+#         except Exception as e:
+#             print(f"❌ خطا در ذخیره‌سازی: {e}")
+#
+#     def __str__(self):
+#         return f"{self.product_name} - {self.standard_price}"
+
 
 class ProductPricing(models.Model):
     product_name = models.CharField(max_length=100, verbose_name="نام کالا", unique=True)
     highest_purchase_price = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        verbose_name="بالاترین قیمت خرید"
+        verbose_name="بالاترین قیمت خرید",
+        null=True,
+        blank=True,
+        default=0
     )
     invoice_date = models.CharField(max_length=10, verbose_name="تاریخ فاکتور", blank=True, null=True)
     invoice_number = models.CharField(max_length=50, verbose_name="شماره فاکتور", blank=True, null=True)
@@ -251,17 +415,26 @@ class ProductPricing(models.Model):
         # ابتدا object رو ذخیره می‌کنیم
         super().save(*args, **kwargs)
 
-        # سپس مستقیماً در دیتابیس آپدیت می‌کنیم
+        # سپس محاسبات را انجام می‌دهیم
         self.force_update_standard_price()
 
     def force_update_standard_price(self):
         """آپدیت قطعی قیمت معیار با استفاده از transaction"""
         try:
+            from django.db import transaction
+
             with transaction.atomic():
-                # محاسبه قیمت جدید
+                # محاسبه قیمت جدید - با تبدیل ایمن به Decimal
                 if self.highest_purchase_price is not None and self.adjustment_percentage is not None:
-                    adjustment_amount = self.highest_purchase_price * (self.adjustment_percentage / Decimal('100'))
-                    new_price = self.highest_purchase_price + adjustment_amount
+                    # تبدیل ایمن به Decimal
+                    from decimal import Decimal
+
+                    highest_purchase = Decimal(str(self.highest_purchase_price or 0))
+                    adjustment_percent = Decimal(str(self.adjustment_percentage or 0))
+
+                    # محاسبه قیمت معیار
+                    adjustment_amount = highest_purchase * (adjustment_percent / Decimal('100'))
+                    new_price = highest_purchase + adjustment_amount
 
                     # آپدیت مستقیم در دیتابیس
                     ProductPricing.objects.filter(pk=self.pk).update(
@@ -273,11 +446,10 @@ class ProductPricing(models.Model):
                     print(f"✅ قیمت معیار با موفقیت در دیتابیس ذخیره شد: {self.standard_price}")
 
         except Exception as e:
-            print(f"❌ خطا در ذخیره‌سازی: {e}")
+            print(f"❌ خطا در ذخیره‌سازی ProductPricing: {e}")
 
     def __str__(self):
         return f"{self.product_name} - {self.standard_price}"
-
 # ------------------------------------------------------------------------------
 from django.db import models
 from django.core.validators import RegexValidator  # این خط را اضافه کنید
