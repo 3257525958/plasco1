@@ -1,3 +1,4 @@
+# sync_service.py
 import requests
 import json
 import time
@@ -6,7 +7,6 @@ import threading
 from decimal import Decimal
 from django.db import models
 from django.conf import settings
-# from sync_app.models import DataSyncLog  # این خط را کامنت کنید موقتاً
 from sync_app.models import DataSyncLog
 from django.utils import timezone
 from django.apps import apps
@@ -14,13 +14,42 @@ from django.apps import apps
 
 class UniversalSyncService:
     def __init__(self):
-        self.server_url = "https://plasmarket.ir"
+        print("🔄 راه‌اندازی سرویس سینک جهانی...")
+
+        # ابتدا تمام متغیرهای ضروری را تعریف می‌کنیم
+        self.server_url = getattr(settings, 'ONLINE_SERVER_URL', 'https://plasmarket.ir')
+        self.online_url = self.server_url
+        self.offline_mode = getattr(settings, 'OFFLINE_MODE', False)
+        self.is_running = False
+        self.sync_models = self.discover_all_models()  # این خط مهم است!
+
+        print(f"🔍 کشف شد: {len(self.sync_models)} مدل برای سینک")
+        print(f"🌐 آدرس سرور: {self.server_url}")
+
+        # بررسی تنظیمات قبل از شروع سینک خودکار
+        if not getattr(settings, 'SYNC_AUTO_START', True):
+            print("🔴 سرویس سینک خودکار غیرفعال شده (از طریق settings)")
+            return
+
+
+        self.sync_models = self.discover_all_models()
+        print(f"🔍 کشف شد: {len(self.sync_models)} مدل برای سینک")
+        # تعریف هر دو آدرس برای سازگاری
+        self.server_url = getattr(settings, 'ONLINE_SERVER_URL', 'https://plasmarket.ir')
+        self.online_url = self.server_url  # برای سازگاری با کد موجود
+        self.offline_mode = getattr(settings, 'OFFLINE_MODE', False)
         self.sync_models = self.discover_all_models()
         self.is_running = False
         print(f"🔍 کشف شد: {len(self.sync_models)} مدل برای سینک")
+        print(f"🌐 آدرس سرور: {self.server_url}")
 
     def start_auto_sync(self):
         """شروع سینک خودکار در فواصل زمانی"""
+        # بررسی تنظیمات قبل از شروع
+        if not getattr(settings, 'SYNC_AUTO_START', True):
+            print("🔴 سرویس سینک خودکار غیرفعال شده")
+            return
+
         if self.is_running:
             return
 
@@ -36,7 +65,7 @@ class UniversalSyncService:
                 except Exception as e:
                     print(f"❌ خطا در سینک دوره‌ای: {e}")
 
-                time.sleep(600)
+                time.sleep(600)  # 10 دقیقه
 
         threading.Thread(target=sync_loop, daemon=True).start()
 
@@ -74,11 +103,24 @@ class UniversalSyncService:
 
         return sync_models
 
+    def check_internet_connection(self):
+        """بررسی اتصال به اینترنت"""
+        try:
+            response = requests.get(f"{self.server_url}/", timeout=10)
+            return response.status_code == 200
+        except Exception as e:
+            print(f"⚠️ عدم اتصال به سرور: {e}")
+            return False
+
     def download_from_server(self):
         """دریافت تمام داده‌ها از سرور اصلی"""
         print("📥 دریافت داده از سرور اصلی...")
 
         try:
+            # بررسی اتصال اینترنت
+            if not self.check_internet_connection():
+                return {'status': 'error', 'message': 'اتصال به سرور میسر نیست'}
+
             response = requests.get(f"{self.server_url}/api/sync/pull/", timeout=60)
 
             if response.status_code == 200:
@@ -124,7 +166,7 @@ class UniversalSyncService:
                 )
 
                 processed_count += 1
-                if processed_count <= 10:
+                if processed_count <= 10:  # فقط 10 تا اول را نمایش بده
                     action = "ایجاد" if created else "آپدیت"
                     print(f"✅ {action}: {model_key} - ID: {record_id}")
 
@@ -196,6 +238,7 @@ class UniversalSyncService:
 
         except Exception as e:
             print(f"⚠️ خطا در فیلتر داده‌ها: {e}")
+            # در صورت خطا، تمام داده‌ها را بدون فیلتر کردن بریز
             for field_name, value in data.items():
                 if value not in ["None", "null", None, ""]:
                     filtered_data[field_name] = value
@@ -264,7 +307,6 @@ class UniversalSyncService:
         if not settings.OFFLINE_MODE:
             return 0
 
-        # import داخلی برای جلوگیری از circular import
         from sync_app.models import DataSyncLog
 
         print("📤 ارسال تغییرات به سرور اصلی...")
@@ -321,6 +363,130 @@ class UniversalSyncService:
             'total': sent + received
         }
 
+    def sync_specific_app(self, app_name):
+        """سینک فقط یک اپ خاص"""
+        print(f"🎯 شروع سینک مدل‌های {app_name} از سرور به لوکال...")
 
+        # بررسی اتصال
+        print("🔗 تست اتصال به سرور...")
+        if not self.check_internet_connection():
+            print("❌ اتصال به سرور برقرار نیست")
+            return {'status': 'error', 'message': 'اتصال به سرور برقرار نیست'}
+
+        try:
+            response = requests.get(f"{self.server_url}/api/sync/pull/", timeout=60)
+
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('status') == 'success':
+                    return self.process_specific_app_data(data, app_name)
+                else:
+                    return {'status': 'error', 'message': data.get('message', 'خطا در سرور')}
+            else:
+                return {'status': 'error', 'message': f'خطا در ارتباط: {response.status_code}'}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def process_specific_app_data(self, payload, target_app):
+        """پردازش داده‌های یک اپ خاص"""
+        changes = payload.get('changes', [])
+        app_changes = [ch for ch in changes if ch.get('app_name') == target_app]
+
+        processed_count = 0
+        errors = []
+
+        print(f"📥 دریافت {len(app_changes)} رکورد از {target_app}")
+
+        for change in app_changes:
+            try:
+                app_name = change['app_name']
+                model_name = change['model_type']
+                record_id = change['record_id']  # این خط باید قبل از استفاده باشد
+                model_key = f"{app_name}.{model_name}"
+
+                if model_key not in self.sync_models:
+                    print(f"⚠️ مدل ناشناخته: {model_key}")
+                    continue
+
+                model_class = self.sync_models[model_key]['model_class']
+                data = change['data']
+
+                # فیلتر و تبدیل داده‌ها
+                filtered_data = {}
+                for field_name, value in data.items():
+                    if value not in ["None", "null", None, ""]:
+                        filtered_data[field_name] = value
+
+                if not filtered_data:
+                    print(f"⚠️ هیچ فیلد معتبری برای {model_key} - ID: {record_id}")
+                    continue
+
+                obj, created = model_class.objects.update_or_create(
+                    id=record_id,
+                    defaults=filtered_data
+                )
+
+                processed_count += 1
+                action = "ایجاد" if created else "آپدیت"
+                print(f"✅ {action}: {model_key} - ID: {record_id}")
+
+            except Exception as e:
+                # استفاده از record_id از scope بیرونی
+                record_id = change.get('record_id', 'نامشخص')
+                model_key = f"{change.get('app_name', 'نامشخص')}.{change.get('model_type', 'نامشخص')}"
+                error_msg = f"❌ خطا در پردازش {model_key} - ID {record_id}: {str(e)}"
+                print(error_msg)
+                errors.append(error_msg)
+                continue
+
+        print(f"🎯 سینک {target_app} کامل شد: {processed_count} رکورد پردازش شد")
+        if errors:
+            print(f"⚠️ {len(errors)} خطا در پردازش")
+
+        return {
+            'status': 'success',
+            'app_name': target_app,
+            'processed_count': processed_count,
+            'errors': errors
+        }
+
+
+    def sync_incremental(self, app_name, last_sync_time=None):
+        """سینک افزایشی - فقط داده‌های تغییر کرده پس از زمان مشخص"""
+        print(f"🔄 سینک افزایشی {app_name} از زمان {last_sync_time}...")
+
+        if not self.check_internet_connection():
+            return {'status': 'error', 'message': 'اتصال به سرور میسر نیست'}
+
+        try:
+            # پارامتر زمان برای سینک افزایشی
+            params = {}
+            if last_sync_time:
+                params['last_sync'] = last_sync_time.isoformat()
+
+            response = requests.get(
+                f"{self.server_url}/api/sync/pull/",
+                params=params,
+                timeout=60
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('status') == 'success':
+                    return self.process_specific_app_data(data, app_name)
+                else:
+                    return {'status': 'error', 'message': data.get('message', 'خطا در سرور')}
+            else:
+                return {'status': 'error', 'message': f'خطا در ارتباط: {response.status_code}'}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
 # ایجاد سرویس جهانی
 sync_service = UniversalSyncService()
+
+# غیرفعال کردن شروع خودکار سرویس
+if not getattr(settings, 'SYNC_AUTO_START', True):
+    print("🔴 سرویس سینک خودکار غیرفعال شده (در سطح ماژول)")
+    sync_service.is_running = False
+

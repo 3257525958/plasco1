@@ -4,17 +4,25 @@ from rest_framework import status
 from django.apps import apps
 from django.utils import timezone
 import decimal
-
 @api_view(['GET'])
 def sync_pull(request):
-    """ارسال داده از سرور اصلی به آفلاین"""
+    """ارسال داده از سرور اصلی به آفلاین - با پشتیبانی سینک افزایشی"""
     try:
-        print("📤 ارسال داده از سرور اصلی به آفلاین...")
+        # دریافت پارامتر سینک افزایشی
+        last_sync_str = request.GET.get('last_sync')
+        last_sync = None
+        if last_sync_str:
+            try:
+                last_sync = timezone.datetime.fromisoformat(last_sync_str.replace('Z', '+00:00'))
+            except:
+                pass
+
+        print(f"📤 ارسال داده از سرور - سینک افزایشی: {last_sync}")
 
         changes = []
+        sync_mode = 'incremental' if last_sync else 'full'
 
-        # لیست کامل مدل‌ها - فقط cantact_app را می‌خواهیم
-        # در تابع sync_pull، لیست target_models را به این صورت به‌روز کنید:
+        # لیست مدل‌های هدف
         target_models = [
             # account_app - مدل‌های اصلی
             'account_app.Product',
@@ -36,12 +44,21 @@ def sync_pull(request):
             'cantact_app.phonnambermodel',
             'cantact_app.savecodphon',
         ]
+
         for model_path in target_models:
             try:
                 app_name, model_name = model_path.split('.')
                 model_class = apps.get_model(app_name, model_name)
 
-                for obj in model_class.objects.all():
+                # فیلتر بر اساس زمان برای سینک افزایشی
+                queryset = model_class.objects.all()
+                if last_sync and hasattr(model_class, 'updated_at'):
+                    queryset = queryset.filter(updated_at__gt=last_sync)
+                elif last_sync and hasattr(model_class, 'created_at'):
+                    queryset = queryset.filter(created_at__gt=last_sync)
+
+                for obj in queryset:
+                    # سریالایز کردن داده‌ها (کد موجود)
                     data = {}
                     for field in obj._meta.get_fields():
                         if not field.is_relation or field.one_to_one:
@@ -51,8 +68,6 @@ def sync_pull(request):
                                     data[field.name] = value.isoformat()
                                 elif isinstance(value, (int, float, bool)):
                                     data[field.name] = value
-                                elif isinstance(value, decimal.Decimal):
-                                    data[field.name] = float(value)
                                 else:
                                     data[field.name] = str(value)
                             except:
@@ -64,10 +79,14 @@ def sync_pull(request):
                         'record_id': obj.id,
                         'action': 'sync',
                         'data': data,
-                        'server_timestamp': timezone.now().isoformat()
+                        'server_timestamp': timezone.now().isoformat(),
+                        'sync_mode': sync_mode
                     })
 
-                print(f"✅ {model_path}: {model_class.objects.count()} رکورد آماده")
+                if sync_mode == 'incremental':
+                    print(f"📈 {model_path}: {queryset.count()} رکورد جدید/تغییر کرده")
+                else:
+                    print(f"📦 {model_path}: {model_class.objects.count()} رکورد")
 
             except Exception as e:
                 print(f"⚠️ خطا در پردازش {model_path}: {e}")
@@ -75,10 +94,12 @@ def sync_pull(request):
 
         return Response({
             'status': 'success',
-            'message': f'ارسال {len(changes)} رکورد از سرور',
+            'message': f'ارسال {len(changes)} رکورد از سرور ({sync_mode})',
             'changes': changes,
             'total_changes': len(changes),
-            'server_timestamp': timezone.now().isoformat()
+            'sync_mode': sync_mode,
+            'server_timestamp': timezone.now().isoformat(),
+            'next_sync_recommended': timezone.now().isoformat()
         })
 
     except Exception as e:

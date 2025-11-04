@@ -24,6 +24,9 @@ class DataSyncLog(models.Model):
     app_name = models.CharField(max_length=50, blank=True)  # نام اپ
     model_name = models.CharField(max_length=50, blank=True)  # نام مدل
     branch_id = models.IntegerField(null=True, blank=True)  # برای تفکیک شعبه
+    last_sync_timestamp = models.DateTimeField(null=True, blank=True, help_text="آخرین زمان سینک موفق")
+    batch_id = models.CharField(max_length=100, blank=True, help_text="شناسه دسته برای ردیابی")
+    is_full_sync = models.BooleanField(default=False, help_text="آیا سینک کامل بوده است؟")
 
     class Meta:
         db_table = 'data_sync_log'
@@ -31,6 +34,9 @@ class DataSyncLog(models.Model):
             models.Index(fields=['sync_status', 'model_type']),
             models.Index(fields=['app_name', 'model_name']),
             models.Index(fields=['created_at']),
+            models.Index(fields=['last_sync_timestamp', 'model_type']),
+            models.Index(fields=['batch_id']),
+
         ]
         ordering = ['-created_at']
 
