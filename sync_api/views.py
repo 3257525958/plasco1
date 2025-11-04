@@ -1,4 +1,4 @@
-f# در sync_api/views.py سرور اصلی - ابتدای فایل
+
 from django.db import models  # ← این خط را اضافه کن
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
