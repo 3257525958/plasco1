@@ -482,6 +482,80 @@ class UniversalSyncService:
 
         except Exception as e:
             return {'status': 'error', 'message': str(e)}
+
+    def get_all_models_for_app(self, app_name):
+        """
+        دریافت تمام مدل‌های یک زیربرنامه
+        """
+        try:
+            from django.apps import apps
+
+            models_list = []
+            app_config = apps.get_app_config(app_name)
+
+            for model in app_config.get_models():
+                model_info = {
+                    'app_name': app_name,
+                    'model_name': model.__name__,
+                    'model_class': model,
+                    'fields': [f.name for f in model._meta.get_fields()],
+                    'record_count': model.objects.count()
+                }
+                models_list.append(model_info)
+
+            print(f"✅ پیدا شد {len(models_list)} مدل در {app_name}")
+            return models_list
+
+        except LookupError:
+            print(f"❌ زیربرنامه {app_name} پیدا نشد")
+            return []
+        except Exception as e:
+            print(f"❌ خطا در دریافت مدل‌های {app_name}: {e}")
+            return []
+
+    def check_previous_sync(self, app_name, models_list):
+        """
+        بررسی اینکه آیا مدل‌های یک زیربرنامه قبلاً سینک شده‌اند یا نه
+        """
+        try:
+            from sync_app.models import DataSyncLog
+
+            sync_status = {}
+
+            for model_info in models_list:
+                model_name = model_info['model_name']
+
+                # بررسی آخرین سینک موفق
+                last_sync = DataSyncLog.objects.filter(
+                    app_name=app_name,
+                    model_name=model_name,
+                    sync_status=True
+                ).order_by('-synced_at').first()
+
+                if last_sync:
+                    sync_status[model_name] = {
+                        'is_synced': True,
+                        'last_sync_time': last_sync.synced_at,
+                        'last_sync_id': last_sync.record_id,
+                        'sync_count': DataSyncLog.objects.filter(
+                            app_name=app_name,
+                            model_name=model_name,
+                            sync_status=True
+                        ).count()
+                    }
+                else:
+                    sync_status[model_name] = {
+                        'is_synced': False,
+                        'last_sync_time': None,
+                        'last_sync_id': 0,
+                        'sync_count': 0
+                    }
+
+            return sync_status
+
+        except Exception as e:
+            print(f"❌ خطا در بررسی سینک قبلی: {e}")
+            return {}
 # ایجاد سرویس جهانی
 sync_service = UniversalSyncService()
 

@@ -3,6 +3,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.apps import apps
 from django.utils import timezone
+# در sync_api/views.py سرور اصلی - ابتدای فایل
+from django.db import models  # ← این خط را اضافه کن
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.apps import apps
+from django.utils import timezone
 import decimal
 
 
