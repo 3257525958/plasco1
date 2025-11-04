@@ -1,9 +1,4 @@
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from django.apps import apps
-from django.utils import timezone
-# در sync_api/views.py سرور اصلی - ابتدای فایل
+f# در sync_api/views.py سرور اصلی - ابتدای فایل
 from django.db import models  # ← این خط را اضافه کن
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -143,50 +138,91 @@ def sync_pull(request):
             'status': 'error',
             'message': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @api_view(['POST'])
 def sync_receive(request):
-    """دریافت تغییرات از سیستم‌های آفلاین"""
+    """دریافت تغییرات از سیستم‌های آفلاین - نسخه کاملاً اصلاح شده"""
     try:
         data = request.data
         print(f"📩 دریافت تغییرات از آفلاین: {data.get('model_type')}")
 
-        # اعمال تغییرات روی دیتابیس اصلی
         app_name = data.get('app_name', '')
         model_type = data.get('model_type')
         action = data.get('action')
+        record_id = data.get('record_id')
         record_data = data.get('data', {})
+
+        print(f"🔍 پارامترها: app={app_name}, model={model_type}, action={action}, id={record_id}")
+        print(f"📦 داده‌ها: {record_data}")
 
         if app_name and model_type:
             try:
+                # دریافت مدل
                 model_class = apps.get_model(app_name, model_type)
+                print(f"✅ مدل پیدا شد: {model_class}")
 
                 if action == 'create':
-                    # برای ایجاد جدید
+                    # برای ایجاد جدید - حذف id از داده‌ها
                     create_data = {k: v for k, v in record_data.items() if k != 'id'}
-                    model_class.objects.create(**create_data)
-                    print(f"✅ ایجاد شد: {model_type}")
+                    print(f"📝 ایجاد با داده: {create_data}")
+
+                    # ایجاد آبجکت جدید
+                    new_obj = model_class.objects.create(**create_data)
+                    print(f"✅ ایجاد شد: {model_type} - ID جدید: {new_obj.id}")
+
+                    return Response({
+                        'status': 'success',
+                        'message': f'ایجاد شد: {model_type} - ID: {new_obj.id}',
+                        'new_id': new_obj.id
+                    })
 
                 elif action == 'update':
-                    # برای آپدیت
-                    record_id = data.get('record_id')
-                    if record_id:
-                        model_class.objects.update_or_create(
-                            id=record_id,
-                            defaults=record_data
-                        )
-                        print(f"✅ آپدیت شد: {model_type} - ID: {record_id}")
+                    print(f"📝 آپدیت با داده: {record_data}")
+
+                    # آپدیت یا ایجاد
+                    obj, created = model_class.objects.update_or_create(
+                        id=record_id,
+                        defaults=record_data
+                    )
+
+                    action_text = "ایجاد" if created else "آپدیت"
+                    print(f"✅ {action_text} شد: {model_type} - ID: {obj.id}")
+
+                    return Response({
+                        'status': 'success',
+                        'message': f'{action_text} شد: {model_type} - ID: {obj.id}',
+                        'action': action_text
+                    })
+
+                else:
+                    return Response({
+                        'status': 'error',
+                        'message': f'عملیت نامعتبر: {action}'
+                    }, status=400)
 
             except Exception as e:
-                print(f"⚠️ خطا در اعمال تغییرات: {e}")
+                print(f"❌ خطا در پردازش مدل: {e}")
+                import traceback
+                print(f"📋 جزئیات خطا: {traceback.format_exc()}")
 
-        return Response({
-            'status': 'success',
-            'message': 'تغییرات اعمال شد'
-        })
+                return Response({
+                    'status': 'error',
+                    'message': f'خطا در پردازش مدل: {str(e)}'
+                }, status=400)
+
+        else:
+            return Response({
+                'status': 'error',
+                'message': 'پارامترهای ناقص: app_name و model_type الزامی هستند'
+            }, status=400)
 
     except Exception as e:
         print(f"❌ خطا در دریافت تغییرات: {e}")
+        import traceback
+        print(f"📋 جزئیات خطا: {traceback.format_exc()}")
+
         return Response({
             'status': 'error',
-            'message': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'message': f'خطای سرور: {str(e)}'
+        }, status=500)

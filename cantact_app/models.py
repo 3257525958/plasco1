@@ -1,3 +1,4 @@
+
 from django.db import models
 
 
@@ -92,3 +93,5 @@ class BranchAdmin(models.Model):
 
     def __str__(self):
         return f"{self.admin_user.firstname} {self.admin_user.lastname} - {self.branch.name}"
+
+
