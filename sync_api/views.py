@@ -42,13 +42,13 @@ def sync_pull(request):
             'account_app.StockTransaction',
 
             # cantact_app - مدل‌های ارتباطی
+            # این مدل‌های cantact_app باید اضافه شوند:
             'cantact_app.Branch',
             'cantact_app.BranchAdmin',
             'cantact_app.accuntmodel',
             'cantact_app.dataacont',
             'cantact_app.phonnambermodel',
-            'cantact_app.savecodphon',
-        ]
+            'cantact_app.savecodphon',        ]
 
         for model_path in target_models:
             try:
