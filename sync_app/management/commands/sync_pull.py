@@ -1,3 +1,4 @@
+# در sync_app/management/commands/sync_pull.py
 from django.core.management.base import BaseCommand
 from django.conf import settings
 import requests
@@ -6,7 +7,7 @@ from django.utils import timezone
 
 
 class Command(BaseCommand):
-    help = 'دریافت تغییرات از سرور به لوکال'
+    help = 'دریافت تغییرات از سرور به لوکال - سیستم ردیابی پیشرفته'
 
     def add_arguments(self, parser):
         parser.add_argument('app_name', type=str, help='نام اپ برای دریافت تغییرات')
@@ -14,11 +15,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         app_name = options['app_name']
 
-        self.stdout.write(f"📥 دریافت تغییرات {app_name} از سرور به لوکال...")
-
-        if not settings.OFFLINE_MODE:
-            self.stdout.write("❌ فقط در حالت آفلاین قابل اجراست")
-            return
+        self.stdout.write(f"🧠 دریافت تغییرات {app_name} (سیستم ردیابی)...")
 
         try:
             from plasco.sync_service import sync_service
@@ -33,10 +30,8 @@ class Command(BaseCommand):
             if last_sync:
                 params['last_sync'] = last_sync.synced_at.isoformat()
                 self.stdout.write(f"⏰ آخرین سینک: {last_sync.synced_at}")
-            else:
-                self.stdout.write("🔄 اولین سینک افزایشی")
 
-            # دریافت تغییرات از سرور
+            # دریافت تغییرات
             response = requests.get(
                 f"{sync_service.server_url}/api/sync/pull/",
                 params=params,
@@ -44,7 +39,7 @@ class Command(BaseCommand):
             )
 
             if response.status_code != 200:
-                self.stdout.write(f"❌ خطا در دریافت تغییرات: {response.status_code}")
+                self.stdout.write(f"❌ خطا در دریافت: {response.status_code}")
                 return
 
             data = response.json()
@@ -54,15 +49,25 @@ class Command(BaseCommand):
                 return
 
             # پردازش تغییرات
-            all_changes = data.get('changes', [])
-            app_changes = [ch for ch in all_changes if ch.get('app_name') == app_name]
+            changes = data.get('changes', [])
+            app_changes = [ch for ch in changes if ch.get('app_name') == app_name]
 
-            self.stdout.write(f"🔄 تعداد تغییرات جدید: {len(app_changes)}")
+            self.stdout.write(f"📥 تعداد تغییرات: {len(app_changes)}")
 
+            # نمایش انواع تغییرات
+            actions = {}
+            for change in app_changes:
+                action = change.get('action', 'unknown')
+                actions[action] = actions.get(action, 0) + 1
+
+            for action, count in actions.items():
+                self.stdout.write(f"   {action}: {count}")
+
+            # پردازش
             result = sync_service.process_server_data({'changes': app_changes})
 
             if result['status'] == 'success':
-                # ثبت لاگ سینک موفق
+                # ذخیره لاگ
                 DataSyncLog.objects.create(
                     app_name=app_name,
                     model_type=f"{app_name}.SyncCheckpoint",
@@ -70,7 +75,11 @@ class Command(BaseCommand):
                     action='sync_pull',
                     sync_status=True,
                     synced_at=timezone.now(),
-                    data={'changes_count': result['processed_count']}
+                    data={
+                        'changes_count': result['processed_count'],
+                        'changes_breakdown': actions,
+                        'sync_type': 'tracker_based'
+                    }
                 )
 
                 self.stdout.write(
@@ -79,7 +88,7 @@ class Command(BaseCommand):
                     )
                 )
             else:
-                self.stdout.write(f"❌ خطا در پردازش تغییرات: {result['message']}")
+                self.stdout.write(f"❌ خطا در پردازش: {result['message']}")
 
         except Exception as e:
-            self.stdout.write(f"❌ خطا در دریافت تغییرات: {e}")
+            self.stdout.write(f"❌ خطا در دریافت: {e}")

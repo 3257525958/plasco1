@@ -156,6 +156,7 @@ class ServerSyncLog(models.Model):
 
 
 # در sync_app/models.py
+# در sync_app/models.py
 class ChangeTracker(models.Model):
     app_name = models.CharField(max_length=50)
     model_name = models.CharField(max_length=50)
@@ -169,3 +170,7 @@ class ChangeTracker(models.Model):
             models.Index(fields=['app_name', 'model_name', 'is_synced']),
             models.Index(fields=['changed_at']),
         ]
+
+    def __str__(self):
+        return f"{self.app_name}.{self.model_name} - {self.record_id} - {self.action}"
+
