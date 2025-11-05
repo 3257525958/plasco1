@@ -10,19 +10,20 @@ import decimal
 
 @api_view(['GET'])
 def sync_pull(request):
-    """ارسال داده از سرور اصلی به آفلاین - با پشتیبانی از حذف"""
+    """ارسال داده از سرور اصلی به آفلاین - نسخه هوشمند مبتنی بر ID"""
     try:
-        # پارامترهای سینک افزایشی
+        # دریافت پارامتر سینک افزایشی مبتنی بر ID
         last_sync_id_str = request.GET.get('last_sync_id')
         last_sync_id = int(last_sync_id_str) if last_sync_id_str and last_sync_id_str.isdigit() else 0
 
         print(f"📤 ارسال داده از سرور - آخرین ID سینک شده: {last_sync_id}")
 
         changes = []
-        deletions = []  # لیست جدید برای حذف‌ها
         sync_mode = 'incremental' if last_sync_id > 0 else 'full'
+        new_records_count = 0
+        overall_max_id = 0
 
-        # مدل‌های هدف
+        # لیست مدل‌های هدف
         target_models = [
             'cantact_app.Branch',
             'cantact_app.BranchAdmin',
@@ -37,46 +38,65 @@ def sync_pull(request):
                 app_name, model_name = model_path.split('.')
                 model_class = apps.get_model(app_name, model_name)
 
-                # داده‌های جدید/تغییر کرده
+                # 🔥 منطق جدید: فقط رکوردهای با ID بزرگتر
                 if sync_mode == 'incremental':
                     queryset = model_class.objects.filter(id__gt=last_sync_id)
+                    new_records_count += queryset.count()
+                    print(f"📈 {model_path}: {queryset.count()} رکورد جدید (ID > {last_sync_id})")
                 else:
                     queryset = model_class.objects.all()
+                    print(f"📦 {model_path}: {model_class.objects.count()} رکورد (سینک کامل)")
+
+                # پیدا کردن حداکثر ID برای این مدل
+                max_id = model_class.objects.aggregate(models.Max('id'))['id__max'] or 0
+                if max_id > overall_max_id:
+                    overall_max_id = max_id
 
                 for obj in queryset:
-                    # سریالایز داده‌ها (کد موجود)
+                    data = {}
+                    for field in obj._meta.get_fields():
+                        if not field.is_relation or field.one_to_one:
+                            try:
+                                value = getattr(obj, field.name)
+                                if hasattr(value, 'isoformat'):
+                                    data[field.name] = value.isoformat()
+                                elif isinstance(value, (int, float, bool)):
+                                    data[field.name] = value
+                                else:
+                                    data[field.name] = str(value)
+                            except:
+                                data[field.name] = None
+
                     changes.append({
                         'app_name': app_name,
                         'model_type': model_name,
                         'record_id': obj.id,
                         'action': 'sync',
-                        'data': data,  # داده‌های سریالایز شده
+                        'data': data,
                         'server_timestamp': timezone.now().isoformat(),
+                        'sync_mode': sync_mode
                     })
-
-                # 🔥 بخش جدید: پیدا کردن حذف‌ها
-                if sync_mode == 'incremental':
-                    # اینجا باید منطق پیدا کردن حذف‌ها را اضافه کنید
-                    # مثلاً از یک جدول جداگانه برای ردیابی حذف‌ها استفاده کنید
-                    pass
 
             except Exception as e:
                 print(f"⚠️ خطا در پردازش {model_path}: {e}")
                 continue
 
+        print(f"🎯 ارسال {len(changes)} رکورد ({sync_mode}) - حداکثر ID: {overall_max_id}")
+
         return Response({
             'status': 'success',
-            'message': f'ارسال {len(changes)} رکورد از سرور',
+            'message': f'ارسال {len(changes)} رکورد از سرور ({sync_mode})',
             'changes': changes,
-            'deletions': deletions,  # 🔥 حذف‌ها هم ارسال شوند
+            'total_changes': len(changes),
             'sync_mode': sync_mode,
-            'max_synced_id': max_id,  # آخرین ID
+            'new_records_count': new_records_count,
+            'max_synced_id': overall_max_id,  # 🔥 این خط مهم است!
+            'server_timestamp': timezone.now().isoformat()
         })
 
     except Exception as e:
         print(f"❌ خطا در سینک پول: {e}")
         return Response({'status': 'error', 'message': str(e)})
-
 @api_view(['POST'])
 def sync_receive(request):
     """دریافت تغییرات از سیستم‌های آفلاین - نسخه کاملاً اصلاح شده"""
