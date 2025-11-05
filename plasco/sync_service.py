@@ -185,7 +185,6 @@ class UniversalSyncService:
             'processed_count': processed_count,
             'errors': errors
         }
-
     def _filter_and_convert_data(self, model_class, data, model_key):
         """فیلتر و تبدیل داده‌ها به انواع صحیح"""
         filtered_data = {}
